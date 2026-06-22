@@ -1,13 +1,24 @@
 ﻿const BOOKINGS_API_URL = '/api/driver/bookings';
 const PROFILE_API_URL = '/api/driver/profile';
-
 let activeDriverProfile = null;
 
-// 1. Fetch User Session Metrics from Database
+// 1. Fetch Dynamic User Session Metrics from Database
 async function loadDriverProfile() {
     try {
-        const response = await fetch(PROFILE_API_URL);
-        if (!response.ok) throw new Error('Database down.');
+        // 1. Look directly at the URL bar (e.g., dashboard.html?email=jordan@ride.com)
+        const urlParams = new URLSearchParams(window.location.search);
+        let loggedInEmail = urlParams.get('email');
+
+        // 2. Fallback only if someone goes directly to dashboard.html without logging in
+        if (!loggedInEmail) {
+            loggedInEmail = 'driver@ride.com';
+        }
+
+        // 3. Request the profile from the backend
+        const targetUrl = `${window.location.origin}${PROFILE_API_URL}?email=${encodeURIComponent(loggedInEmail)}`;
+
+        const response = await fetch(targetUrl);
+        if (!response.ok) throw new Error('Profile response status not ok.');
 
         activeDriverProfile = await response.json();
 
@@ -16,6 +27,7 @@ async function loadDriverProfile() {
     } catch (error) {
         console.error('Error fetching driver details:', error);
         document.getElementById('driverNameLabel').innerText = "Session User Offline";
+        document.getElementById('driverEmailLabel').innerText = "connecting to database...";
     }
 }
 
@@ -24,7 +36,8 @@ async function loadDriverDashboard() {
     const tableBody = document.getElementById('bookingsTableBody');
 
     try {
-        const response = await fetch(BOOKINGS_API_URL);
+        const targetUrl = `${window.location.origin}${BOOKINGS_API_URL}`;
+        const response = await fetch(targetUrl);
         if (!response.ok) throw new Error('Network fault.');
 
         const data = await response.json();
@@ -54,10 +67,10 @@ async function loadDriverDashboard() {
                     </div>
                 </td>
                 <td><span class="student-num">${booking.studentNumber}</span></td>
-                <td>Shuttle Alpha</td>
+                <td>${booking.shuttle}</td>
                 <td><span class="route-tag ${routeClass}">${booking.routeName}</span></td>
                 <td><strong>${booking.departureTime}</strong></td>
-                <td>${new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</td>
+                <td>${booking.bookingDate}</td>
                 <td><span class="badge ${statusClass}">${booking.status}</span></td>
                 <td class="actions-cell">&#8942;</td>
             `;
@@ -70,9 +83,8 @@ async function loadDriverDashboard() {
 }
 
 // ==========================================================================
-// NEW FEATURES: REAL-TIME SEARCHING & DATE FILTER ENGINE
+// REAL-TIME SEARCHING & DATE FILTER ENGINE
 // ==========================================================================
-
 function filterTable() {
     const input = document.getElementById("tableSearch").value.toUpperCase();
     const rows = document.getElementById("bookingsTableBody").getElementsByTagName("tr");
@@ -88,7 +100,7 @@ function filterTable() {
 
 function filterByDate() {
     const filterValue = document.getElementById("manifestDateFilter").value;
-    alert(`Filtering manifest list to matches for date: ${filterValue}\n(In real production context, this fires a parameterized query to the back-end)`);
+    alert(`Filtering manifest list to matches for date: ${filterValue}`);
 }
 
 function startLiveClock() {
@@ -101,7 +113,6 @@ function startLiveClock() {
 // ==========================================================================
 // INTERFACE MODAL WINDOW CONTROLLERS
 // ==========================================================================
-
 function toggleProfileMenu() {
     document.getElementById('profileDropdown').classList.toggle('show');
 }
@@ -115,13 +126,15 @@ function openProfileModal() {
         document.getElementById('modalIdNumber').innerText = activeDriverProfile.idNumber;
     }
 }
+
 function closeProfileModal() { document.getElementById('profileModal').classList.remove('active'); }
+defineModalToggle('Settings'); defineModalToggle('Support');
 
-function openSettingsModal() { document.getElementById('settingsModal').classList.add('active'); }
-function closeSettingsModal() { document.getElementById('settingsModal').classList.remove('active'); }
-
-function openSupportModal() { document.getElementById('supportModal').classList.add('active'); }
-function closeSupportModal() { document.getElementById('supportModal').classList.remove('active'); }
+// Helper generator utility
+function defineModalToggle(name) {
+    window[`open${name}Modal`] = () => document.getElementById(`${name.toLowerCase()}Modal`).classList.add('active');
+    window[`close${name}Modal`] = () => document.getElementById(`${name.toLowerCase()}Modal`).classList.remove('active');
+}
 
 function handleLogout() {
     if (confirm("Are you sure you want to sign out of the GetYourRide portal workspace?")) {
@@ -134,15 +147,16 @@ function handleLogout() {
 window.addEventListener('click', function (e) {
     const trigger = document.querySelector('.profile-trigger-area');
     if (trigger && !trigger.contains(e.target)) {
-        document.getElementById('profileDropdown').classList.remove('show');
+        const dropdown = document.getElementById('profileDropdown');
+        if (dropdown) dropdown.classList.remove('show');
     }
 });
 
 // Structural initialization triggers
 window.onload = async function () {
     startLiveClock();
-    // Pre-populate date picker selector input with today's standard calendar date
-    document.getElementById('manifestDateFilter').valueAsDate = new Date();
+    const dateInput = document.getElementById('manifestDateFilter');
+    if (dateInput) dateInput.valueAsDate = new Date();
     await loadDriverProfile();
     await loadDriverDashboard();
 };

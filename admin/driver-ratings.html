@@ -1,0 +1,83 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Portal - Driver Ratings</title>
+    <link rel="stylesheet" href="../assets/css/admin-dashboard.css">
+</head>
+<body>
+    <div class="sidebar">
+        <div class="brand">
+            <h1>GetYourRide</h1>
+            <span>University Admin Portal</span>
+        </div>
+        <ul class="menu-list">
+            <li><a href="dashboard.html" class="menu-item">📊 Dashboard</a></li>
+            <li><a href="verify-drivers.html" class="menu-item">🛡️ Driver Verification</a></li>
+            <li><a href="driver-ratings.html" class="menu-item active">⭐ Driver Ratings</a></li>
+        </ul>
+        <div class="sidebar-spacer"></div>
+    </div>
+
+    <div class="main-content">
+        <div class="top-navbar">
+            <input type="text" class="search-bar" id="globalSearchInput" placeholder="Search operational roster..." onkeyup="searchDrivers()">
+            <div class="top-navbar-right">
+                <div class="admin-profile-trigger" id="profileTriggerBtn" onclick="toggleDropdown(event)">
+                    <div class="avatar-circle">AU</div>
+                    <span class="profile-label">Admin User</span>
+                </div>
+                <div class="profile-dropdown-menu" id="adminGlobalDropdown">
+                    <div class="dropdown-item" onclick="alert('Admin Profile Info:\nName: Admin User\nRole: Head System Administrator\nEmail: admin@getyourride.com')">👤 View Profile Info</div>
+                    <div class="dropdown-item" onclick="alert('Opening System Settings & Configurations Control Loop...')">⚙️ Settings Option</div>
+                    <div class="dropdown-item" onclick="alert('Opening Helpdesk & Technical Support Ticketing Window...')">💬 Support Option</div>
+                    <div class="dropdown-divider"></div>
+                    <div class="dropdown-item text-danger" onclick="executeLogout()">🚪 Log Out</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="content-body">
+            <div class="view-header">
+                <div>
+                    <h2>Driver Performance Matrix</h2>
+                    <p class="subtitle">Live quality indices fed directly from tracking databases.</p>
+                </div>
+            </div>
+
+            <div class="metrics-grid">
+                <div class="metric-card"><div class="metric-header"><span class="metric-title">Active Drivers</span></div><span class="metric-value" id="metricActiveDrivers">0</span></div>
+                <div class="metric-card"><div class="metric-header"><span class="metric-title">Average Fleet Rating</span></div><span class="metric-value" id="metricAverageRating">0.00</span></div>
+                <div class="metric-card"><div class="metric-header"><span class="metric-title">Global Trips Logged</span></div><span class="metric-value" id="metricTotalTrips">0</span></div>
+                <div class="metric-card"><div class="metric-header"><span class="metric-title">Performance Flags</span></div><span class="metric-value text-danger" id="metricFlagsCount">0</span></div>
+            </div>
+
+            <div class="table-card">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Driver Name</th>
+                            <th>ID Number</th>
+                            <th>Average Rating</th>
+                            <th>Trips</th>
+                            <th>Total Ratings</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody id="driverRatingsTableBody">
+                        <tr>
+                            <td colspan="6" style="text-align: center; color: var(--text-muted); padding: 20px;">Connecting backend parameters...</td>
+                        </tr>
+                    </tbody>
+                </table>
+                <div class="table-footer">
+                    <span id="showingEntriesCount">Processing columns...</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="../assets/js/admin-ratings.js"></script>
+</body>
+</html>

@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Admin Portal - Dashboard Home</title>
+    <title>Admin Portal - Verify Drivers</title>
     <link rel="stylesheet" href="../assets/css/admin-dashboard.css">
 </head>
 <body>
@@ -13,8 +13,8 @@
             <span>University Admin Portal</span>
         </div>
         <ul class="menu-list">
-            <li><a href="dashboard.html" class="menu-item active">📊 Dashboard</a></li>
-            <li><a href="verify-drivers.html" class="menu-item">🛡️ Driver Verification</a></li>
+            <li><a href="dashboard.html" class="menu-item">📊 Dashboard</a></li>
+            <li><a href="verify-drivers.html" class="menu-item active">🛡️ Driver Verification</a></li>
             <li><a href="driver-ratings.html" class="menu-item">⭐ Driver Ratings</a></li>
         </ul>
         <div class="sidebar-spacer"></div>
@@ -22,7 +22,7 @@
 
     <div class="main-content">
         <div class="top-navbar">
-            <div></div>
+            <input type="text" class="search-bar" id="verifySearchInput" placeholder="Filter registration files..." onkeyup="searchUnverified()">
             <div class="top-navbar-right">
                 <div class="admin-profile-trigger" id="profileTriggerBtn" onclick="toggleDropdown(event)">
                     <div class="avatar-circle">AU</div>
@@ -41,23 +41,31 @@
         <div class="content-body">
             <div class="view-header">
                 <div>
-                    <h2>Welcome to the Admin Command Center</h2>
-                    <p class="subtitle">Select an operational dashboard control panel to view system tracking matrix loops.</p>
+                    <h2>Verification Processing Pipeline</h2>
+                    <p class="subtitle">Review academic credentials and activate valid driver roles.</p>
                 </div>
             </div>
-            <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 24px; margin-top: 20px;">
-                <div class="metric-card" style="cursor: pointer;" onclick="window.location.href='verify-drivers.html'">
-                    <h3>🛡️ Driver Verification Queue</h3>
-                    <p style="color: var(--text-muted); font-size: 13px; line-height: 1.5;">Review incoming driver applications, verify student documentation, and approve system activation requests.</p>
-                </div>
-                <div class="metric-card" style="cursor: pointer;" onclick="window.location.href='driver-ratings.html'">
-                    <h3>⭐ Driver Performance & Ratings</h3>
-                    <p style="color: var(--text-muted); font-size: 13px; line-height: 1.5;">Track overall score stats, monitor completed transit counts, and evaluate driver feedback rules directly.</p>
-                </div>
+
+            <div class="table-card">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Applicant Name</th>
+                            <th>Student ID Reference</th>
+                            <th>System Contact Email</th>
+                            <th>Action Trigger</th>
+                        </tr>
+                    </thead>
+                    <tbody id="verificationTableBody">
+                        <tr>
+                            <td colspan="4" style="text-align: center; color: var(--text-muted); padding: 20px;">Streaming pending rows...</td>
+                        </tr>
+                    </tbody>
+                </table>
             </div>
         </div>
     </div>
 
-    <script src="../assets/js/admin-dropdown.js"></script>
+    <script src="../assets/js/admin-verify.js"></script>
 </body>
 </html>
