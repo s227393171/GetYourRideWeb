@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Driver Manifest - GetYourRide</title>
+    <title>Driver Dashboard - GetYourRide</title>
     <link rel="stylesheet" href="../assets/css/driver-dashboard.css">
 </head>
 <body>
@@ -13,15 +13,32 @@
             <h1>GETYOURRIDE</h1>
             <span>Shuttle Driver</span>
         </div>
+
         <ul class="menu-list">
             <li><a href="#" class="menu-item active">📋 Bookings</a></li>
         </ul>
+
+        <div class="sidebar-profile-footer">
+            <div class="profile-trigger-area" onclick="toggleProfileMenu()">
+                <div class="avatar-placeholder"></div>
+                <div class="profile-info-text">
+                    <span class="user-display-name" id="driverNameLabel">Loading profile...</span>
+                    <span class="user-display-email" id="driverEmailLabel">connecting to database...</span>
+                </div>
+            </div>
+
+            <div class="profile-dropdown-menu" id="profileDropdown">
+                <a href="#" class="dropdown-link" onclick="openProfileModal()">👤 View Profile</a>
+                <hr class="dropdown-divider">
+                <a href="#" class="dropdown-link logout-action" onclick="handleLogout()">Authorization</a>
+            </div>
+        </div>
     </div>
 
     <div class="main-content">
         <div class="top-navbar">
             <input type="text" class="search-bar" placeholder="Search manifest bookings...">
-            <div style="font-weight:600; font-size:14px; color:#334155;">Driver Portal</div>
+            <div class="portal-badge">Driver Portal</div>
         </div>
 
         <div class="content-body">
@@ -46,6 +63,19 @@
                     </tbody>
                 </table>
             </div>
+        </div>
+    </div>
+
+    <div class="profile-modal-overlay" id="profileModal">
+        <div class="profile-modal-card">
+            <h3>Driver Profile Card</h3>
+            <div class="modal-body-content">
+                <p><strong>Full Name:</strong> <span id="modalFullName">Loading...</span></p>
+                <p><strong>Staff/ID Number:</strong> <span id="modalIdNumber">Loading...</span></p>
+                <p><strong>System Email:</strong> <span id="modalEmail">Loading...</span></p>
+                <p><strong>Assigned Role:</strong> <span id="modalRole">Shuttle Driver</span></p>
+            </div>
+            <button class="close-modal-btn" onclick="closeProfileModal()">Close Reference</button>
         </div>
     </div>
 

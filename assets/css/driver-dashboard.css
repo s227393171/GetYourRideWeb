@@ -23,6 +23,7 @@ body {
     display: flex;
     flex-direction: column;
     padding: 20px 0;
+    box-sizing: border-box;
 }
 
 .brand {
@@ -58,11 +59,99 @@ body {
 
     .menu-item.active {
         background-color: var(--bg-dark-hover);
-        color: #ff7a00; /* Subtle orange indicator theme from image */
+        color: #ff7a00; /* Subtle orange indicator theme from your image layout */
         border-left: 4px solid #ff7a00;
     }
 
-/* Main App Work Area */
+/* Sidebar Profile Footer Component */
+.sidebar-profile-footer {
+    margin-top: auto;
+    padding: 16px;
+    border-top: 1px solid var(--bg-dark-hover);
+    position: relative;
+}
+
+.profile-trigger-area {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    cursor: pointer;
+    padding: 8px;
+    border-radius: 6px;
+    transition: background 0.2s ease;
+}
+
+    .profile-trigger-area:hover {
+        background-color: var(--bg-dark-hover);
+    }
+
+.profile-info-text {
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+.user-display-name {
+    font-size: 13px;
+    font-weight: 600;
+    color: #ffffff;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+    overflow: hidden;
+}
+
+.user-display-email {
+    font-size: 11px;
+    color: var(--text-muted);
+    white-space: nowrap;
+    text-overflow: ellipsis;
+    overflow: hidden;
+}
+
+/* Floating Dropdown Component */
+.profile-dropdown-menu {
+    position: absolute;
+    bottom: 75px;
+    left: 16px;
+    right: 16px;
+    background-color: #ffffff;
+    border-radius: 8px;
+    box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.15), 0 4px 6px rgba(0,0,0,0.05);
+    display: none;
+    flex-direction: column;
+    z-index: 100;
+    overflow: hidden;
+    border: 1px solid var(--border-color);
+}
+
+    .profile-dropdown-menu.show {
+        display: flex;
+    }
+
+.dropdown-link {
+    padding: 12px 16px;
+    font-size: 13px;
+    color: #334155;
+    text-decoration: none;
+    transition: background 0.15s ease;
+}
+
+    .dropdown-link:hover {
+        background-color: #f8fafc;
+    }
+
+.dropdown-divider {
+    margin: 0;
+    border: 0;
+    border-top: 1px solid var(--border-color);
+}
+
+.logout-action {
+    color: #ef4444;
+    font-weight: 600;
+}
+
+/* Main Workspace Framework */
 .main-content {
     flex: 1;
     display: flex;
@@ -88,11 +177,17 @@ body {
     font-size: 13px;
 }
 
+.portal-badge {
+    font-weight: 600;
+    font-size: 14px;
+    color: #334155;
+}
+
 .content-body {
     padding: 30px;
 }
 
-/* Table Container Card */
+/* Table Card Component */
 .table-card {
     background: white;
     border-radius: 12px;
@@ -128,7 +223,17 @@ tr:hover {
     background-color: #fafafa;
 }
 
-/* Profile Elements */
+.loading-state {
+    text-align: center;
+    color: var(--text-muted);
+}
+
+.error-state {
+    text-align: center;
+    color: #ef4444;
+}
+
+/* Student Profiling Grid Elements */
 .student-profile {
     display: flex;
     align-items: center;
@@ -143,7 +248,7 @@ tr:hover {
 .avatar-placeholder {
     width: 32px;
     height: 32px;
-    background-color: #e2e8f0;
+    background-color: #cbd5e1;
     border-radius: 50%;
 }
 
@@ -151,7 +256,7 @@ tr:hover {
     color: var(--text-muted);
 }
 
-/* Route Location Tags */
+/* Route Badges Layout */
 .route-tag {
     padding: 4px 8px;
     border-radius: 4px;
@@ -175,7 +280,7 @@ tr:hover {
     color: #6b21a8;
 }
 
-/* Status Labels */
+/* Booking Status Badges */
 .badge {
     padding: 6px 14px;
     border-radius: 20px;
@@ -204,3 +309,59 @@ tr:hover {
     cursor: pointer;
     font-size: 18px;
 }
+
+/* Popup Overlay Modals Styles */
+.profile-modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: rgba(15, 23, 42, 0.6);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+}
+
+    .profile-modal-overlay.active {
+        display: flex;
+    }
+
+.profile-modal-card {
+    background: #ffffff;
+    padding: 24px;
+    border-radius: 12px;
+    width: 100%;
+    max-width: 400px;
+    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+}
+
+    .profile-modal-card h3 {
+        margin-top: 0;
+        color: #0f172a;
+        border-bottom: 1px solid var(--border-color);
+        padding-bottom: 12px;
+    }
+
+.modal-body-content p {
+    font-size: 14px;
+    color: #334155;
+    margin: 12px 0;
+}
+
+.close-modal-btn {
+    width: 100%;
+    padding: 10px;
+    background-color: #111625;
+    color: #ffffff;
+    border: none;
+    border-radius: 6px;
+    font-weight: 600;
+    cursor: pointer;
+    margin-top: 16px;
+}
+
+    .close-modal-btn:hover {
+        background-color: #1e2538;
+    }
