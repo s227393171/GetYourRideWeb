@@ -406,3 +406,43 @@ tr:hover {
     .close-modal-btn:hover {
         background-color: #1e2538;
     }
+
+/* ==========================================================================
+   NEW INTEGRATED COMPONENT CLASSES (ADDED SAFELY BELOW ORIGINAL STYLES)
+   ========================================================================== */
+
+/* Keeps Search Input and Date Selector neatly structured on the left */
+.search-box-wrapper {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+/* Styled enterprise date input selector field */
+.date-filter {
+    background: #f1f5f9;
+    border: 1px solid var(--border-color);
+    padding: 8px 14px;
+    border-radius: 20px;
+    font-size: 13px;
+    color: #334155;
+    font-family: inherit;
+    outline: none;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+    .date-filter:focus {
+        background: #ffffff;
+        border-color: #ff7a00;
+        box-shadow: 0 0 0 3px rgba(255, 122, 0, 0.15);
+    }
+/* Automatically takes up all available vertical room in the sidebar */
+.sidebar-spacer {
+    flex: 1;
+}
+
+/* Optional clean separation buffer above the bottom options */
+.bottom-menu {
+    margin-bottom: 15px;
+}

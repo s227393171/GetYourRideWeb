@@ -16,6 +16,11 @@
 
         <ul class="menu-list">
             <li><a href="#" class="menu-item active">📋 Bookings</a></li>
+
+        </ul>
+        <ul class="menu-list bottom-menu">
+            <li><a href="#" class="menu-item" onclick="openSettingsModal()">⚙️ Settings</a></li>
+            <li><a href="#" class="menu-item" onclick="openSupportModal()">❓ Support Help</a></li>
         </ul>
 
         <div class="sidebar-profile-footer">
@@ -37,9 +42,16 @@
 
     <div class="main-content">
         <div class="top-navbar">
-            <input type="text" class="search-bar" placeholder="Search manifest bookings...">
+            <div class="search-box-wrapper">
+                <input type="text" class="search-bar" id="tableSearch" placeholder="Search manifest bookings..." onkeyup="filterTable()">
+                <input type="date" class="date-filter" id="manifestDateFilter" onchange="filterByDate()">
+            </div>
+
             <div class="top-navbar-right">
-                <div class="portal-badge">Driver Portal</div>
+                <div class="portal-badge">
+                    <span id="liveClock" style="font-family: monospace; font-weight: 700; color: #ff7a00; margin-right: 15px;">00:00:00</span>
+                    Driver Portal
+                </div>
                 <button class="top-logout-btn" onclick="handleLogout()">🚪 Logout</button>
             </div>
         </div>
@@ -79,6 +91,42 @@
                 <p><strong>Assigned Role:</strong> <span id="modalRole">Shuttle Driver</span></p>
             </div>
             <button class="close-modal-btn" onclick="closeProfileModal()">Close Reference</button>
+        </div>
+    </div>
+
+    <div class="profile-modal-overlay" id="settingsModal">
+        <div class="profile-modal-card">
+            <h3>⚙️ Portal Settings</h3>
+            <div class="modal-body-content">
+                <label style="display:block; margin: 10px 0 5px; font-weight:600; font-size:13px;">Dashboard Theme</label>
+                <select style="width:100%; padding:8px; border-radius:6px; border:1px solid #cbd5e1; outline:none;">
+                    <option>Default Light Mode</option>
+                    <option>High Contrast Dark Mode</option>
+                </select>
+                <label style="display:block; margin: 15px 0 5px; font-weight:600; font-size:13px;">Refresh Frequency</label>
+                <select style="width:100%; padding:8px; border-radius:6px; border:1px solid #cbd5e1; outline:none;">
+                    <option>Every 30 Seconds</option>
+                    <option>Every Minute</option>
+                    <option>Manual Refresh</option>
+                </select>
+            </div>
+            <button class="close-modal-btn" onclick="closeSettingsModal()">Save & Close</button>
+        </div>
+    </div>
+
+    <div class="profile-modal-overlay" id="supportModal">
+        <div class="profile-modal-card">
+            <h3>❓ Dispatch Support Help</h3>
+            <div class="modal-body-content">
+                <p style="font-size:13px; color:#64748b;">Need immediate assistance with a transit route layout or emergency check-in failure?</p>
+                <div style="background:#f8fafc; padding:12px; border-radius:6px; border-left:4px solid #ff7a00; margin:10px 0;">
+                    <strong>📞 Transit Control Line:</strong><br>+27 (0) 41 504 1111
+                </div>
+                <div style="background:#f8fafc; padding:12px; border-radius:6px; border-left:4px solid #10b981; margin:10px 0;">
+                    <strong>✉️ Emergency Support:</strong><br>support@getyourride.com
+                </div>
+            </div>
+            <button class="close-modal-btn" onclick="closeSupportModal()">Close Help Desk</button>
         </div>
     </div>
 

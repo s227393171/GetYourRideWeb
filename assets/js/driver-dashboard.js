@@ -1,12 +1,9 @@
-﻿// Local dev running ports mapping URLs
-// By removing 'http://localhost:5000', the browser automatically requests from your active running port!
-const BOOKINGS_API_URL = '/api/driver/bookings';
+﻿const BOOKINGS_API_URL = '/api/driver/bookings';
 const PROFILE_API_URL = '/api/driver/profile';
 
-// Keeps tracking reference of active record context loaded directly from database entity
 let activeDriverProfile = null;
 
-// 1. Fetch User Session Metrics from the Backend MySQL instance
+// 1. Fetch User Session Metrics from Database
 async function loadDriverProfile() {
     try {
         const response = await fetch(PROFILE_API_URL);
@@ -14,7 +11,6 @@ async function loadDriverProfile() {
 
         activeDriverProfile = await response.json();
 
-        // Dynamically populates tracking targets layout elements
         document.getElementById('driverNameLabel').innerText = activeDriverProfile.fullName;
         document.getElementById('driverEmailLabel').innerText = activeDriverProfile.email;
     } catch (error) {
@@ -23,7 +19,7 @@ async function loadDriverProfile() {
     }
 }
 
-// 2. Fetch Assigned Manifest bookings from the Backend MySQL instance
+// 2. Fetch Assigned Manifest bookings from Database
 async function loadDriverDashboard() {
     const tableBody = document.getElementById('bookingsTableBody');
 
@@ -61,7 +57,7 @@ async function loadDriverDashboard() {
                 <td>Shuttle Alpha</td>
                 <td><span class="route-tag ${routeClass}">${booking.routeName}</span></td>
                 <td><strong>${booking.departureTime}</strong></td>
-                <td>Oct 24, 2026</td>
+                <td>${new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</td>
                 <td><span class="badge ${statusClass}">${booking.status}</span></td>
                 <td class="actions-cell">&#8942;</td>
             `;
@@ -74,10 +70,38 @@ async function loadDriverDashboard() {
 }
 
 // ==========================================================================
-// INTERFACE CONTROLLERS & ACTIONS
+// NEW FEATURES: REAL-TIME SEARCHING & DATE FILTER ENGINE
 // ==========================================================================
 
-// Dropdown Toggles UI Layer Controllers
+function filterTable() {
+    const input = document.getElementById("tableSearch").value.toUpperCase();
+    const rows = document.getElementById("bookingsTableBody").getElementsByTagName("tr");
+
+    for (let i = 0; i < rows.length; i++) {
+        const nameCell = rows[i].getElementsByTagName("td")[0];
+        if (nameCell) {
+            const txtValue = nameCell.textContent || nameCell.innerText;
+            rows[i].style.display = txtValue.toUpperCase().indexOf(input) > -1 ? "" : "none";
+        }
+    }
+}
+
+function filterByDate() {
+    const filterValue = document.getElementById("manifestDateFilter").value;
+    alert(`Filtering manifest list to matches for date: ${filterValue}\n(In real production context, this fires a parameterized query to the back-end)`);
+}
+
+function startLiveClock() {
+    setInterval(() => {
+        const now = new Date();
+        document.getElementById('liveClock').innerText = now.toLocaleTimeString();
+    }, 1000);
+}
+
+// ==========================================================================
+// INTERFACE MODAL WINDOW CONTROLLERS
+// ==========================================================================
+
 function toggleProfileMenu() {
     document.getElementById('profileDropdown').classList.toggle('show');
 }
@@ -85,32 +109,28 @@ function toggleProfileMenu() {
 function openProfileModal() {
     document.getElementById('profileModal').classList.add('active');
     document.getElementById('profileDropdown').classList.remove('show');
-
-    // Safety check ensuring data object hydrated completely out of async pipeline tasks before population
     if (activeDriverProfile) {
         document.getElementById('modalFullName').innerText = activeDriverProfile.fullName;
         document.getElementById('modalEmail').innerText = activeDriverProfile.email;
         document.getElementById('modalIdNumber').innerText = activeDriverProfile.idNumber;
     }
 }
+function closeProfileModal() { document.getElementById('profileModal').classList.remove('active'); }
 
-function closeProfileModal() {
-    document.getElementById('profileModal').classList.remove('active');
-}
+function openSettingsModal() { document.getElementById('settingsModal').classList.add('active'); }
+function closeSettingsModal() { document.getElementById('settingsModal').classList.remove('active'); }
 
-// EDITED: Clears cache and matches your C# routing endpoint context directly
+function openSupportModal() { document.getElementById('supportModal').classList.add('active'); }
+function closeSupportModal() { document.getElementById('supportModal').classList.remove('active'); }
+
 function handleLogout() {
     if (confirm("Are you sure you want to sign out of the GetYourRide portal workspace?")) {
-        // Clear active web session footprints
         localStorage.clear();
         sessionStorage.clear();
-
-        // Bounce back to root "/" where Program.cs automatically serves Login.html
         window.location.href = "/";
     }
 }
 
-// Window interceptor checking click distributions to clear flyouts
 window.addEventListener('click', function (e) {
     const trigger = document.querySelector('.profile-trigger-area');
     if (trigger && !trigger.contains(e.target)) {
@@ -118,8 +138,11 @@ window.addEventListener('click', function (e) {
     }
 });
 
-// Structural initialization lifecycles entry workflow triggers
+// Structural initialization triggers
 window.onload = async function () {
+    startLiveClock();
+    // Pre-populate date picker selector input with today's standard calendar date
+    document.getElementById('manifestDateFilter').valueAsDate = new Date();
     await loadDriverProfile();
     await loadDriverDashboard();
 };
