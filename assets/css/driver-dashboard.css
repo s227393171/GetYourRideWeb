@@ -1,0 +1,206 @@
+﻿:root {
+    --bg-dark-sidebar: #111625;
+    --bg-dark-hover: #1e2538;
+    --bg-main: #f8fafc;
+    --text-muted: #64748b;
+    --border-color: #f1f5f9;
+}
+
+body {
+    font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+    background-color: var(--bg-main);
+    margin: 0;
+    display: flex;
+    height: 100vh;
+    overflow: hidden;
+}
+
+/* Sidebar Layout */
+.sidebar {
+    width: 240px;
+    background-color: var(--bg-dark-sidebar);
+    color: #ffffff;
+    display: flex;
+    flex-direction: column;
+    padding: 20px 0;
+}
+
+.brand {
+    padding: 0 24px;
+    margin-bottom: 30px;
+}
+
+    .brand h1 {
+        font-size: 18px;
+        margin: 0;
+        letter-spacing: 0.5px;
+    }
+
+    .brand span {
+        font-size: 11px;
+        color: var(--text-muted);
+    }
+
+.menu-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.menu-item {
+    padding: 12px 24px;
+    display: flex;
+    align-items: center;
+    color: #94a3b8;
+    text-decoration: none;
+    font-size: 14px;
+}
+
+    .menu-item.active {
+        background-color: var(--bg-dark-hover);
+        color: #ff7a00; /* Subtle orange indicator theme from image */
+        border-left: 4px solid #ff7a00;
+    }
+
+/* Main App Work Area */
+.main-content {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    overflow-y: auto;
+}
+
+.top-navbar {
+    background: white;
+    padding: 15px 30px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.search-bar {
+    background: #f1f5f9;
+    border: none;
+    padding: 10px 16px;
+    border-radius: 20px;
+    width: 300px;
+    font-size: 13px;
+}
+
+.content-body {
+    padding: 30px;
+}
+
+/* Table Container Card */
+.table-card {
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.02);
+    border: 1px solid var(--border-color);
+    overflow: hidden;
+}
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+th {
+    background-color: #f8fafc;
+    color: var(--text-muted);
+    font-size: 11px;
+    text-transform: uppercase;
+    padding: 16px 20px;
+    font-weight: 600;
+    border-bottom: 1px solid var(--border-color);
+}
+
+td {
+    padding: 16px 20px;
+    border-bottom: 1px solid var(--border-color);
+    color: #334155;
+    font-size: 14px;
+    vertical-align: middle;
+}
+
+tr:hover {
+    background-color: #fafafa;
+}
+
+/* Profile Elements */
+.student-profile {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+    .student-profile span {
+        font-weight: 600;
+        color: #0f172a;
+    }
+
+.avatar-placeholder {
+    width: 32px;
+    height: 32px;
+    background-color: #e2e8f0;
+    border-radius: 50%;
+}
+
+.student-num {
+    color: var(--text-muted);
+}
+
+/* Route Location Tags */
+.route-tag {
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.3px;
+}
+
+.route-campus {
+    background-color: #e0f2fe;
+    color: #0369a1;
+}
+
+.route-downtown {
+    background-color: #ffedd5;
+    color: #c2410c;
+}
+
+.route-med {
+    background-color: #f3e8ff;
+    color: #6b21a8;
+}
+
+/* Status Labels */
+.badge {
+    padding: 6px 14px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 600;
+    display: inline-block;
+}
+
+.status-boarded {
+    background-color: #ecfdf5;
+    color: #10b981;
+}
+
+.status-booked {
+    background-color: #fffbeb;
+    color: #f59e0b;
+}
+
+.status-cancelled {
+    background-color: #fef2f2;
+    color: #ef4444;
+}
+
+.actions-cell {
+    color: var(--text-muted);
+    cursor: pointer;
+    font-size: 18px;
+}

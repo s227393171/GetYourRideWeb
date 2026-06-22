@@ -1,2 +1,54 @@
-﻿<h1>Driver Dashboard</h1>
-<p>View your bookings here</p>
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Driver Manifest - GetYourRide</title>
+    <link rel="stylesheet" href="../assets/css/driver-dashboard.css">
+</head>
+<body>
+
+    <div class="sidebar">
+        <div class="brand">
+            <h1>GETYOURRIDE</h1>
+            <span>Shuttle Driver</span>
+        </div>
+        <ul class="menu-list">
+            <li><a href="#" class="menu-item active">📋 Bookings</a></li>
+        </ul>
+    </div>
+
+    <div class="main-content">
+        <div class="top-navbar">
+            <input type="text" class="search-bar" placeholder="Search manifest bookings...">
+            <div style="font-weight:600; font-size:14px; color:#334155;">Driver Portal</div>
+        </div>
+
+        <div class="content-body">
+            <div class="table-card">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Student Name</th>
+                            <th>Student Number</th>
+                            <th>Shuttle</th>
+                            <th>Route</th>
+                            <th>Departure Time</th>
+                            <th>Booking Date</th>
+                            <th>Status</th>
+                            <th></th>
+                        </tr>
+                    </thead>
+                    <tbody id="bookingsTableBody">
+                        <tr>
+                            <td colspan="8" class="loading-state">Loading active manifest schedules...</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <script src="../assets/js/driver-dashboard.js"></script>
+</body>
+</html>

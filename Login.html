@@ -2,19 +2,28 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Login</title>
+    <title>GetYourRide - Login</title>
+    <!-- Link to external stylesheet -->
     <link rel="stylesheet" href="/assets/css/styles.css">
 </head>
 <body>
 
     <div class="login-container">
-        <h2>Login</h2>
+        <!-- Logo -->
+        <img src="/assets/img/logo.png" alt="GetYourRide Logo" class="logo">
+
+        <h1>GetYourRide</h1>
+        <p class="tagline">Reliable campus mobility for everyone</p>
+
         <form id="loginForm">
-            <input type="email" id="email" placeholder="Email" required><br><br>
-            <input type="password" id="password" placeholder="Password" required><br><br>
-            <button type="submit">Log In</button>
+            <input type="email" id="email" placeholder="Email" required>
+            <input type="password" id="password" placeholder="Password" required>
+            <button type="submit">Login</button>
         </form>
-        <p id="errorMessage" style="color:red;"></p>
+
+        <p id="errorMessage"></p>
+
+        <a href="#" class="link">Forgot Password?</a>
     </div>
 
     <script src="/assets/js/login.js"></script>
