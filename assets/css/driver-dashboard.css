@@ -15,7 +15,9 @@ body {
     overflow: hidden;
 }
 
-/* Sidebar Layout */
+/* ==========================================================================
+   Sidebar Layout
+   ========================================================================== */
 .sidebar {
     width: 240px;
     background-color: var(--bg-dark-sidebar);
@@ -63,7 +65,9 @@ body {
         border-left: 4px solid #ff7a00;
     }
 
-/* Sidebar Profile Footer Component */
+/* ==========================================================================
+   Sidebar Profile Footer Component
+   ========================================================================== */
 .sidebar-profile-footer {
     margin-top: auto;
     padding: 16px;
@@ -151,7 +155,9 @@ body {
     font-weight: 600;
 }
 
-/* Main Workspace Framework */
+/* ==========================================================================
+   Main Workspace Framework & Top Navbar Extensions
+   ========================================================================== */
 .main-content {
     flex: 1;
     display: flex;
@@ -177,17 +183,48 @@ body {
     font-size: 13px;
 }
 
+/* New layout wrapper for right-side navbar objects */
+.top-navbar-right {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+}
+
 .portal-badge {
     font-weight: 600;
     font-size: 14px;
     color: #334155;
 }
 
+/* New custom class for instant workspace logout actions */
+.top-logout-btn {
+    background-color: #fee2e2;
+    color: #b91c1c;
+    border: 1px solid #fca5a5;
+    padding: 8px 16px;
+    border-radius: 6px;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    transition: all 0.2s ease;
+}
+
+    .top-logout-btn:hover {
+        background-color: #fca5a5;
+        color: #991b1b;
+        box-shadow: 0 2px 4px rgba(239, 68, 68, 0.1);
+    }
+
 .content-body {
     padding: 30px;
 }
 
-/* Table Card Component */
+/* ==========================================================================
+   Table Card Components
+   ========================================================================== */
 .table-card {
     background: white;
     border-radius: 12px;
@@ -233,7 +270,9 @@ tr:hover {
     color: #ef4444;
 }
 
-/* Student Profiling Grid Elements */
+/* ==========================================================================
+   Student Profiling Grid Elements & Tags
+   ========================================================================== */
 .student-profile {
     display: flex;
     align-items: center;
@@ -310,7 +349,9 @@ tr:hover {
     font-size: 18px;
 }
 
-/* Popup Overlay Modals Styles */
+/* ==========================================================================
+   Popup Overlay Modals Styles
+   ========================================================================== */
 .profile-modal-overlay {
     position: fixed;
     top: 0;

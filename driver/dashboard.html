@@ -30,7 +30,7 @@
             <div class="profile-dropdown-menu" id="profileDropdown">
                 <a href="#" class="dropdown-link" onclick="openProfileModal()">👤 View Profile</a>
                 <hr class="dropdown-divider">
-                <a href="#" class="dropdown-link logout-action" onclick="handleLogout()">Authorization</a>
+                <a href="#" class="dropdown-link logout-action" onclick="handleLogout()">🚪 Logout Portal</a>
             </div>
         </div>
     </div>
@@ -38,7 +38,10 @@
     <div class="main-content">
         <div class="top-navbar">
             <input type="text" class="search-bar" placeholder="Search manifest bookings...">
-            <div class="portal-badge">Driver Portal</div>
+            <div class="top-navbar-right">
+                <div class="portal-badge">Driver Portal</div>
+                <button class="top-logout-btn" onclick="handleLogout()">🚪 Logout</button>
+            </div>
         </div>
 
         <div class="content-body">

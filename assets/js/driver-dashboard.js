@@ -2,6 +2,7 @@
 // By removing 'http://localhost:5000', the browser automatically requests from your active running port!
 const BOOKINGS_API_URL = '/api/driver/bookings';
 const PROFILE_API_URL = '/api/driver/profile';
+
 // Keeps tracking reference of active record context loaded directly from database entity
 let activeDriverProfile = null;
 
@@ -72,6 +73,10 @@ async function loadDriverDashboard() {
     }
 }
 
+// ==========================================================================
+// INTERFACE CONTROLLERS & ACTIONS
+// ==========================================================================
+
 // Dropdown Toggles UI Layer Controllers
 function toggleProfileMenu() {
     document.getElementById('profileDropdown').classList.toggle('show');
@@ -93,9 +98,15 @@ function closeProfileModal() {
     document.getElementById('profileModal').classList.remove('active');
 }
 
+// EDITED: Clears cache and matches your C# routing endpoint context directly
 function handleLogout() {
     if (confirm("Are you sure you want to sign out of the GetYourRide portal workspace?")) {
-        window.location.href = "../Login.html";
+        // Clear active web session footprints
+        localStorage.clear();
+        sessionStorage.clear();
+
+        // Bounce back to root "/" where Program.cs automatically serves Login.html
+        window.location.href = "/";
     }
 }
 
