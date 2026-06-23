@@ -1,0 +1,191 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Coordinator Portal - Manage Shuttles</title>
+    <link rel="stylesheet" href="../assets/css/styles.css">
+    <link rel="stylesheet" href="../assets/css/coordinator.css">
+</head>
+<body>
+    <div class="sidebar">
+        <div class="brand">
+            <h1>GETYOURRIDE</h1>
+            <span>Shuttle Coordinator</span>
+        </div>
+        <ul class="menu-list">
+            <li><a href="dashboard.html" class="menu-item">📋 Dashboard</a></li>
+            <li><a href="manage-shuttles.html" class="menu-item active">🚌 Shuttle Management</a></li>
+            <li><a href="#" class="menu-item">📅 Schedule shuttles</a></li>
+            <li><a href="manage-drivers.html" class="menu-item">👨‍✈️ Shuttle driver management</a></li>
+        </ul>
+        <div class="sidebar-spacer"></div>
+        <div class="sidebar-footer">
+            <a href="#" class="menu-item" id="btnSidebarSupport">❓ Support & Help</a>
+        </div>
+    </div>
+
+    <div class="main-content">
+        <div class="top-navbar">
+            <div class="nav-breadcrumb">Coordinator Portal > <strong>Shuttle Management</strong></div>
+            <div class="top-navbar-right">
+                <button class="icon-btn">🔔</button>
+                <div class="profile-trigger" id="profileTrigger">
+                    <div class="avatar-circle">SC</div>
+                    <div class="dropdown-menu" id="coordinatorDropdown">
+                        <a href="#" id="btnDropdownProfile">👤 View Profile</a>
+                        <hr style="border: 0; border-top: 1px solid #f1f5f9; margin: 4px 0;">
+                        <a href="#" id="btnDropdownLogout" style="color: #dc2626;">🚪 Logout Session</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="content-body">
+            <div class="view-header">
+                <div>
+                    <h2>Manage Shuttles</h2>
+                    <p class="subtitle">Configure and monitor the university shuttle fleet.</p>
+                </div>
+                <button class="btn btn-primary" id="btnOpenAddModal" style="background: #f97316; border: none; font-weight: 600; padding: 10px 20px; border-radius: 8px; color: white; cursor: pointer;">🧡 Add New Shuttle</button>
+            </div>
+
+            <div class="metrics-grid">
+                <div class="metric-card">
+                    <span class="card-icon">🚌</span>
+                    <div>
+                        <label>TOTAL FLEET</label>
+                        <h3 id="txtTotalFleet">0</h3>
+                    </div>
+                </div>
+                <div class="metric-card">
+                    <span class="card-icon" style="color: #10b981;">✅</span>
+                    <div>
+                        <label>ACTIVE NOW</label>
+                        <h3 id="txtActiveFleet">0</h3>
+                    </div>
+                </div>
+                <div class="metric-card">
+                    <span class="card-icon" style="color: #f59e0b;">🔧</span>
+                    <div>
+                        <label>IN MAINTENANCE</label>
+                        <h3 id="txtMaintenanceFleet">0</h3>
+                    </div>
+                </div>
+                <div class="metric-card">
+                    <span class="card-icon" style="color: #06b6d4;">👥</span>
+                    <div>
+                        <label>TOTAL CAPACITY</label>
+                        <h3 id="txtTotalCapacity">0</h3>
+                    </div>
+                </div>
+            </div>
+
+            <div class="table-card">
+                <div class="table-header">
+                    <h3>Fleet Overview</h3>
+                    <input type="text" id="shuttleSearchInput" placeholder="🔍 Search shuttles...">
+                </div>
+                <table class="fleet-table">
+                    <thead>
+                        <tr>
+                            <th>SHUTTLE NAME</th>
+                            <th>SHUTTLE NUMBER / PLATE</th>
+                            <th>SEATING CAPACITY</th>
+                            <th>AVAILABILITY STATUS</th>
+                            <th>ACTIONS</th>
+                        </tr>
+                    </thead>
+                    <tbody id="shuttleTableBody">
+                        <tr>
+                            <td colspan="5" style="text-align:center; padding:30px; color:#64748b;">Loading fleet database records...</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="maintenance-tray" id="maintenanceAlertBox" style="display:none;">
+                <div class="alert-left">
+                    <span class="alert-tag">⚠️ Pending Maintenance</span>
+                    <p id="maintenanceAlertText" style="margin: 4px 0 0 0; font-size: 0.85rem; color: #475569;">No vehicles require maintenance layout configuration overrides.</p>
+                </div>
+                <button class="btn btn-secondary-sm" style="background: transparent; border: 1px solid #ef4444; color: #ef4444; padding: 6px 12px; border-radius: 4px; cursor: pointer; font-weight: 600;">Schedule</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal-overlay" id="shuttleModal">
+        <div class="modal-card">
+            <h3 id="modalTitle">Add New Shuttle</h3>
+            <hr style="border:0; border-top:1px solid #e2e8f0; margin: 12px 0 20px 0;">
+            <form id="shuttleForm">
+                <input type="hidden" id="formShuttleId">
+                <div class="form-group">
+                    <label for="formName">Shuttle Name</label>
+                    <input type="text" id="formName" required placeholder="e.g. Blue Line Alpha">
+                </div>
+                <div class="form-group">
+                    <label for="formPlate">License Plate Number</label>
+                    <input type="text" id="formPlate" required placeholder="e.g. CR-99-WY-GP">
+                </div>
+                <div class="form-group">
+                    <label for="formCapacity">Seating Capacity</label>
+                    <input type="number" id="formCapacity" required min="1" placeholder="e.g. 22">
+                </div>
+                <div class="form-group">
+                    <label for="formStatus">Availability Status</label>
+                    <select id="formStatus">
+                        <option value="Active">Available</option>
+                        <option value="Maintenance">Maintenance</option>
+                        <option value="Inactive">Unavailable</option>
+                    </select>
+                </div>
+                <div class="modal-actions">
+                    <button type="button" class="btn btn-secondary" id="btnCancelShuttleModal">Cancel</button>
+                    <button type="submit" class="btn btn-primary" style="background: #f97316; color:white; border:none;">Save Vehicle</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div class="modal-overlay" id="profileModal">
+        <div class="modal-card">
+            <h3>Coordinator Profile</h3>
+            <hr style="border:0; border-top:1px solid #e2e8f0; margin: 12px 0 20px 0;">
+            <div style="text-align: center; margin-bottom: 20px;">
+                <div class="avatar-circle" style="width: 64px; height: 64px; font-size: 1.5rem; margin: 0 auto 12px auto; display: flex; align-items: center; justify-content: center; background: #e2e8f0; border-radius: 50%;">SC</div>
+                <h4 style="margin: 0; font-size: 1.2rem; color: #0f172a;">Sibusiso Cele</h4>
+                <p style="margin: 4px 0 0 0; font-size: 0.85rem; color: #64748b;">Logistics Operations Division</p>
+            </div>
+            <div class="form-group">
+                <label>Staff Personnel Number</label>
+                <input type="text" value="COORD-2026-88" readonly style="background: #f8fafc; color: #64748b; cursor: not-allowed;">
+            </div>
+            <div class="form-group">
+                <label>Official Email Address</label>
+                <input type="text" value="coordinator@ride.com" readonly style="background: #f8fafc; color: #64748b; cursor: not-allowed;">
+            </div>
+            <div class="modal-actions">
+                <button type="button" class="btn btn-secondary" id="btnCloseProfile" style="width: 100%;">Close Profile View</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal-overlay" id="supportModal">
+        <div class="modal-card">
+            <h3>Support & System Help</h3>
+            <hr style="border:0; border-top:1px solid #e2e8f0; margin: 12px 0 20px 0;">
+            <p style="font-size: 0.9rem; color: #475569; line-height: 1.5; margin-bottom: 16px;">Vehicle inventory guide parameters:</p>
+            <ul style="font-size: 0.85rem; color: #64748b; padding-left: 20px; line-height: 1.8;">
+                <li><strong>Add / Edit Form:</strong> License plate entries must be unique.</li>
+                <li><strong>Maintenance Status:</strong> Downed flags trigger the bottom notice panel.</li>
+            </ul>
+            <div class="modal-actions">
+                <button type="button" class="btn btn-secondary" id="btnCloseSupport" style="width: 100%;">Got It</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="../assets/js/coordinator-shuttles.js"></script>
+</body>
+</html>

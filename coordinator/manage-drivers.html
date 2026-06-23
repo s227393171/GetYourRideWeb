@@ -1,0 +1,133 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Coordinator Portal - Manage Shuttle Drivers</title>
+    <link rel="stylesheet" href="../assets/css/coordinator.css">
+</head>
+<body>
+
+    <nav class="sidebar">
+        <div class="brand">
+            <h1>GetYourRide</h1>
+            <span>Shuttle Coordinator</span>
+        </div>
+        <ul class="menu-list">
+            <li><a href="dashboard.html" class="menu-item">📊 Dashboard </a></li>
+            <li><a href="manage-shuttles.html" class="menu-item">🚌 Shuttle Management</a></li>
+            <li><a href="manage-drivers.html" class="menu-item active">👨‍✈️ Shuttle driver management</a></li>
+            <li><a href="scheduling.html" class="menu-item">📅 Schedule shuttles</a></li>
+           
+        </ul>
+        <div class="sidebar-spacer"></div>
+        <div class="sidebar-footer">
+            <a href="#" class="menu-item" onclick="window.location.href='../Login.html'">🚪 Logout Session</a>
+        </div>
+    </nav>
+
+    <main class="main-content">
+        <header class="top-navbar">
+            <div class="nav-breadcrumb">Management / <strong>Shuttle Drivers</strong></div>
+            <div class="top-navbar-right">
+                <span class="notification-bell">🔔</span>
+                <div class="avatar-circle">SC</div>
+                <span class="user-profile-link">View Profile</span>
+            </div>
+        </header>
+
+        <section class="content-body">
+            <div class="view-header">
+                <div>
+                    <h2>Manage Shuttle Drivers</h2>
+                    <p class="subtitle">Configure driver assignments, monitor status, and manage the campus operator roster.</p>
+                </div>
+                <button class="btn-primary-orange" id="btnOpenAddDriverModal">➕ Add Driver</button>
+            </div>
+
+            <div class="metrics-grid">
+                <div class="metric-card">
+                    <div class="metric-icon-box blue-bg">👥</div>
+                    <div>
+                        <label>TOTAL DRIVERS</label>
+                        <h3 id="txtTotalDrivers">0</h3>
+                    </div>
+                </div>
+                <div class="metric-card">
+                    <div class="metric-icon-box green-bg">🟢</div>
+                    <div>
+                        <label>ACTIVE NOW</label>
+                        <h3 id="txtActiveDrivers">0</h3>
+                    </div>
+                </div>
+                <div class="metric-card">
+                    <div class="metric-icon-box orange-bg">☕</div>
+                    <div>
+                        <label>ON BREAK</label>
+                        <h3 id="txtBreakDrivers">0</h3>
+                    </div>
+                </div>
+                <div class="metric-card">
+                    <div class="metric-icon-box gray-bg">💤</div>
+                    <div>
+                        <label>OFF DUTY</label>
+                        <h3 id="txtOffDutyDrivers">0</h3>
+                    </div>
+                </div>
+            </div>
+
+            <div class="table-card">
+                <div class="table-header">
+                    <h3>Driver Roster <span class="semester-badge">AUTUMN SEMESTER</span></h3>
+                </div>
+
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>DRIVER NAME</th>
+                            <th>EMPLOYEE ID</th>
+                            <th>CONTACT NUMBER</th>
+                            <th>ASSIGNED SHUTTLE</th>
+                            <th>STATUS</th>
+                            <th>ACTIONS</th>
+                        </tr>
+                    </thead>
+                    <tbody id="driverTableBody">
+                    </tbody>
+                </table>
+            </div>
+        </section>
+    </main>
+
+    <div class="modal-overlay" id="driverFormModal">
+        <div class="modal-card">
+            <h3 id="modalDriverFormTitle">Add New Driver Profile</h3>
+            <form id="frmDriverAsset" onsubmit="handleDriverFormSubmit(event)">
+                <input type="hidden" id="txtDriverId">
+
+                <div class="form-group">
+                    <label>Full Name</label>
+                    <input type="text" id="txtDriverName" required placeholder="e.g. Michael Dorsey">
+                </div>
+
+                <div class="form-group">
+                    <label>Student / Employee Number</label>
+                    <input type="text" id="txtStudentNumber" required placeholder="e.g. ID-22941">
+                </div>
+
+                <div class="form-group">
+                    <label>Email Address</label>
+                    <input type="email" id="txtDriverEmail" required placeholder="e.g. m.dorsey@university.edu">
+                </div>
+
+                <div class="form-actions">
+                    <button type="button" id="btnCancelDriverModal" class="btn-secondary">Cancel</button>
+                    <button type="submit" class="btn-primary-orange">Save Profile</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script src="../assets/js/coordinator-drivers.js"></script>
+</body>
+</html>

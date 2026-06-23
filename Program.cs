@@ -1,35 +1,54 @@
 using MySqlConnector;
 using System.Data;
 using Microsoft.Extensions.FileProviders;
-var builder = WebApplication.CreateBuilder(args);// Enable CORS so your frontend can communicate with the API
+
+var builder = WebApplication.CreateBuilder(args);
+
+// Enable CORS so your frontend can communicate with the API
 builder.Services.AddCors(options => {
     options.AddDefaultPolicy(policy =>
         policy.AllowAnyOrigin()
               .AllowAnyHeader()
               .AllowAnyMethod());
-}); var app = builder.Build();
-app.UseCors();// ✅ 1. Serve static files from wwwroot if it exists
-app.UseStaticFiles();// ✅ 2. Serve static files from project root (Login.html, etc.)
+});
+
+var app = builder.Build();
+app.UseCors();
+
+// ✅ 1. Serve static files from wwwroot if it exists
+app.UseStaticFiles();
+
+// ✅ 2. Serve static files from project root (Login.html, etc.)
 app.UseFileServer(new FileServerOptions
 {
     FileProvider = new PhysicalFileProvider(
         Path.Combine(Directory.GetCurrentDirectory())),
     RequestPath = "",
     EnableDefaultFiles = true
-});// ✅ 3. Explicitly map and serve the 'admin' directory assets securely
+});
+
+// ✅ 3. Explicitly map and serve the 'admin' directory assets securely
 app.UseStaticFiles(new StaticFileOptions
 {
     FileProvider = new PhysicalFileProvider(
         Path.Combine(Directory.GetCurrentDirectory(), "admin")),
     RequestPath = "/admin"
-});// ✅ 4. Serve static files from assets folder (css, js)
+});
+
+// ✅ 4. Serve static files from assets folder (css, js)
 app.UseStaticFiles(new StaticFileOptions
 {
     FileProvider = new PhysicalFileProvider(
         Path.Combine(Directory.GetCurrentDirectory(), "assets")),
     RequestPath = "/assets"
-});// Root Route: Serve Login.html
-app.MapGet("/", () => Results.File(Path.Combine(Directory.GetCurrentDirectory(), "Login.html"), "text/html"));// ---------------------------------------------------------// AUTHENTICATION ENDPOINT// ---------------------------------------------------------
+});
+
+// Root Route: Serve Login.html
+app.MapGet("/", () => Results.File(Path.Combine(Directory.GetCurrentDirectory(), "Login.html"), "text/html"));
+
+// ---------------------------------------------------------
+// AUTHENTICATION ENDPOINT
+// ---------------------------------------------------------
 app.MapPost("/api/login", async (LoginRequest request, IConfiguration config) => {
     string connectionString = config.GetConnectionString("DefaultConnection");
 
@@ -51,7 +70,11 @@ app.MapPost("/api/login", async (LoginRequest request, IConfiguration config) =>
     }
 
     return Results.Json(new { success = false, message = "Invalid email or password" }, statusCode: 401);
-});// ---------------------------------------------------------// DRIVER PORTAL ENDPOINTS// ---------------------------------------------------------// 1. Force the database to return Marcus Chen directly for testing
+});
+
+// ---------------------------------------------------------
+// DRIVER PORTAL ENDPOINTS
+// ---------------------------------------------------------
 app.MapGet("/api/driver/profile", async (string email, IConfiguration config) =>
 {
     if (string.IsNullOrEmpty(email)) email = "driver@ride.com";
@@ -76,7 +99,8 @@ app.MapGet("/api/driver/profile", async (string email, IConfiguration config) =>
         });
     }
     return Results.NotFound();
-});// 2. Fetch Active Shuttle Manifest Bookings Data for Today (Synced camelCase Mapping)
+});
+
 app.MapGet("/api/driver/bookings", async (IConfiguration config) => {
     string connectionString = config.GetConnectionString("DefaultConnection");
     var bookings = new List<object>();
@@ -86,7 +110,6 @@ app.MapGet("/api/driver/bookings", async (IConfiguration config) => {
 
     try
     {
-        // Removed the restrictive CURDATE() rule constraint so sample insert logs register flawlessly
         string query = @"
             SELECT b.BookingID, u.FullName, u.StudentNumber, r.RouteName, r.DepartureTime, b.BookingDate, b.Status 
             FROM Bookings b
@@ -99,7 +122,6 @@ app.MapGet("/api/driver/bookings", async (IConfiguration config) => {
 
         while (await reader.ReadAsync())
         {
-            // Maps exactly to what your driver dashboard JS variables look for!
             bookings.Add(new
             {
                 bookingId = reader["BookingID"],
@@ -120,7 +142,11 @@ app.MapGet("/api/driver/bookings", async (IConfiguration config) => {
     }
 
     return Results.Ok(bookings);
-});// ---------------------------------------------------------// ADMIN DASHBOARD ENDPOINTS// ---------------------------------------------------------// 1. Fetch Active/Verified Drivers Performance metrics from the Database
+});
+
+// ---------------------------------------------------------
+// ADMIN DASHBOARD ENDPOINTS
+// ---------------------------------------------------------
 app.MapGet("/api/admin/driver-ratings", async (IConfiguration config) => {
     string connectionString = config.GetConnectionString("DefaultConnection");
     var drivers = new List<object>();
@@ -150,7 +176,8 @@ app.MapGet("/api/admin/driver-ratings", async (IConfiguration config) => {
         });
     }
     return Results.Ok(drivers);
-});// 2. Fetch Pending/Unverified Driver Applicants for the Verification Panel
+});
+
 app.MapGet("/api/admin/unverified-drivers", async (IConfiguration config) => {
     string connectionString = config.GetConnectionString("DefaultConnection");
     var unverified = new List<object>();
@@ -177,7 +204,8 @@ app.MapGet("/api/admin/unverified-drivers", async (IConfiguration config) => {
         });
     }
     return Results.Ok(unverified);
-});// 3. Update Verification State (Switches IsVerified flag from 0 to 1 when Admin clicks approve)
+});
+
 app.MapPost("/api/admin/verify-driver", async (VerifyActionRequest req, IConfiguration config) => {
     string connectionString = config.GetConnectionString("DefaultConnection");
 
@@ -191,7 +219,8 @@ app.MapPost("/api/admin/verify-driver", async (VerifyActionRequest req, IConfigu
 
     int rowsAffected = await command.ExecuteNonQueryAsync();
     return rowsAffected > 0 ? Results.Ok(new { success = true }) : Results.BadRequest();
-});// 4. NEW: Fetch Single Application Profile Details (Combined SQL INNER JOIN using StudentNumber)
+});
+
 app.MapGet("/api/admin/drivers/{studentId}", async (string studentId, IConfiguration config) =>
 {
     string connectionString = config.GetConnectionString("DefaultConnection");
@@ -232,7 +261,8 @@ app.MapGet("/api/admin/drivers/{studentId}", async (string studentId, IConfigura
     }
 
     return Results.NotFound(new { message = "Application profile details not found." });
-});// 5. NEW: Handle Decision Processing Status Updates (Approve / Reject Decisions)
+});
+
 app.MapPost("/api/admin/drivers/{studentId}/status", async (string studentId, DynamicStatusUpdate req, IConfiguration config) =>
 {
     string connectionString = config.GetConnectionString("DefaultConnection");
@@ -240,7 +270,6 @@ app.MapPost("/api/admin/drivers/{studentId}/status", async (string studentId, Dy
     using var connection = new MySqlConnection(connectionString);
     await connection.OpenAsync();
 
-    // If decision rule is Approval, switch IsVerified flag inside Core User profile record to active state
     int isVerifiedValue = (req.Status.Equals("Approved", StringComparison.OrdinalIgnoreCase)) ? 1 : 0;
 
     string updateQuery = @"
@@ -258,7 +287,208 @@ app.MapPost("/api/admin/drivers/{studentId}/status", async (string studentId, Dy
     return rowsAffected > 0 ? Results.Ok(new { success = true }) : Results.BadRequest();
 });
 
+// ---------------------------------------------------------
+// SHUTTLE COORDINATOR FLEET ENDPOINTS
+// ---------------------------------------------------------
+
+// 1. Fetch all shuttles (GET)
+app.MapGet("/api/coordinator/shuttles", async (IConfiguration config) => {
+    string connectionString = config.GetConnectionString("DefaultConnection");
+    var shuttles = new List<object>();
+
+    using var connection = new MySqlConnection(connectionString);
+    await connection.OpenAsync();
+
+    string query = "SELECT ShuttleID, ShuttleName, LicensePlate, Capacity, Status FROM Shuttles ORDER BY ShuttleID DESC;";
+
+    using var command = new MySqlCommand(query, connection);
+    using var reader = await command.ExecuteReaderAsync();
+
+    while (await reader.ReadAsync())
+    {
+        shuttles.Add(new
+        {
+            shuttleId = Convert.ToInt32(reader["ShuttleID"]),
+            shuttleName = reader["ShuttleName"].ToString(),
+            licensePlate = reader["LicensePlate"].ToString(),
+            capacity = Convert.ToInt32(reader["Capacity"]),
+            status = reader["Status"].ToString()
+        });
+    }
+    return Results.Ok(shuttles);
+});
+
+// 2. Add new shuttle (POST)
+app.MapPost("/api/coordinator/shuttles", async (ShuttleDto newShuttle, IConfiguration config) => {
+    string connectionString = config.GetConnectionString("DefaultConnection");
+    using var connection = new MySqlConnection(connectionString);
+    await connection.OpenAsync();
+
+    string query = @"INSERT INTO Shuttles (ShuttleName, LicensePlate, Capacity, Status) 
+                     VALUES (@Name, @Plate, @Capacity, @Status);";
+
+    using var command = new MySqlCommand(query, connection);
+    command.Parameters.AddWithValue("@Name", newShuttle.ShuttleName);
+    command.Parameters.AddWithValue("@Plate", newShuttle.LicensePlate);
+    command.Parameters.AddWithValue("@Capacity", newShuttle.Capacity);
+    command.Parameters.AddWithValue("@Status", newShuttle.Status);
+
+    try
+    {
+        await command.ExecuteNonQueryAsync();
+        return Results.Ok(new { message = "Shuttle successfully added to database." });
+    }
+    catch (MySqlException ex) when (ex.Number == 1062)
+    {
+        return Results.BadRequest("A vehicle asset with this license plate already exists.");
+    }
+});
+
+// 3. Update existing shuttle (PUT)
+app.MapPut("/api/coordinator/shuttles/{id:int}", async (int id, ShuttleDto updatedShuttle, IConfiguration config) => {
+    string connectionString = config.GetConnectionString("DefaultConnection");
+    using var connection = new MySqlConnection(connectionString);
+    await connection.OpenAsync();
+
+    string query = @"UPDATE Shuttles 
+                     SET ShuttleName = @Name, LicensePlate = @Plate, Capacity = @Capacity, Status = @Status 
+                     WHERE ShuttleID = @Id;";
+
+    using var command = new MySqlCommand(query, connection);
+    command.Parameters.AddWithValue("@Id", id);
+    command.Parameters.AddWithValue("@Name", updatedShuttle.ShuttleName);
+    command.Parameters.AddWithValue("@Plate", updatedShuttle.LicensePlate);
+    command.Parameters.AddWithValue("@Capacity", updatedShuttle.Capacity);
+    command.Parameters.AddWithValue("@Status", updatedShuttle.Status);
+
+    int rowsAffected = await command.ExecuteNonQueryAsync();
+    if (rowsAffected == 0) return Results.NotFound("Shuttle record not found.");
+
+    return Results.Ok(new { message = "Shuttle updated successfully." });
+});
+
+// 4. Delete shuttle (DELETE)
+app.MapDelete("/api/coordinator/shuttles/{id:int}", async (int id, IConfiguration config) => {
+    string connectionString = config.GetConnectionString("DefaultConnection");
+    using var connection = new MySqlConnection(connectionString);
+    await connection.OpenAsync();
+
+    string query = "DELETE FROM Shuttles WHERE ShuttleID = @Id;";
+
+    using var command = new MySqlCommand(query, connection);
+    command.Parameters.AddWithValue("@Id", id);
+
+    int rowsAffected = await command.ExecuteNonQueryAsync();
+    if (rowsAffected == 0) return Results.NotFound("Target record does not exist.");
+
+    return Results.Ok(new { message = "Asset successfully deleted." });
+});
+
+// ---------------------------------------------------------
+// SHUTTLE COORDINATOR DRIVER ENDPOINTS
+// ---------------------------------------------------------
+
+// 1. Fetch all drivers (GET)
+app.MapGet("/api/coordinator/drivers", async (IConfiguration config) => {
+    string connectionString = config.GetConnectionString("DefaultConnection");
+    var drivers = new List<object>();
+
+    using var connection = new MySqlConnection(connectionString);
+    await connection.OpenAsync();
+
+    string query = @"SELECT UserID, StudentNumber, FullName, Email, IsVerified 
+                     FROM Users 
+                     WHERE LOWER(Role) = 'driver' 
+                     ORDER BY UserID DESC;";
+
+    using var command = new MySqlCommand(query, connection);
+    using var reader = await command.ExecuteReaderAsync();
+
+    while (await reader.ReadAsync())
+    {
+        drivers.Add(new
+        {
+            userId = Convert.ToInt32(reader["UserID"]),
+            studentNumber = reader["StudentNumber"] != DBNull.Value ? reader["StudentNumber"].ToString() : "N/A",
+            fullName = reader["FullName"].ToString(),
+            email = reader["Email"].ToString(),
+            status = Convert.ToInt32(reader["IsVerified"]) == 1 ? "Active" : "Inactive"
+        });
+    }
+    return Results.Ok(drivers);
+});
+
+// 2. Add new driver (POST)
+app.MapPost("/api/coordinator/drivers", async (DriverUpsertDto newDriver, IConfiguration config) => {
+    string connectionString = config.GetConnectionString("DefaultConnection");
+    using var connection = new MySqlConnection(connectionString);
+    await connection.OpenAsync();
+
+    string query = @"INSERT INTO Users (StudentNumber, FullName, Email, Password, Role, IsVerified) 
+                     VALUES (@StudentNum, @Name, @Email, '1234', 'driver', 1);";
+
+    using var command = new MySqlCommand(query, connection);
+    command.Parameters.AddWithValue("@StudentNum", newDriver.StudentNumber);
+    command.Parameters.AddWithValue("@Name", newDriver.FullName);
+    command.Parameters.AddWithValue("@Email", newDriver.Email);
+
+    try
+    {
+        await command.ExecuteNonQueryAsync();
+        return Results.Ok(new { message = "Driver profile successfully registered." });
+    }
+    catch (MySqlException ex) when (ex.Number == 1062)
+    {
+        return Results.BadRequest("A user account with this email address already exists.");
+    }
+});
+
+// 3. Update existing driver (PUT)
+app.MapPut("/api/coordinator/drivers/{id:int}", async (int id, DriverUpsertDto updatedDriver, IConfiguration config) => {
+    string connectionString = config.GetConnectionString("DefaultConnection");
+    using var connection = new MySqlConnection(connectionString);
+    await connection.OpenAsync();
+
+    string query = @"UPDATE Users 
+                     SET StudentNumber = @StudentNum, FullName = @Name, Email = @Email 
+                     WHERE UserID = @Id AND LOWER(Role) = 'driver';";
+
+    using var command = new MySqlCommand(query, connection);
+    command.Parameters.AddWithValue("@Id", id);
+    command.Parameters.AddWithValue("@StudentNum", updatedDriver.StudentNumber);
+    command.Parameters.AddWithValue("@Name", updatedDriver.FullName);
+    command.Parameters.AddWithValue("@Email", updatedDriver.Email);
+
+    int rowsAffected = await command.ExecuteNonQueryAsync();
+    if (rowsAffected == 0) return Results.NotFound("Driver record not found.");
+
+    return Results.Ok(new { message = "Driver profile updated successfully." });
+});
+
+// 4. Delete driver (DELETE)
+app.MapDelete("/api/coordinator/drivers/{id:int}", async (int id, IConfiguration config) => {
+    string connectionString = config.GetConnectionString("DefaultConnection");
+    using var connection = new MySqlConnection(connectionString);
+    await connection.OpenAsync();
+
+    string query = "DELETE FROM Users WHERE UserID = @Id AND LOWER(Role) = 'driver';";
+
+    using var command = new MySqlCommand(query, connection);
+    command.Parameters.AddWithValue("@Id", id);
+
+    int rowsAffected = await command.ExecuteNonQueryAsync();
+    if (rowsAffected == 0) return Results.NotFound("Driver record not found.");
+
+    return Results.Ok(new { message = "Driver account successfully removed." });
+});
+
 app.Run();
+
+// ---------------------------------------------------------
+// DATA TRANSFER RECORDS (DTOs)
+// ---------------------------------------------------------
 public record LoginRequest(string Email, string Password);
 public record VerifyActionRequest(int UserId);
 public record DynamicStatusUpdate(string Status);
+public record ShuttleDto(string ShuttleName, string LicensePlate, int Capacity, string Status);
+public record DriverUpsertDto(string StudentNumber, string FullName, string Email);
