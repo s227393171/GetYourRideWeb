@@ -29,12 +29,17 @@ function renderVerificationTable(list) {
             <td><strong>${driver.fullName}</strong></td>
             <td><code style="background:#f1f5f9; padding:4px 8px; border-radius:4px; font-weight:600;">${driver.studentNumber}</code></td>
             <td>${driver.email}</td>
-            <td><button class="btn-action verify-approve" onclick="approveDriver(${driver.userId})">🛡️ Approve & Verify Profile</button></td>
+            <td>
+                <a href="review-application.html?id=${driver.studentNumber}" class="btn-action verify-approve" style="display: inline-block; text-decoration: none; text-align: center;">
+                    🛡️ Approve & Verify Profile
+                </a>
+            </td>
         `;
         tableBody.appendChild(row);
     });
 }
 
+// Retaining your original approve function in case you use it anywhere else in your codebase
 async function approveDriver(userId) {
     if (!confirm("Authorize credentials and grant driver application access privileges?")) return;
     try {
@@ -59,8 +64,20 @@ function searchUnverified() {
 }
 
 // Global UI Navigation Controllers
-function toggleDropdown(e) { e.stopPropagation(); document.getElementById('adminGlobalDropdown').classList.toggle('show'); }
-function executeLogout() { if (confirm("Log out of Admin Session?")) window.location.href = "../Login.html"; }
-window.addEventListener('click', function () { const d = document.getElementById('adminGlobalDropdown'); if (d) d.classList.remove('show'); });
+function toggleDropdown(e) {
+    e.stopPropagation();
+    document.getElementById('adminGlobalDropdown').classList.toggle('show');
+}
 
-window.onload = () => { loadVerificationQueue(); };
+function executeLogout() {
+    if (confirm("Log out of Admin Session?")) window.location.href = "../Login.html";
+}
+
+window.addEventListener('click', function () {
+    const d = document.getElementById('adminGlobalDropdown');
+    if (d) d.classList.remove('show');
+});
+
+window.onload = () => {
+    loadVerificationQueue();
+};

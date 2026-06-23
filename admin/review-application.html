@@ -1,0 +1,107 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Portal - Review Application</title>
+    <link rel="stylesheet" href="../assets/css/admin-dashboard.css">
+    <link rel="stylesheet" href="../assets/css/admin-review.css">
+</head>
+<body>
+    <div class="sidebar">
+        <div class="brand">
+            <h1>GetYourRide</h1>
+            <span>University Admin Portal</span>
+        </div>
+        <ul class="menu-list">
+            <li><a href="dashboard.html" class="menu-item">📊 Dashboard</a></li>
+            <li><a href="verify-drivers.html" class="menu-item active">🛡️ Driver Verification</a></li>
+            <li><a href="driver-ratings.html" class="menu-item">⭐ Driver Ratings</a></li>
+        </ul>
+        <div class="sidebar-spacer"></div>
+    </div>
+
+    <div class="main-content">
+        <div class="top-navbar">
+            <div style="color: var(--text-muted); font-size: 0.9rem;">DRIVER VERIFICATION &gt; REVIEW PROFILE</div>
+            <div class="top-navbar-right">
+                <div class="admin-profile-trigger">
+                    <div class="avatar-circle">AU</div>
+                    <span class="profile-label">Admin User</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="content-body">
+            <div class="view-header" style="display: flex; justify-content: space-between; align-items: center;">
+                <div>
+                    <h2>Review Application</h2>
+                </div>
+                <span class="badge-pending" id="applicationStatusLabel">PENDING REVIEW</span>
+            </div>
+
+            <div class="review-container">
+                <div>
+                    <div class="review-card">
+                        <div class="card-title">👤 Personal Details</div>
+                        <div class="meta-group">
+                            <div class="meta-item"><label>Full Name</label><span id="lblFullName">---</span></div>
+                            <div class="meta-item"><label>Student ID</label><span id="lblStudentID">---</span></div>
+                        </div>
+                        <div class="meta-group">
+                            <div class="meta-item"><label>Email Address</label><span id="lblEmail">---</span></div>
+                            <div class="meta-item"><label>Contact Number</label><span id="lblContact">---</span></div>
+                        </div>
+                    </div>
+
+                    <div class="review-card">
+                        <div class="card-title">🚘 Vehicle Details</div>
+                        <div class="meta-group">
+                            <div class="meta-item"><label>Make &amp; Model</label><span id="lblVehicleMake">---</span></div>
+                            <div class="meta-item"><label>Registration</label><span id="lblVehicleReg">---</span></div>
+                        </div>
+                        <div class="meta-group">
+                            <div class="meta-item"><label>Seating Capacity</label><span id="lblCapacity">---</span></div>
+                            <div class="meta-item"><label>Color</label><span id="lblColor">---</span></div>
+                        </div>
+                    </div>
+                </div>
+
+                <div>
+                    <div class="review-card">
+                        <div class="card-title">📄 Document Verification</div>
+                        <div class="meta-group">
+                            <div class="meta-item">
+                                <label>Driver's License</label>
+                                <div class="doc-preview-box">
+                                    <img id="imgLicense" src="" alt="Driver's License File Path Not Set">
+                                </div>
+                                <div class="doc-footer">
+                                    <a href="#" id="linkLicenseFull" target="_blank" class="doc-link">View Full Document ↗</a>
+                                </div>
+                            </div>
+                            <div class="meta-item">
+                                <label>Vehicle Registration</label>
+                                <div class="doc-preview-box">
+                                    <img id="imgRegistration" src="" alt="Registration File Path Not Set">
+                                </div>
+                                <div class="doc-footer">
+                                    <a href="#" id="linkRegFull" target="_blank" class="doc-link">View Full Document ↗</a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="action-tray">
+                <a href="verify-drivers.html" class="btn btn-secondary">← Return to List</a>
+                <button class="btn btn-danger" onclick="updateApplicationStatus('Rejected')">✖ Reject Application</button>
+                <button class="btn btn-success" onclick="updateApplicationStatus('Approved')">✔ Approve Driver</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="../assets/js/admin-review.js"></script>
+</body>
+</html>

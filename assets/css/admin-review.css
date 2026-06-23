@@ -1,0 +1,145 @@
+﻿/* Specific layouts tailored to match your Review Application design */
+.review-container {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 24px;
+    margin-top: 20px;
+}
+
+.review-card {
+    background: #ffffff;
+    border-radius: 12px;
+    padding: 24px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+    margin-bottom: 24px;
+}
+
+.card-title {
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: #1e293b;
+    margin-bottom: 20px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.meta-group {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+    margin-bottom: 16px;
+}
+
+.meta-item label {
+    display: block;
+    font-size: 0.8rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: #64748b;
+    margin-bottom: 4px;
+    font-weight: 600;
+}
+
+.meta-item span {
+    font-size: 1rem;
+    color: #0f172a;
+    font-weight: 500;
+}
+
+.doc-preview-box {
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    overflow: hidden;
+    background: #f8fafc;
+    text-align: center;
+    position: relative;
+    min-height: 180px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+    .doc-preview-box img {
+        max-width: 100%;
+        max-height: 220px;
+        object-fit: contain;
+    }
+
+.doc-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 8px;
+    font-size: 0.9rem;
+}
+
+.doc-link {
+    color: #3b82f6;
+    text-decoration: none;
+    font-weight: 500;
+}
+
+    .doc-link:hover {
+        text-decoration: underline;
+    }
+
+.action-tray {
+    display: flex;
+    justify-content: flex-end;
+    gap: 16px;
+    background: #ffffff;
+    padding: 16px 24px;
+    border-radius: 12px;
+    box-shadow: 0 -4px 12px rgba(0,0,0,0.02);
+    margin-top: 20px;
+}
+
+.btn {
+    padding: 12px 24px;
+    border-radius: 8px;
+    font-weight: 600;
+    cursor: pointer;
+    border: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.95rem;
+    text-decoration: none;
+}
+
+.btn-secondary {
+    background: #f1f5f9;
+    color: #475569;
+}
+
+    .btn-secondary:hover {
+        background: #e2e8f0;
+    }
+
+.btn-danger {
+    background: #fee2e2;
+    color: #dc2626;
+}
+
+    .btn-danger:hover {
+        background: #fecaca;
+    }
+
+.btn-success {
+    background: #22c55e;
+    color: #ffffff;
+}
+
+    .btn-success:hover {
+        background: #16a34a;
+    }
+
+.badge-pending {
+    background: #fef3c7;
+    color: #d97706;
+    padding: 6px 12px;
+    border-radius: 20px;
+    font-weight: 600;
+    font-size: 0.85rem;
+}

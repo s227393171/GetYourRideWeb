@@ -1,57 +1,36 @@
 using MySqlConnector;
 using System.Data;
 using Microsoft.Extensions.FileProviders;
-
-var builder = WebApplication.CreateBuilder(args);
-
-// Enable CORS so your frontend can communicate with the API
-builder.Services.AddCors(options =>
-{
+var builder = WebApplication.CreateBuilder(args);// Enable CORS so your frontend can communicate with the API
+builder.Services.AddCors(options => {
     options.AddDefaultPolicy(policy =>
         policy.AllowAnyOrigin()
               .AllowAnyHeader()
               .AllowAnyMethod());
-});
-
-var app = builder.Build();
-app.UseCors();
-
-// ✅ 1. Serve static files from wwwroot if it exists
-app.UseStaticFiles();
-
-// ✅ 2. Serve static files from project root (Login.html, etc.)
+}); var app = builder.Build();
+app.UseCors();// ✅ 1. Serve static files from wwwroot if it exists
+app.UseStaticFiles();// ✅ 2. Serve static files from project root (Login.html, etc.)
 app.UseFileServer(new FileServerOptions
 {
     FileProvider = new PhysicalFileProvider(
         Path.Combine(Directory.GetCurrentDirectory())),
     RequestPath = "",
     EnableDefaultFiles = true
-});
-
-// ✅ 3. Explicitly map and serve the 'admin' directory assets securely
+});// ✅ 3. Explicitly map and serve the 'admin' directory assets securely
 app.UseStaticFiles(new StaticFileOptions
 {
     FileProvider = new PhysicalFileProvider(
         Path.Combine(Directory.GetCurrentDirectory(), "admin")),
     RequestPath = "/admin"
-});
-
-// ✅ 4. Serve static files from assets folder (css, js)
+});// ✅ 4. Serve static files from assets folder (css, js)
 app.UseStaticFiles(new StaticFileOptions
 {
     FileProvider = new PhysicalFileProvider(
         Path.Combine(Directory.GetCurrentDirectory(), "assets")),
     RequestPath = "/assets"
-});
-
-// Root Route: Serve Login.html
-app.MapGet("/", () => Results.File(Path.Combine(Directory.GetCurrentDirectory(), "Login.html"), "text/html"));
-
-// ---------------------------------------------------------
-// AUTHENTICATION ENDPOINT
-// ---------------------------------------------------------
-app.MapPost("/api/login", async (LoginRequest request, IConfiguration config) =>
-{
+});// Root Route: Serve Login.html
+app.MapGet("/", () => Results.File(Path.Combine(Directory.GetCurrentDirectory(), "Login.html"), "text/html"));// ---------------------------------------------------------// AUTHENTICATION ENDPOINT// ---------------------------------------------------------
+app.MapPost("/api/login", async (LoginRequest request, IConfiguration config) => {
     string connectionString = config.GetConnectionString("DefaultConnection");
 
     using var connection = new MySqlConnection(connectionString);
@@ -72,13 +51,7 @@ app.MapPost("/api/login", async (LoginRequest request, IConfiguration config) =>
     }
 
     return Results.Json(new { success = false, message = "Invalid email or password" }, statusCode: 401);
-});
-
-// ---------------------------------------------------------
-// DRIVER PORTAL ENDPOINTS
-// ---------------------------------------------------------
-
-// 1. Force the database to return Marcus Chen directly for testing
+});// ---------------------------------------------------------// DRIVER PORTAL ENDPOINTS// ---------------------------------------------------------// 1. Force the database to return Marcus Chen directly for testing
 app.MapGet("/api/driver/profile", async (string email, IConfiguration config) =>
 {
     if (string.IsNullOrEmpty(email)) email = "driver@ride.com";
@@ -103,10 +76,8 @@ app.MapGet("/api/driver/profile", async (string email, IConfiguration config) =>
         });
     }
     return Results.NotFound();
-});
-// 2. Fetch Active Shuttle Manifest Bookings Data for Today (Synced camelCase Mapping)
-app.MapGet("/api/driver/bookings", async (IConfiguration config) =>
-{
+});// 2. Fetch Active Shuttle Manifest Bookings Data for Today (Synced camelCase Mapping)
+app.MapGet("/api/driver/bookings", async (IConfiguration config) => {
     string connectionString = config.GetConnectionString("DefaultConnection");
     var bookings = new List<object>();
 
@@ -149,15 +120,8 @@ app.MapGet("/api/driver/bookings", async (IConfiguration config) =>
     }
 
     return Results.Ok(bookings);
-});
-
-// ---------------------------------------------------------
-// ADMIN DASHBOARD ENDPOINTS
-// ---------------------------------------------------------
-
-// 1. Fetch Active/Verified Drivers Performance metrics from the Database
-app.MapGet("/api/admin/driver-ratings", async (IConfiguration config) =>
-{
+});// ---------------------------------------------------------// ADMIN DASHBOARD ENDPOINTS// ---------------------------------------------------------// 1. Fetch Active/Verified Drivers Performance metrics from the Database
+app.MapGet("/api/admin/driver-ratings", async (IConfiguration config) => {
     string connectionString = config.GetConnectionString("DefaultConnection");
     var drivers = new List<object>();
 
@@ -186,11 +150,8 @@ app.MapGet("/api/admin/driver-ratings", async (IConfiguration config) =>
         });
     }
     return Results.Ok(drivers);
-});
-
-// 2. Fetch Pending/Unverified Driver Applicants for the Verification Panel
-app.MapGet("/api/admin/unverified-drivers", async (IConfiguration config) =>
-{
+});// 2. Fetch Pending/Unverified Driver Applicants for the Verification Panel
+app.MapGet("/api/admin/unverified-drivers", async (IConfiguration config) => {
     string connectionString = config.GetConnectionString("DefaultConnection");
     var unverified = new List<object>();
 
@@ -216,11 +177,8 @@ app.MapGet("/api/admin/unverified-drivers", async (IConfiguration config) =>
         });
     }
     return Results.Ok(unverified);
-});
-
-// 3. Update Verification State (Switches IsVerified flag from 0 to 1 when Admin clicks approve)
-app.MapPost("/api/admin/verify-driver", async (VerifyActionRequest req, IConfiguration config) =>
-{
+});// 3. Update Verification State (Switches IsVerified flag from 0 to 1 when Admin clicks approve)
+app.MapPost("/api/admin/verify-driver", async (VerifyActionRequest req, IConfiguration config) => {
     string connectionString = config.GetConnectionString("DefaultConnection");
 
     using var connection = new MySqlConnection(connectionString);
@@ -233,12 +191,74 @@ app.MapPost("/api/admin/verify-driver", async (VerifyActionRequest req, IConfigu
 
     int rowsAffected = await command.ExecuteNonQueryAsync();
     return rowsAffected > 0 ? Results.Ok(new { success = true }) : Results.BadRequest();
+});// 4. NEW: Fetch Single Application Profile Details (Combined SQL INNER JOIN using StudentNumber)
+app.MapGet("/api/admin/drivers/{studentId}", async (string studentId, IConfiguration config) =>
+{
+    string connectionString = config.GetConnectionString("DefaultConnection");
+
+    using var connection = new MySqlConnection(connectionString);
+    await connection.OpenAsync();
+
+    string query = @"
+        SELECT u.FullName, u.StudentNumber, u.Email, 
+               da.ContactNumber, da.VehicleMakeModel, da.RegistrationNumber, 
+               da.SeatingCapacity, da.VehicleColor, da.LicenseImagePath, 
+               da.RegistrationFilePath, da.ApplicationStatus
+        FROM Users u
+        INNER JOIN DriverApplications da ON u.UserID = da.UserID
+        WHERE u.StudentNumber = @StudentNumber LIMIT 1;";
+
+    using var command = new MySqlCommand(query, connection);
+    command.Parameters.AddWithValue("@StudentNumber", studentId);
+
+    using var reader = await command.ExecuteReaderAsync();
+
+    if (await reader.ReadAsync())
+    {
+        return Results.Ok(new
+        {
+            fullName = reader["FullName"].ToString(),
+            studentNumber = reader["StudentNumber"].ToString(),
+            email = reader["Email"].ToString(),
+            contactNumber = reader["ContactNumber"].ToString(),
+            vehicleMakeModel = reader["VehicleMakeModel"].ToString(),
+            registrationNumber = reader["RegistrationNumber"].ToString(),
+            seatingCapacity = Convert.ToInt32(reader["SeatingCapacity"]),
+            vehicleColor = reader["VehicleColor"].ToString(),
+            licenseImagePath = reader["LicenseImagePath"].ToString(),
+            registrationFilePath = reader["RegistrationFilePath"].ToString(),
+            applicationStatus = reader["ApplicationStatus"].ToString()
+        });
+    }
+
+    return Results.NotFound(new { message = "Application profile details not found." });
+});// 5. NEW: Handle Decision Processing Status Updates (Approve / Reject Decisions)
+app.MapPost("/api/admin/drivers/{studentId}/status", async (string studentId, DynamicStatusUpdate req, IConfiguration config) =>
+{
+    string connectionString = config.GetConnectionString("DefaultConnection");
+
+    using var connection = new MySqlConnection(connectionString);
+    await connection.OpenAsync();
+
+    // If decision rule is Approval, switch IsVerified flag inside Core User profile record to active state
+    int isVerifiedValue = (req.Status.Equals("Approved", StringComparison.OrdinalIgnoreCase)) ? 1 : 0;
+
+    string updateQuery = @"
+        UPDATE Users u
+        INNER JOIN DriverApplications da ON u.UserID = da.UserID
+        SET da.ApplicationStatus = @Status, u.IsVerified = @IsVerified
+        WHERE u.StudentNumber = @StudentNumber;";
+
+    using var command = new MySqlCommand(updateQuery, connection);
+    command.Parameters.AddWithValue("@Status", req.Status);
+    command.Parameters.AddWithValue("@IsVerified", isVerifiedValue);
+    command.Parameters.AddWithValue("@StudentNumber", studentId);
+
+    int rowsAffected = await command.ExecuteNonQueryAsync();
+    return rowsAffected > 0 ? Results.Ok(new { success = true }) : Results.BadRequest();
 });
 
 app.Run();
-
-// ---------------------------------------------------------
-// DATA TRANSFER OBJECTS (DTOs)
-// ---------------------------------------------------------
 public record LoginRequest(string Email, string Password);
 public record VerifyActionRequest(int UserId);
+public record DynamicStatusUpdate(string Status);
