@@ -388,104 +388,82 @@ app.MapDelete("/api/coordinator/shuttles/{id:int}", async (int id, IConfiguratio
 // SHUTTLE COORDINATOR DRIVER ENDPOINTS
 // ---------------------------------------------------------
 
-// 1. Fetch all drivers (GET)
-app.MapGet("/api/coordinator/drivers", async (IConfiguration config) => {
+// ---------------------------------------------------------
+// SHUTTLE COORDINATOR SCHEDULING ENDPOINTS (Direct Tables)
+// ---------------------------------------------------------
+
+// 1. Fetch all schedules to render the view dashboard table row lines
+app.MapGet("/api/coordinator/schedules", async (IConfiguration config) => {
     string connectionString = config.GetConnectionString("DefaultConnection");
-    var drivers = new List<object>();
+    var schedules = new List<object>();
 
     using var connection = new MySqlConnection(connectionString);
     await connection.OpenAsync();
 
-    string query = @"SELECT UserID, StudentNumber, FullName, Email, IsVerified 
-                     FROM Users 
-                     WHERE LOWER(Role) = 'driver' 
-                     ORDER BY UserID DESC;";
+    // Queries your single extended Routes table directly!
+    string query = @"
+        SELECT r.RouteID, r.RouteName, r.DepartureTime, r.ScheduleDate, s.ShuttleName, u.FullName AS DriverName
+        FROM Routes r
+        LEFT JOIN Shuttles s ON r.ShuttleID = s.ShuttleID
+        LEFT JOIN Users u ON r.DriverID = u.UserID
+        WHERE r.ScheduleDate IS NOT NULL
+        ORDER BY r.ScheduleDate DESC, r.DepartureTime ASC;";
 
     using var command = new MySqlCommand(query, connection);
     using var reader = await command.ExecuteReaderAsync();
 
     while (await reader.ReadAsync())
     {
-        drivers.Add(new
+        schedules.Add(new
         {
-            userId = Convert.ToInt32(reader["UserID"]),
-            studentNumber = reader["StudentNumber"] != DBNull.Value ? reader["StudentNumber"].ToString() : "N/A",
-            fullName = reader["FullName"].ToString(),
-            email = reader["Email"].ToString(),
-            status = Convert.ToInt32(reader["IsVerified"]) == 1 ? "Active" : "Inactive"
+            scheduleId = Convert.ToInt32(reader["RouteID"]),
+            routeName = reader["RouteName"].ToString(),
+            departureTime = reader["DepartureTime"].ToString(),
+            scheduleDate = reader["ScheduleDate"] != DBNull.Value ? Convert.ToDateTime(reader["ScheduleDate"]).ToString("yyyy-MM-dd") : "",
+            shuttleName = reader["ShuttleName"] != DBNull.Value ? reader["ShuttleName"].ToString() : "Unassigned",
+            driverName = reader["DriverName"] != DBNull.Value ? reader["DriverName"].ToString() : "Unassigned"
         });
     }
-    return Results.Ok(drivers);
+    return Results.Ok(schedules);
 });
 
-// 2. Add new driver (POST)
-app.MapPost("/api/coordinator/drivers", async (DriverUpsertDto newDriver, IConfiguration config) => {
+// 2. Save a new schedule assignment (Inserts directly into Routes)
+app.MapPost("/api/coordinator/schedules", async (ScheduleDirectDto req, IConfiguration config) => {
     string connectionString = config.GetConnectionString("DefaultConnection");
     using var connection = new MySqlConnection(connectionString);
     await connection.OpenAsync();
 
-    string query = @"INSERT INTO Users (StudentNumber, FullName, Email, Password, Role, IsVerified) 
-                     VALUES (@StudentNum, @Name, @Email, '1234', 'driver', 1);";
+    string standardizedTime = req.DepartureTime;
+    if (standardizedTime.Length == 5) standardizedTime += ":00";
+
+    string query = @"INSERT INTO Routes (RouteName, DepartureTime, ScheduleDate, ShuttleID, DriverID) 
+                     VALUES (@RouteName, @DepartureTime, @ScheduleDate, @ShuttleID, @DriverID);";
 
     using var command = new MySqlCommand(query, connection);
-    command.Parameters.AddWithValue("@StudentNum", newDriver.StudentNumber);
-    command.Parameters.AddWithValue("@Name", newDriver.FullName);
-    command.Parameters.AddWithValue("@Email", newDriver.Email);
+    command.Parameters.AddWithValue("@RouteName", req.RouteName);
+    command.Parameters.AddWithValue("@DepartureTime", standardizedTime);
+    command.Parameters.AddWithValue("@ScheduleDate", req.ScheduleDate);
+    command.Parameters.AddWithValue("@ShuttleID", req.ShuttleID);
+    command.Parameters.AddWithValue("@DriverID", req.DriverID);
 
     try
     {
         await command.ExecuteNonQueryAsync();
-        return Results.Ok(new { message = "Driver profile successfully registered." });
+        return Results.Ok(new { success = true, message = "Assignment recorded successfully." });
     }
-    catch (MySqlException ex) when (ex.Number == 1062)
+    catch (Exception ex)
     {
-        return Results.BadRequest("A user account with this email address already exists.");
+        Console.WriteLine($"Database Save Error: {ex.Message}");
+        return Results.Json(new { success = false, message = ex.Message }, statusCode: 500);
     }
 });
 
-// 3. Update existing driver (PUT)
-app.MapPut("/api/coordinator/drivers/{id:int}", async (int id, DriverUpsertDto updatedDriver, IConfiguration config) => {
-    string connectionString = config.GetConnectionString("DefaultConnection");
-    using var connection = new MySqlConnection(connectionString);
-    await connection.OpenAsync();
-
-    string query = @"UPDATE Users 
-                     SET StudentNumber = @StudentNum, FullName = @Name, Email = @Email 
-                     WHERE UserID = @Id AND LOWER(Role) = 'driver';";
-
-    using var command = new MySqlCommand(query, connection);
-    command.Parameters.AddWithValue("@Id", id);
-    command.Parameters.AddWithValue("@StudentNum", updatedDriver.StudentNumber);
-    command.Parameters.AddWithValue("@Name", updatedDriver.FullName);
-    command.Parameters.AddWithValue("@Email", updatedDriver.Email);
-
-    int rowsAffected = await command.ExecuteNonQueryAsync();
-    if (rowsAffected == 0) return Results.NotFound("Driver record not found.");
-
-    return Results.Ok(new { message = "Driver profile updated successfully." });
-});
-
-// 4. Delete driver (DELETE)
-app.MapDelete("/api/coordinator/drivers/{id:int}", async (int id, IConfiguration config) => {
-    string connectionString = config.GetConnectionString("DefaultConnection");
-    using var connection = new MySqlConnection(connectionString);
-    await connection.OpenAsync();
-
-    string query = "DELETE FROM Users WHERE UserID = @Id AND LOWER(Role) = 'driver';";
-
-    using var command = new MySqlCommand(query, connection);
-    command.Parameters.AddWithValue("@Id", id);
-
-    int rowsAffected = await command.ExecuteNonQueryAsync();
-    if (rowsAffected == 0) return Results.NotFound("Driver record not found.");
-
-    return Results.Ok(new { message = "Driver account successfully removed." });
-});
 app.Run();
 
 // ---------------------------------------------------------
 // DATA TRANSFER RECORDS (DTOs)
 // ---------------------------------------------------------
+public record ScheduleDirectDto(string RouteName, string ScheduleDate, string DepartureTime, int ShuttleID, int DriverID);
 public record LoginRequest(string Email, string Password);
 public record VerifyActionRequest(int UserId);
 public record DynamicStatusUpdate(string Status);

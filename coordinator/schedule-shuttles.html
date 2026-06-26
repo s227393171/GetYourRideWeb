@@ -1,0 +1,106 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Coordinator Portal - Schedule Shuttles</title>
+    <link rel="stylesheet" href="../assets/css/styles.css">
+    <link rel="stylesheet" href="../assets/css/coordinator.css">
+</head>
+<body>
+    <div class="sidebar">
+        <div class="brand">
+            <h1>GETYOURRIDE</h1>
+            <span>Shuttle Coordinator</span>
+        </div>
+        <ul class="menu-list">
+            <li><a href="dashboard.html" class="menu-item">📋 Dashboard Hub</a></li>
+            <li><a href="manage-shuttles.html" class="menu-item">🚌 Shuttle Management</a></li>
+            <li><a href="schedule-shuttles.html" class="menu-item active">📅 Schedule Shuttles</a></li>
+            <li><a href="manage-drivers.html" class="menu-item">👤 Shuttle Driver Management</a></li>
+        </ul>
+
+        <div class="sidebar-footer">
+            <a href="#" class="footer-link">
+                <span class="footer-icon icon-support">❓</span> Support & Help
+            </a>
+            <a href="../Login.html" class="footer-link">
+                <span class="footer-icon icon-logout">🚪</span> Logout
+            </a>
+        </div>
+    </div>
+
+    <div class="main-content">
+        <div class="top-navbar">
+            <div class="nav-breadcrumb">Management > <strong>Assignment Scheduler</strong></div>
+
+            <div class="nav-profile-section">
+                <span class="notification-bell">🔔</span>
+                <div class="user-avatar">SC</div>
+                <a href="#" class="view-profile-link">View Profile</a>
+            </div>
+        </div>
+
+        <div class="content-body">
+            <div class="scheduler-header">
+                <div>
+                    <h2>Schedule Transit Routes</h2>
+                    <p class="subtitle">Map fleet vehicles and authorized operators to active departure routes.</p>
+                </div>
+                <button class="btn-primary" id="btnOpenScheduleModal">+ Create New Schedule</button>
+            </div>
+
+            <div class="table-card">
+                <table class="scheduler-table">
+                    <thead>
+                        <tr>
+                            <th>ROUTE NAME</th>
+                            <th>DATE</th>
+                            <th>DEPARTURE TIME</th>
+                            <th>ASSIGNED SHUTTLE</th>
+                            <th>ASSIGNED OPERATOR</th>
+                        </tr>
+                    </thead>
+                    <tbody id="scheduleTableBody">
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal-overlay" id="scheduleModal">
+        <div class="modal-card">
+            <h3>Generate Fleet Route Dispatch</h3>
+            <hr class="modal-divider">
+            <form id="frmScheduleAsset">
+                <div class="form-group">
+                    <label>Select Route Path Corridor</label>
+                    <select id="ddlRouteAsset" required></select>
+                </div>
+                <div class="form-group">
+                    <label>Target Calendar Run Date</label>
+                    <input type="date" id="txtScheduleDate" required>
+                </div>
+                <div class="form-group">
+                    <label>Departure Clock Timestamp</label>
+                    <input type="time" id="txtDepartureTime" required>
+                </div>
+                <div class="form-group">
+                    <label>Assign Fleet Vehicle Asset</label>
+                    <select id="ddlShuttleAsset" required></select>
+                </div>
+                <div class="form-group">
+                    <label>Assign Verified Driver</label>
+                    <select id="ddlDriverAsset" required></select>
+                </div>
+                <div class="modal-actions">
+                    <button type="button" id="btnCancelModal" class="btn-secondary">Cancel</button>
+                    <button type="submit" class="btn-submit">Save Assignment</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script src="../assets/js/coordinator-schedules.js"></script>
+</body>
+</html>
