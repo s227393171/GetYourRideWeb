@@ -481,7 +481,6 @@ app.MapDelete("/api/coordinator/drivers/{id:int}", async (int id, IConfiguration
 
     return Results.Ok(new { message = "Driver account successfully removed." });
 });
-
 app.Run();
 
 // ---------------------------------------------------------
