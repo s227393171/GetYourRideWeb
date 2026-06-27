@@ -111,7 +111,7 @@ app.MapGet("/api/driver/bookings", async (IConfiguration config) => {
     try
     {
         string query = @"
-            SELECT b.BookingID, u.FullName, u.StudentNumber, r.RouteName, r.DepartureTime, b.BookingDate, b.Status 
+            SELECT b.BookingID, u.FullName, u.StudentNumber, r.DepartureFrom, r.ArrivalAt, r.DepartureTime, b.BookingDate, b.Status 
             FROM Bookings b
             JOIN Users u ON b.StudentID = u.UserID
             JOIN Routes r ON b.RouteID = r.RouteID
@@ -120,25 +120,53 @@ app.MapGet("/api/driver/bookings", async (IConfiguration config) => {
         using var command = new MySqlCommand(query, connection);
         using var reader = await command.ExecuteReaderAsync();
 
+        int idOrdinal = reader.GetOrdinal("BookingID");
+        int nameOrdinal = reader.GetOrdinal("FullName");
+        int numOrdinal = reader.GetOrdinal("StudentNumber");
+        int fromOrdinal = reader.GetOrdinal("DepartureFrom");
+        int atOrdinal = reader.GetOrdinal("ArrivalAt");
+        int timeOrdinal = reader.GetOrdinal("DepartureTime");
+        int dateOrdinal = reader.GetOrdinal("BookingDate");
+        int statusOrdinal = reader.GetOrdinal("Status");
+
         while (await reader.ReadAsync())
         {
+            int bookingId = reader.GetInt32(idOrdinal);
+            string studentName = reader.GetString(nameOrdinal);
+            string studentNumber = !reader.IsDBNull(numOrdinal) ? reader.GetValue(numOrdinal).ToString() : "N/A";
+            string departureFrom = reader.GetString(fromOrdinal);
+            string arrivalAt = reader.GetString(atOrdinal);
+
+            string departureTime = reader.GetValue(timeOrdinal).ToString();
+            if (departureTime.Length >= 5) departureTime = departureTime.Substring(0, 5);
+
+            string bookingDate = "2026-06-26";
+            if (!reader.IsDBNull(dateOrdinal))
+            {
+                var rawDate = reader.GetValue(dateOrdinal);
+                bookingDate = rawDate is DateTime dt ? dt.ToString("yyyy-MM-dd") : Convert.ToDateTime(rawDate).ToString("yyyy-MM-dd");
+            }
+
+            string status = !reader.IsDBNull(statusOrdinal) ? reader.GetString(statusOrdinal) : "Booked";
+
             bookings.Add(new
             {
-                bookingId = reader["BookingID"],
-                studentName = reader["FullName"].ToString(),
-                studentNumber = reader["StudentNumber"] != DBNull.Value ? reader["StudentNumber"].ToString() : "N/A",
+                bookingId = bookingId,
+                studentName = studentName,
+                studentNumber = studentNumber,
                 shuttle = "Shuttle Bus A",
-                routeName = reader["RouteName"].ToString(),
-                departureTime = reader["DepartureTime"].ToString(),
-                bookingDate = Convert.ToDateTime(reader["BookingDate"]).ToString("yyyy-MM-dd"),
-                status = reader["Status"].ToString()
+                departureFrom = departureFrom,
+                arrivalAt = arrivalAt,
+                departureTime = departureTime,
+                bookingDate = bookingDate,
+                status = status
             });
         }
     }
-    catch (MySqlException ex)
+    catch (Exception ex)
     {
-        Console.WriteLine($"Database query mismatch: {ex.Message}");
-        return Results.Ok(bookings);
+        Console.WriteLine($"[API Error] Driver Bookings failed: {ex.Message}");
+        return Results.Json(new { error = ex.Message }, statusCode: 500);
     }
 
     return Results.Ok(bookings);
@@ -290,8 +318,6 @@ app.MapPost("/api/admin/drivers/{studentId}/status", async (string studentId, Dy
 // ---------------------------------------------------------
 // SHUTTLE COORDINATOR FLEET ENDPOINTS
 // ---------------------------------------------------------
-
-// 1. Fetch all shuttles (GET)
 app.MapGet("/api/coordinator/shuttles", async (IConfiguration config) => {
     string connectionString = config.GetConnectionString("DefaultConnection");
     var shuttles = new List<object>();
@@ -318,7 +344,6 @@ app.MapGet("/api/coordinator/shuttles", async (IConfiguration config) => {
     return Results.Ok(shuttles);
 });
 
-// 2. Add new shuttle (POST)
 app.MapPost("/api/coordinator/shuttles", async (ShuttleDto newShuttle, IConfiguration config) => {
     string connectionString = config.GetConnectionString("DefaultConnection");
     using var connection = new MySqlConnection(connectionString);
@@ -344,7 +369,6 @@ app.MapPost("/api/coordinator/shuttles", async (ShuttleDto newShuttle, IConfigur
     }
 });
 
-// 3. Update existing shuttle (PUT)
 app.MapPut("/api/coordinator/shuttles/{id:int}", async (int id, ShuttleDto updatedShuttle, IConfiguration config) => {
     string connectionString = config.GetConnectionString("DefaultConnection");
     using var connection = new MySqlConnection(connectionString);
@@ -367,7 +391,6 @@ app.MapPut("/api/coordinator/shuttles/{id:int}", async (int id, ShuttleDto updat
     return Results.Ok(new { message = "Shuttle updated successfully." });
 });
 
-// 4. Delete shuttle (DELETE)
 app.MapDelete("/api/coordinator/shuttles/{id:int}", async (int id, IConfiguration config) => {
     string connectionString = config.GetConnectionString("DefaultConnection");
     using var connection = new MySqlConnection(connectionString);
@@ -385,14 +408,8 @@ app.MapDelete("/api/coordinator/shuttles/{id:int}", async (int id, IConfiguratio
 });
 
 // ---------------------------------------------------------
-// SHUTTLE COORDINATOR DRIVER ENDPOINTS
+// SHUTTLE COORDINATOR SCHEDULING ENDPOINTS (ShuttleSchedules Table Alignment)
 // ---------------------------------------------------------
-
-// ---------------------------------------------------------
-// SHUTTLE COORDINATOR SCHEDULING ENDPOINTS (Direct Tables)
-// ---------------------------------------------------------
-
-// 1. Fetch all schedules to render the view dashboard table row lines
 app.MapGet("/api/coordinator/schedules", async (IConfiguration config) => {
     string connectionString = config.GetConnectionString("DefaultConnection");
     var schedules = new List<object>();
@@ -400,34 +417,113 @@ app.MapGet("/api/coordinator/schedules", async (IConfiguration config) => {
     using var connection = new MySqlConnection(connectionString);
     await connection.OpenAsync();
 
-    // Queries your single extended Routes table directly!
-    string query = @"
-        SELECT r.RouteID, r.RouteName, r.DepartureTime, r.ScheduleDate, s.ShuttleName, u.FullName AS DriverName
-        FROM Routes r
-        LEFT JOIN Shuttles s ON r.ShuttleID = s.ShuttleID
-        LEFT JOIN Users u ON r.DriverID = u.UserID
-        WHERE r.ScheduleDate IS NOT NULL
-        ORDER BY r.ScheduleDate DESC, r.DepartureTime ASC;";
-
-    using var command = new MySqlCommand(query, connection);
-    using var reader = await command.ExecuteReaderAsync();
-
-    while (await reader.ReadAsync())
+    try
     {
-        schedules.Add(new
+        // Targets ShuttleSchedules and brings in route, shuttle, and driver descriptions safely
+        string query = @"
+            SELECT sch.ScheduleID, r.DepartureFrom, r.ArrivalAt, sch.DepartureTime, sch.ScheduleDate,
+                   COALESCE(s.ShuttleName, 'Unassigned') AS ShuttleName, 
+                   COALESCE(u.FullName, 'Unassigned') AS DriverName
+            FROM ShuttleSchedules sch
+            INNER JOIN Routes r ON sch.RouteID = r.RouteID
+            LEFT JOIN Shuttles s ON sch.ShuttleID = s.ShuttleID
+            LEFT JOIN Users u ON sch.DriverID = u.UserID
+            ORDER BY sch.ScheduleDate DESC, sch.DepartureTime ASC;";
+
+        using var command = new MySqlCommand(query, connection);
+        using var reader = await command.ExecuteReaderAsync();
+
+        int scheduleIdOrdinal = reader.GetOrdinal("ScheduleID");
+        int fromOrdinal = reader.GetOrdinal("DepartureFrom");
+        int atOrdinal = reader.GetOrdinal("ArrivalAt");
+        int timeOrdinal = reader.GetOrdinal("DepartureTime");
+        int dateOrdinal = reader.GetOrdinal("ScheduleDate");
+        int shuttleOrdinal = reader.GetOrdinal("ShuttleName");
+        int driverOrdinal = reader.GetOrdinal("DriverName");
+
+        while (await reader.ReadAsync())
         {
-            scheduleId = Convert.ToInt32(reader["RouteID"]),
-            routeName = reader["RouteName"].ToString(),
-            departureTime = reader["DepartureTime"].ToString(),
-            scheduleDate = reader["ScheduleDate"] != DBNull.Value ? Convert.ToDateTime(reader["ScheduleDate"]).ToString("yyyy-MM-dd") : "",
-            shuttleName = reader["ShuttleName"] != DBNull.Value ? reader["ShuttleName"].ToString() : "Unassigned",
-            driverName = reader["DriverName"] != DBNull.Value ? reader["DriverName"].ToString() : "Unassigned"
-        });
+            string scheduleTimeFormatted = reader.GetValue(timeOrdinal).ToString();
+            if (scheduleTimeFormatted.Length >= 5) scheduleTimeFormatted = scheduleTimeFormatted.Substring(0, 5);
+
+            string scheduleDateFormatted = "2026-06-26";
+            if (!reader.IsDBNull(dateOrdinal))
+            {
+                scheduleDateFormatted = Convert.ToDateTime(reader.GetValue(dateOrdinal)).ToString("yyyy-MM-dd");
+            }
+
+            schedules.Add(new
+            {
+                scheduleId = Convert.ToInt32(reader[scheduleIdOrdinal]),
+                routeName = $"{reader[fromOrdinal]} ➔ {reader[atOrdinal]}",
+                departureTime = scheduleTimeFormatted,
+                scheduleDate = scheduleDateFormatted,
+                shuttleName = reader[shuttleOrdinal].ToString(),
+                driverName = reader[driverOrdinal].ToString()
+            });
+        }
+    }
+    catch (Exception ex)
+    {
+        Console.WriteLine($"[API Error] Schedules lookup failed: {ex.Message}");
+        return Results.Json(new { error = ex.Message }, statusCode: 500);
     }
     return Results.Ok(schedules);
 });
+// 5. Fetch all verified drivers for the coordinator roster (GET)
+app.MapGet("/api/coordinator/drivers", async (IConfiguration config) => {
+    string connectionString = config.GetConnectionString("DefaultConnection");
+    var drivers = new List<object>();
 
-// 2. Save a new schedule assignment (Inserts directly into Routes)
+    using var connection = new MySqlConnection(connectionString);
+    await connection.OpenAsync();
+
+    try
+    {
+        string query = @"
+            SELECT u.UserID, u.StudentNumber, u.FullName, u.IsVerified, u.Email,
+                   COALESCE(da.ContactNumber, 'N/A') AS ContactNumber
+            FROM Users u
+            LEFT JOIN DriverApplications da ON u.UserID = da.UserID
+            WHERE LOWER(u.Role) = 'driver' AND u.IsVerified = 1;";
+
+        using var command = new MySqlCommand(query, connection);
+        using var reader = await command.ExecuteReaderAsync();
+
+        while (await reader.ReadAsync())
+        {
+            drivers.Add(new
+            {
+                // JavaScript fields are case-sensitive. Let's provide BOTH standard naming styles 
+                // so your script catches what it needs regardless of its variable setup:
+                id = Convert.ToInt32(reader["UserID"]),
+                driverId = Convert.ToInt32(reader["UserID"]),
+
+                // Mappings for Name & Email subtext fields
+                name = reader["FullName"].ToString(),
+                fullName = reader["FullName"].ToString(),
+                email = reader["Email"].ToString(),
+
+                // Mappings for Employee ID columns
+                employeeId = reader["StudentNumber"] != DBNull.Value ? reader["StudentNumber"].ToString() : $"EMP-{reader["UserID"]}",
+                studentNumber = reader["StudentNumber"] != DBNull.Value ? reader["StudentNumber"].ToString() : $"EMP-{reader["UserID"]}",
+
+                // Other dashboard attributes
+                contactNumber = reader["ContactNumber"].ToString(),
+                assignedShuttle = "Unassigned",
+                status = "Active"
+            });
+        }
+    }
+    catch (Exception ex)
+    {
+        Console.WriteLine($"[API Error] Coordinator drivers loading failed: {ex.Message}");
+        return Results.Json(new { error = ex.Message }, statusCode: 500);
+    }
+
+    return Results.Ok(drivers);
+});
+
 app.MapPost("/api/coordinator/schedules", async (ScheduleDirectDto req, IConfiguration config) => {
     string connectionString = config.GetConnectionString("DefaultConnection");
     using var connection = new MySqlConnection(connectionString);
@@ -436,20 +532,39 @@ app.MapPost("/api/coordinator/schedules", async (ScheduleDirectDto req, IConfigu
     string standardizedTime = req.DepartureTime;
     if (standardizedTime.Length == 5) standardizedTime += ":00";
 
-    string query = @"INSERT INTO Routes (RouteName, DepartureTime, ScheduleDate, ShuttleID, DriverID) 
-                     VALUES (@RouteName, @DepartureTime, @ScheduleDate, @ShuttleID, @DriverID);";
-
-    using var command = new MySqlCommand(query, connection);
-    command.Parameters.AddWithValue("@RouteName", req.RouteName);
-    command.Parameters.AddWithValue("@DepartureTime", standardizedTime);
-    command.Parameters.AddWithValue("@ScheduleDate", req.ScheduleDate);
-    command.Parameters.AddWithValue("@ShuttleID", req.ShuttleID);
-    command.Parameters.AddWithValue("@DriverID", req.DriverID);
+    string incoming = req.RouteName;
+    string fromLocation = incoming.Contains('➔') ? incoming.Split('➔')[0].Trim() : incoming.Trim();
+    string toLocation = incoming.Contains('➔') ? incoming.Split('➔')[1].Trim() : "Campus Hub";
 
     try
     {
+        // Find existing RouteID matching the stop tracking locations
+        int routeId = 1;
+        string findRouteQuery = "SELECT RouteID FROM Routes WHERE DepartureFrom = @From AND ArrivalAt = @To LIMIT 1;";
+        using (var findCmd = new MySqlCommand(findRouteQuery, connection))
+        {
+            findCmd.Parameters.AddWithValue("@From", fromLocation);
+            findCmd.Parameters.AddWithValue("@To", toLocation);
+            var result = await findCmd.ExecuteScalarAsync();
+            if (result != null)
+            {
+                routeId = Convert.ToInt32(result);
+            }
+        }
+
+        // Inserts data directly into the matching ShuttleSchedules schema allocation table
+        string insertQuery = @"INSERT INTO ShuttleSchedules (RouteID, ScheduleDate, DepartureTime, ShuttleID, DriverID) 
+                               VALUES (@RouteID, @ScheduleDate, @DepartureTime, @ShuttleID, @DriverID);";
+
+        using var command = new MySqlCommand(insertQuery, connection);
+        command.Parameters.AddWithValue("@RouteID", routeId);
+        command.Parameters.AddWithValue("@ScheduleDate", string.IsNullOrEmpty(req.ScheduleDate) ? "2026-06-26" : req.ScheduleDate);
+        command.Parameters.AddWithValue("@DepartureTime", standardizedTime);
+        command.Parameters.AddWithValue("@ShuttleID", req.ShuttleID);
+        command.Parameters.AddWithValue("@DriverID", req.DriverID);
+
         await command.ExecuteNonQueryAsync();
-        return Results.Ok(new { success = true, message = "Assignment recorded successfully." });
+        return Results.Ok(new { success = true, message = "Assignment recorded successfully inside ShuttleSchedules." });
     }
     catch (Exception ex)
     {

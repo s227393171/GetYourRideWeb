@@ -55,10 +55,6 @@ async function loadDriverDashboard() {
             if (booking.status.toLowerCase() === 'boarded') statusClass = 'status-boarded';
             if (booking.status.toLowerCase() === 'cancelled') statusClass = 'status-cancelled';
 
-            let routeClass = 'route-campus';
-            if (booking.routeName.toUpperCase().includes('DOWNTOWN')) routeClass = 'route-downtown';
-            if (booking.routeName.toUpperCase().includes('MED')) routeClass = 'route-med';
-
             row.innerHTML = `
                 <td>
                     <div class="student-profile">
@@ -68,7 +64,15 @@ async function loadDriverDashboard() {
                 </td>
                 <td><span class="student-num">${booking.studentNumber}</span></td>
                 <td>${booking.shuttle}</td>
-                <td><span class="route-tag ${routeClass}">${booking.routeName}</span></td>
+                
+                <td>
+                    <div style="display: flex; align-items: center; gap: 8px;">
+                        <span style="font-weight: 600; color: #1e293b;">${booking.departureFrom}</span>
+                        <span style="color: #94a3b8; font-size: 12px;">➔</span>
+                        <span style="font-weight: 600; color: #64748b;">${booking.arrivalAt}</span>
+                    </div>
+                </td>
+                
                 <td><strong>${booking.departureTime}</strong></td>
                 <td>${booking.bookingDate}</td>
                 <td><span class="badge ${statusClass}">${booking.status}</span></td>
@@ -117,6 +121,7 @@ function toggleProfileMenu() {
     document.getElementById('profileDropdown').classList.toggle('show');
 }
 
+// Update local modal data fields safely
 function openProfileModal() {
     document.getElementById('profileModal').classList.add('active');
     document.getElementById('profileDropdown').classList.remove('show');
