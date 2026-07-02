@@ -18,17 +18,41 @@
             <li><a href="verify-drivers.html" class="menu-item active">🛡️ Driver Verification</a></li>
             <li><a href="driver-ratings.html" class="menu-item">⭐ Driver Ratings</a></li>
         </ul>
+
         <div class="sidebar-spacer"></div>
+
+        <ul class="menu-list bottom-menu">
+            <li><a href="#" class="menu-item" onclick="openSettingsModal()">⚙️ Settings</a></li>
+            <li><a href="#" class="menu-item" onclick="openSupportModal()">❓ Support Help</a></li>
+        </ul>
+
+        <div class="sidebar-profile-footer">
+            <div class="profile-trigger-area" onclick="toggleProfileMenu()">
+                <div class="avatar-placeholder"></div>
+                <div class="profile-info-text">
+                    <span class="user-display-name" id="adminNameLabel">Loading profile...</span>
+                    <span class="user-display-email" id="adminEmailLabel">connecting to database...</span>
+                </div>
+            </div>
+
+            <div class="profile-dropdown-menu" id="profileDropdown">
+                <a href="#" class="dropdown-link" onclick="openProfileModal()">👤 View Profile</a>
+                <hr class="dropdown-divider">
+                <a href="#" class="dropdown-link logout-action" onclick="handleLogout()">🚪 Logout Portal</a>
+            </div>
+        </div>
     </div>
 
     <div class="main-content">
         <div class="top-navbar">
-            <div style="color: var(--text-muted); font-size: 0.9rem;">DRIVER VERIFICATION &gt; REVIEW PROFILE</div>
+            <div style="color: var(--text-muted); font-size: 0.9rem; font-weight: 600;">DRIVER VERIFICATION &gt; REVIEW PROFILE</div>
+
             <div class="top-navbar-right">
-                <div class="admin-profile-trigger">
-                    <div class="avatar-circle">AU</div>
-                    <span class="profile-label">Admin User</span>
+                <div class="portal-badge">
+                    <span id="liveClock" style="font-family: monospace; font-weight: 700; color: #ff7a00; margin-right: 15px;">00:00:00</span>
+                    Admin Portal
                 </div>
+                <button class="top-logout-btn" onclick="handleLogout()"> Logout</button>
             </div>
         </div>
 
@@ -102,6 +126,56 @@
         </div>
     </div>
 
+    <div class="profile-modal-overlay" id="profileModal">
+        <div class="profile-modal-card">
+            <h3>Admin Profile Card</h3>
+            <div class="modal-body-content">
+                <p><strong>Full Name:</strong> <span id="modalFullName">Loading...</span></p>
+                <p><strong>Staff/ID Number:</strong> <span id="modalIdNumber">Loading...</span></p>
+                <p><strong>System Email:</strong> <span id="modalEmail">Loading...</span></p>
+                <p><strong>Assigned Role:</strong> <span id="modalAssignedRole">Head System Administrator</span></p>
+            </div>
+            <button class="close-modal-btn" onclick="closeProfileModal()">Close Reference</button>
+        </div>
+    </div>
+
+    <div class="profile-modal-overlay" id="settingsModal">
+        <div class="profile-modal-card">
+            <h3>⚙️ Portal Settings</h3>
+            <div class="modal-body-content">
+                <label style="display:block; margin: 10px 0 5px; font-weight:600; font-size:13px;">Dashboard Theme</label>
+                <select id="themeSelect" style="width:100%; padding:8px; border-radius:6px; border:1px solid #cbd5e1; outline:none;">
+                    <option value="light">Default Light Mode</option>
+                    <option value="dark">High Contrast Dark Mode</option>
+                </select>
+                <label style="display:block; margin: 15px 0 5px; font-weight:600; font-size:13px;">Refresh Frequency</label>
+                <select id="refreshSelect" style="width:100%; padding:8px; border-radius:6px; border:1px solid #cbd5e1; outline:none;">
+                    <option value="30000">Every 30 Seconds</option>
+                    <option value="60000">Every Minute</option>
+                    <option value="manual">Manual Refresh</option>
+                </select>
+            </div>
+            <button class="close-modal-btn" onclick="closeSettingsModal()">Save & Close</button>
+        </div>
+    </div>
+
+    <div class="profile-modal-overlay" id="supportModal">
+        <div class="profile-modal-card">
+            <h3>❓ Dispatch Support Help</h3>
+            <div class="modal-body-content">
+                <p style="font-size:13px; color:#64748b;">Need immediate assistance with a transit route layout or emergency check-in failure?</p>
+                <div style="background:#f8fafc; padding:12px; border-radius:6px; border-left:4px solid #ff7a00; margin:10px 0;">
+                    <strong>📞 Transit Control Line:</strong><br>+27 (0) 41 504 1111
+                </div>
+                <div style="background:#f8fafc; padding:12px; border-radius:6px; border-left:4px solid #10b981; margin:10px 0;">
+                    <strong>✉️ Emergency Support:</strong><br>support@getyourride.com
+                </div>
+            </div>
+            <button class="close-modal-btn" onclick="closeSupportModal()">Close Help Desk</button>
+        </div>
+    </div>
+
     <script src="../assets/js/admin-review.js"></script>
+    <script src="../assets/js/admin-dropdown.js"></script>
 </body>
 </html>

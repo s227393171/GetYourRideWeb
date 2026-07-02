@@ -2,13 +2,15 @@ DROP DATABASE IF EXISTS getyourride;
 CREATE DATABASE getyourride;
 USE getyourride;
 
+-- 1. USERS TABLE
 CREATE TABLE Users (
     UserID INT AUTO_INCREMENT PRIMARY KEY,
     StudentNumber VARCHAR(20) NULL,
-    FullName VARCHAR(100) NOT NULL,
+    fName VARCHAR(50) NOT NULL,                 
+    lName VARCHAR(50) NOT NULL,                 
     Email VARCHAR(100) NOT NULL UNIQUE,
     Password VARCHAR(100) NOT NULL,
-    Role VARCHAR(20) NOT NULL,
+    Role VARCHAR(20) NOT NULL,                  -- 'Student', 'Driver', 'Admin', 'Coordinator'
     JoinDate DATE DEFAULT (CURDATE()),
     IsVerified TINYINT(1) DEFAULT 1,
     AverageRating DECIMAL(3,2) DEFAULT 5.00,
@@ -16,13 +18,16 @@ CREATE TABLE Users (
     TotalRatingsCount INT DEFAULT 0
 );
 
+-- 2. ROUTES TABLE (Aligned to match API fields: DepartureFrom & ArrivalAt)
 CREATE TABLE Routes (
     RouteID INT AUTO_INCREMENT PRIMARY KEY,
     RouteName VARCHAR(50) NOT NULL,
+    DepartureFrom VARCHAR(100) NOT NULL,        -- Matched to API code
+    ArrivalAt VARCHAR(100) NOT NULL,            -- Matched to API code
     DepartureTime TIME NOT NULL
 );
 
-
+-- 3. BOOKINGS TABLE
 CREATE TABLE Bookings (
     BookingID INT AUTO_INCREMENT PRIMARY KEY,
     StudentID INT NOT NULL,
@@ -33,7 +38,7 @@ CREATE TABLE Bookings (
     FOREIGN KEY (RouteID) REFERENCES Routes(RouteID) ON DELETE CASCADE
 );
 
-
+-- 4. DRIVER APPLICATIONS TABLE
 CREATE TABLE DriverApplications (
     ApplicationID INT AUTO_INCREMENT PRIMARY KEY,
     UserID INT NOT NULL,
@@ -48,7 +53,7 @@ CREATE TABLE DriverApplications (
     FOREIGN KEY (UserID) REFERENCES Users(UserID) ON DELETE CASCADE
 );
 
-
+-- 5. SHUTTLES TABLE
 CREATE TABLE Shuttles (
     ShuttleID INT AUTO_INCREMENT PRIMARY KEY,
     ShuttleName VARCHAR(50) NOT NULL,
@@ -57,7 +62,7 @@ CREATE TABLE Shuttles (
     Status VARCHAR(20) DEFAULT 'Active'
 );
 
-
+-- 6. SHUTTLE SCHEDULES TABLE
 CREATE TABLE ShuttleSchedules (
     ScheduleID INT AUTO_INCREMENT PRIMARY KEY,
     RouteID INT NOT NULL,
@@ -71,48 +76,53 @@ CREATE TABLE ShuttleSchedules (
 );
 
 
+-- ========================================================
+-- SEED DATA 
+-- ========================================================
 
-INSERT INTO Users (StudentNumber, FullName, Email, Password, Role, IsVerified, AverageRating, TotalTrips, TotalRatingsCount)
+-- Admins & Coordinators
+INSERT INTO Users (StudentNumber, fName, lName, Email, Password, Role, IsVerified, AverageRating, TotalTrips, TotalRatingsCount)
 VALUES 
-(NULL, 'Admin User', 'admin@getyourride.com', '1234', 'Admin', 1, 5.00, 0, 0),
-(NULL, 'Shuttle Coordinator', 'coord@getyourride.com', '1234', 'Coordinator', 1, 5.00, 0, 0);
+(NULL, 'Admin', 'User', 'admin@getyourride.com', '1234', 'Admin', 1, 5.00, 0, 0),
+(NULL, 'Shuttle', 'Coordinator', 'coord@getyourride.com', '1234', 'Coordinator', 1, 5.00, 0, 0);
 
-
-INSERT INTO Users (StudentNumber, FullName, Email, Password, Role, JoinDate, IsVerified, AverageRating, TotalTrips, TotalRatingsCount)
+-- Active Drivers
+INSERT INTO Users (StudentNumber, fName, lName, Email, Password, Role, JoinDate, IsVerified, AverageRating, TotalTrips, TotalRatingsCount)
 VALUES
-('ID-99481', 'Nation Ntuli', 'driver@ride.com', '1234', 'driver', '2025-02-14', 1, 4.80, 142, 110),
-('ID-22941', 'Jordan Henderson', 'jordan@ride.com', '1234', 'driver', '2025-01-10', 1, 4.90, 1240, 982),
-('ID-88492', 'Marcus Chen', 'marcus@ride.com', '1234', 'driver', '2025-05-14', 1, 2.70, 310, 256); 
+('ID-99481', 'Nation', 'Ntuli', 'driver@ride.com', '1234', 'Driver', '2025-02-14', 1, 4.80, 142, 110),
+('ID-22941', 'Jordan', 'Henderson', 'jordan@ride.com', '1234', 'Driver', '2025-01-10', 1, 4.90, 1240, 982),
+('ID-88492', 'Marcus', 'Chen', 'marcus@ride.com', '1234', 'Driver', '2025-05-14', 1, 2.70, 310, 256); 
 
-
-INSERT INTO Users (StudentNumber, FullName, Email, Password, Role, JoinDate, IsVerified, AverageRating, TotalTrips, TotalRatingsCount)
+-- Pending Drivers
+INSERT INTO Users (StudentNumber, fName, lName, Email, Password, Role, JoinDate, IsVerified, AverageRating, TotalTrips, TotalRatingsCount)
 VALUES
-('ID-99201', 'Alex Thompson', 'alex@ride.com', '1234', 'driver', '2026-06-21', 0, 5.00, 0, 0),
-('ID-44310', 'Emily Blunt', 'emily@ride.com', '1234', 'driver', '2026-06-22', 0, 5.00, 0, 0),
-('ID-45880', 'lanele Blunt', 'lanele@ride.com', '1234', 'driver', '2026-06-23', 0, 5.00, 0, 0),
-('ID-44510', 'vusi Blunt', 'vusumzi@ride.com', '1234', 'driver', '2026-06-22', 0, 5.00, 0, 0);
+('ID-99201', 'Alex', 'Thompson', 'alex@ride.com', '1234', 'Driver', '2026-06-21', 0, 5.00, 0, 0),
+('ID-44310', 'Emily', 'Blunt', 'emily@ride.com', '1234', 'Driver', '2026-06-22', 0, 5.00, 0, 0),
+('ID-45880', 'Lanele', 'Blunt', 'lanele@ride.com', '1234', 'Driver', '2026-06-23', 0, 5.00, 0, 0),
+('ID-44510', 'Vusi', 'Blunt', 'vusumzi@ride.com', '1234', 'Driver', '2026-06-22', 0, 5.00, 0, 0);
 
-INSERT INTO Users (StudentNumber, FullName, Email, Password, Role) 
+-- Students (UserIDs: Thabo = 10, Jane = 11, Sipho = 12)
+INSERT INTO Users (StudentNumber, fName, lName, Email, Password, Role) 
 VALUES  
-('2267898997', 'Thabo Khumalo', 'thabo@ride.com', '1234', 'Student'),
-('4567890', 'Jane Smith', 'jane@ride.com', '1234', 'Student'),
-('473683768', 'Sipho Zulu', 'sipho@ride.com', '1234', 'Student');
+('2267898997', 'Thabo', 'Khumalo', 'thabo@ride.com', '1234', 'Student'),
+('4567890', 'Jane', 'Smith', 'jane@ride.com', '1234', 'Student'),
+('473683768', 'Sipho', 'Zulu', 'sipho@ride.com', '1234', 'Student');
 
-
-INSERT INTO Routes (RouteName, DepartureTime) 
+-- Routes (Populated with location data needed by C# endpoints)
+INSERT INTO Routes (RouteName, DepartureFrom, ArrivalAt, DepartureTime) 
 VALUES  
-('CAMPUS NORTH', '08:30:00'),
-('DOWNTOWN EXPRESS', '10:15:00'),
-('MEDICAL CENTER SHUTTLE', '13:00:00');
+('CAMPUS NORTH', 'Main Gate', 'North Residence', '08:30:00'),
+('DOWNTOWN EXPRESS', 'Main Gate', 'Downtown Hub', '10:15:00'),
+('MEDICAL CENTER SHUTTLE', 'South Gate', 'Medical Campus', '13:00:00');
 
-
+-- Bookings 
 INSERT INTO Bookings (StudentID, RouteID, BookingDate, Status) 
 VALUES  
 (10, 1, CURDATE(), 'Booked'),
 (11, 2, CURDATE(), 'Boarded'),
 (12, 3, CURDATE(), 'Cancelled');
 
-
+-- Driver Applications
 INSERT INTO DriverApplications (UserID, ContactNumber, VehicleMakeModel, RegistrationNumber, SeatingCapacity, VehicleColor, LicenseImagePath, RegistrationFilePath)
 VALUES 
 (6, '+1 (555) 902-3481', 'Toyota Camry 2022', 'CAL-992-TX', 4, 'Metallic Silver', '../assets/img/licenses/alex_license.png', '../assets/img/docs/alex_reg.png'),
@@ -120,18 +130,42 @@ VALUES
 (8, '+1 (555) 765-4321', 'Ford Ranger 2020', 'GP-881-ZZ', 2, 'Oxford White', '../assets/img/licenses/lanele_license.png', '../assets/img/docs/lanele_reg.png'),
 (9, '+1 (555) 987-6543', 'Hyundai i20 2023', 'KZN-004-WP', 4, 'Cherry Red', '../assets/img/licenses/vusi_license.png', '../assets/img/docs/vusi_reg.png');
 
-
+-- Shuttles
 INSERT INTO Shuttles (ShuttleName, LicensePlate, Capacity, Status) 
 VALUES
 ('Blue Line Alpha', 'CR-99-WY-GP', 22, 'Active'),
 ('Campus Shuttle B', 'BZ-44-LL-GP', 15, 'Active'),
 ('West Campus Van', 'FX-88-TT-GP', 8, 'Maintenance');
 
+-- ShuttleSchedules
+INSERT INTO ShuttleSchedules (RouteID, ScheduleDate, DepartureTime, ShuttleID, DriverID)
+VALUES 
+(1, CURDATE(), '08:30:00', 1, 3), 
+(2, CURDATE(), '10:15:00', 2, 4), 
+(3, CURDATE(), '13:00:00', 1, 5);
+-- 1. Drop it and recreate it to make sure it exists perfectly
+DROP TABLE IF EXISTS Bookings;
 
-SELECT * FROM Users;
-SELECT * FROM DriverApplications;
-SELECT * FROM Routes;
-SELECT * FROM Bookings;
-SELECT * FROM Shuttles;
-SELECT * FROM ShuttleSchedules;
+CREATE TABLE Bookings (
+    BookingID INT AUTO_INCREMENT PRIMARY KEY,
+    StudentID INT NOT NULL,
+    ScheduleID INT NOT NULL,                     
+    BookingDate DATE NOT NULL,
+    Status VARCHAR(20) DEFAULT 'Booked',
+    FOREIGN KEY (StudentID) REFERENCES Users(UserID) ON DELETE CASCADE,
+    FOREIGN KEY (ScheduleID) REFERENCES ShuttleSchedules(ScheduleID) ON DELETE CASCADE
+);
+
+-- 2. Insert with the exact matching columns and values (4 columns, 4 values)
+INSERT INTO Bookings (StudentID, ScheduleID, BookingDate, Status) 
+VALUES  
+(10, 1, CURDATE(), 'Booked'), 
+(11, 2, CURDATE(), 'Boarded'),
+(12, 3, CURDATE(), 'Cancelled');
+
+
+-- Verification Check Output
 SHOW TABLES;
+SELECT UserID, fName, lName, Role FROM Users;
+SELECT RouteID, RouteName, DepartureFrom, ArrivalAt FROM Routes;
+SELECT * FROM Bookings;

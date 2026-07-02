@@ -14,10 +14,10 @@ body {
     height: 100vh;
     overflow: hidden;
 }
-
 /* ==========================================================================
    Sidebar Layout
    ========================================================================== */
+
 .sidebar {
     width: 240px;
     background-color: var(--bg-dark-sidebar);
@@ -64,12 +64,12 @@ body {
         color: #ff7a00; /* Subtle orange indicator theme from your image layout */
         border-left: 4px solid #ff7a00;
     }
-
 /* ==========================================================================
    Sidebar Profile Footer Component
    ========================================================================== */
+
 .sidebar-profile-footer {
-    margin-top: auto;
+    /* margin-top: auto; <-- Removed from here so the bottom-menu navigates to the bottom instead */
     padding: 16px;
     border-top: 1px solid var(--bg-dark-hover);
     position: relative;
@@ -111,8 +111,8 @@ body {
     text-overflow: ellipsis;
     overflow: hidden;
 }
-
 /* Floating Dropdown Component */
+
 .profile-dropdown-menu {
     position: absolute;
     bottom: 75px;
@@ -154,10 +154,10 @@ body {
     color: #ef4444;
     font-weight: 600;
 }
-
 /* ==========================================================================
    Main Workspace Framework & Top Navbar Extensions
    ========================================================================== */
+
 .main-content {
     flex: 1;
     display: flex;
@@ -182,8 +182,8 @@ body {
     width: 300px;
     font-size: 13px;
 }
-
 /* New layout wrapper for right-side navbar objects */
+
 .top-navbar-right {
     display: flex;
     align-items: center;
@@ -195,8 +195,8 @@ body {
     font-size: 14px;
     color: #334155;
 }
-
 /* New custom class for instant workspace logout actions */
+
 .top-logout-btn {
     background-color: #fee2e2;
     color: #b91c1c;
@@ -221,10 +221,10 @@ body {
 .content-body {
     padding: 30px;
 }
-
 /* ==========================================================================
    Table Card Components
    ========================================================================== */
+
 .table-card {
     background: white;
     border-radius: 12px;
@@ -269,10 +269,10 @@ tr:hover {
     text-align: center;
     color: #ef4444;
 }
-
 /* ==========================================================================
    Student Profiling Grid Elements & Tags
    ========================================================================== */
+
 .student-profile {
     display: flex;
     align-items: center;
@@ -294,8 +294,8 @@ tr:hover {
 .student-num {
     color: var(--text-muted);
 }
-
 /* Route Badges Layout */
+
 .route-tag {
     padding: 4px 8px;
     border-radius: 4px;
@@ -318,8 +318,8 @@ tr:hover {
     background-color: #f3e8ff;
     color: #6b21a8;
 }
-
 /* Booking Status Badges */
+
 .badge {
     padding: 6px 14px;
     border-radius: 20px;
@@ -348,10 +348,10 @@ tr:hover {
     cursor: pointer;
     font-size: 18px;
 }
-
 /* ==========================================================================
    Popup Overlay Modals Styles
    ========================================================================== */
+
 .profile-modal-overlay {
     position: fixed;
     top: 0;
@@ -406,19 +406,17 @@ tr:hover {
     .close-modal-btn:hover {
         background-color: #1e2538;
     }
-
 /* ==========================================================================
    NEW INTEGRATED COMPONENT CLASSES (ADDED SAFELY BELOW ORIGINAL STYLES)
-   ========================================================================== */
+   ========================================================================== */ /* Keeps Search Input and Date Selector neatly structured on the left */
 
-/* Keeps Search Input and Date Selector neatly structured on the left */
 .search-box-wrapper {
     display: flex;
     align-items: center;
     gap: 12px;
 }
-
 /* Styled enterprise date input selector field */
+
 .date-filter {
     background: #f1f5f9;
     border: 1px solid var(--border-color);
@@ -438,11 +436,40 @@ tr:hover {
         box-shadow: 0 0 0 3px rgba(255, 122, 0, 0.15);
     }
 /* Automatically takes up all available vertical room in the sidebar */
+
 .sidebar-spacer {
     flex: 1;
 }
-
 /* Optional clean separation buffer above the bottom options */
+
 .bottom-menu {
+    margin-top: auto; /* 🌟 Pushes settings and everything below it down to the bottom edge */
     margin-bottom: 15px;
+    border-top: 1px solid var(--bg-dark-hover); /* Elegant separator line */
+    padding-top: 10px;
+}
+/* High Contrast Dark Mode Override Properties */
+body.dark-mode {
+    --bg-main: #0b0f19; /* Deeper dark charcoal workspace background */
+}
+
+    body.dark-mode .top-navbar,
+    body.dark-mode .table-card,
+    body.dark-mode .profile-modal-card {
+        background-color: #111625;
+        border-color: #1e2538;
+        color: #ffffff;
+    }
+
+    body.dark-mode td {
+        color: #cbd5e1;
+        border-bottom-color: #1e2538;
+    }
+
+    body.dark-mode th {
+        background-color: #141b2d;
+        border-bottom-color: #1e2538;
+    }
+.profile-modal-overlay.active {
+    display: flex;
 }

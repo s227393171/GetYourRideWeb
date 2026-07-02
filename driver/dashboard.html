@@ -52,7 +52,7 @@
                     <span id="liveClock" style="font-family: monospace; font-weight: 700; color: #ff7a00; margin-right: 15px;">00:00:00</span>
                     Driver Portal
                 </div>
-                <button class="top-logout-btn" onclick="handleLogout()">🚪 Logout</button>
+                <button class="top-logout-btn" onclick="handleLogout()"> Logout</button>
             </div>
         </div>
 
@@ -99,15 +99,15 @@
             <h3>⚙️ Portal Settings</h3>
             <div class="modal-body-content">
                 <label style="display:block; margin: 10px 0 5px; font-weight:600; font-size:13px;">Dashboard Theme</label>
-                <select style="width:100%; padding:8px; border-radius:6px; border:1px solid #cbd5e1; outline:none;">
-                    <option>Default Light Mode</option>
-                    <option>High Contrast Dark Mode</option>
+                <select id="themeSelect" style="width:100%; padding:8px; border-radius:6px; border:1px solid #cbd5e1; outline:none;">
+                    <option value="light">Default Light Mode</option>
+                    <option value="dark">High Contrast Dark Mode</option>
                 </select>
                 <label style="display:block; margin: 15px 0 5px; font-weight:600; font-size:13px;">Refresh Frequency</label>
-                <select style="width:100%; padding:8px; border-radius:6px; border:1px solid #cbd5e1; outline:none;">
-                    <option>Every 30 Seconds</option>
-                    <option>Every Minute</option>
-                    <option>Manual Refresh</option>
+                <select id="refreshSelect" style="width:100%; padding:8px; border-radius:6px; border:1px solid #cbd5e1; outline:none;">
+                    <option value="30000">Every 30 Seconds</option>
+                    <option value="60000">Every Minute</option>
+                    <option value="manual">Manual Refresh</option>
                 </select>
             </div>
             <button class="close-modal-btn" onclick="closeSettingsModal()">Save & Close</button>

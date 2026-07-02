@@ -1,0 +1,144 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Forgot Password - GetYourRide</title>
+    <style>
+        /* General Page Styling */
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+        }
+
+        /* Card Container */
+        .login-container {
+            background-color: #ffffff;
+            padding: 2.5rem;
+            border-radius: 10px;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.05);
+            width: 100%;
+            max-width: 400px;
+            box-sizing: border-box;
+            text-align: center;
+        }
+
+            /* Typography */
+            .login-container h2 {
+                margin-top: 0;
+                color: #333333;
+                font-size: 1.75rem;
+                margin-bottom: 0.5rem;
+            }
+
+            .login-container p {
+                color: #666666;
+                font-size: 0.9rem;
+                line-height: 1.5;
+                margin-bottom: 1.5rem;
+            }
+
+        /* Form Layout */
+        #forgotForm {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+
+        /* Input Fields */
+        input[type="email"] {
+            width: 100%;
+            padding: 0.75rem 1rem;
+            border: 1px solid #dcdcdc;
+            border-radius: 5px;
+            font-size: 0.95rem;
+            box-sizing: border-box;
+            transition: border-color 0.2s ease, box-shadow 0.2s ease;
+        }
+
+            input[type="email"]:focus {
+                outline: none;
+                border-color: #4a90e2;
+                box-shadow: 0 0 0 3px rgba(74, 144, 226, 0.15);
+            }
+
+        /* Primary Button */
+        button[type="submit"] {
+            background-color: #4a90e2;
+            color: #ffffff;
+            border: none;
+            padding: 0.75rem;
+            border-radius: 5px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background-color 0.2s ease;
+        }
+
+            button[type="submit"]:hover {
+                background-color: #357abd;
+            }
+
+        /* Feedback Messages */
+        #message {
+            margin-top: 1rem;
+            font-size: 0.85rem;
+            font-weight: 500;
+            min-height: 1.25rem; /* Prevents layout shifting when text appears */
+        }
+
+        /* Navigation Links */
+        .login-container a {
+            display: inline-block;
+            margin-top: 1.5rem;
+            color: #4a90e2;
+            text-decoration: none;
+            font-size: 0.9rem;
+            transition: color 0.2s ease;
+        }
+
+            .login-container a:hover {
+                color: #357abd;
+                text-decoration: underline;
+            }
+    </style>
+</head>
+<body>
+    <div class="login-container">
+        <h2>Reset Your Password</h2>
+        <p>Enter your email address and we'll send you a link to reset your password.</p>
+        <form id="forgotForm">
+            <input type="email" id="resetEmail" placeholder="Enter your email" required>
+            <button type="submit">Send Reset Link</button>
+        </form>
+        <p id="message"></p>
+        <a href="Login.html">Back to Login</a>
+    </div>
+
+    <script>
+        document.getElementById('forgotForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const email = document.getElementById('resetEmail').value;
+            const messageEl = document.getElementById('message');
+
+            const response = await fetch('/api/auth/forgot-password', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ email })
+            });
+
+            const data = await response.json();
+
+            // SECURITY TIP: Always show a success message even if the email doesn't exist.
+            // This prevents hackers from guessing registered database emails.
+            messageEl.textContent = "If that email matches an account, a secure reset link has been sent.";
+            messageEl.style.color = "green";
+        });
+    </script>
+</body>
+</html>

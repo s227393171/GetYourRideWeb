@@ -165,3 +165,48 @@ window.onload = async function () {
     await loadDriverProfile();
     await loadDriverDashboard();
 };
+// Global execution window handles
+window.openSettingsModal = function () {
+    const modal = document.getElementById('settingsModal');
+    if (modal) {
+        modal.classList.add('active');
+
+        // Load any previously saved settings
+        if (localStorage.getItem('portalTheme') && document.getElementById('themeSelect')) {
+            document.getElementById('themeSelect').value = localStorage.getItem('portalTheme');
+        }
+        if (localStorage.getItem('portalRefresh') && document.getElementById('refreshSelect')) {
+            document.getElementById('refreshSelect').value = localStorage.getItem('portalRefresh');
+        }
+    }
+};
+
+window.closeSettingsModal = function () {
+    const modal = document.getElementById('settingsModal');
+    if (modal) {
+        const themeVal = document.getElementById('themeSelect')?.value || 'light';
+        const refreshVal = document.getElementById('refreshSelect')?.value || 'manual';
+
+        // Save preferences
+        localStorage.setItem('portalTheme', themeVal);
+        localStorage.setItem('portalRefresh', refreshVal);
+
+        // Apply theme color flip instantly
+        if (themeVal === 'dark') {
+            document.body.classList.add('dark-mode');
+        } else {
+            document.body.classList.remove('dark-mode');
+        }
+
+        // Remove active display class
+        modal.classList.remove('active');
+    }
+};
+
+window.openSupportModal = function () {
+    document.getElementById('supportModal')?.classList.add('active');
+};
+
+window.closeSupportModal = function () {
+    document.getElementById('supportModal')?.classList.remove('active');
+};

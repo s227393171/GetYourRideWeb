@@ -6,6 +6,7 @@
     <title>Coordinator Portal - Dashboard</title>
     <link rel="stylesheet" href="../assets/css/styles.css">
     <link rel="stylesheet" href="../assets/css/coordinator.css">
+    <link rel="stylesheet" href="../assets/css/driver-dashboard.css">
 </head>
 <body>
     <div class="sidebar">
@@ -19,25 +20,46 @@
             <li><a href="schedule-shuttles.html" class="menu-item">📅 Schedule shuttles</a></li>
             <li><a href="manage-drivers.html" class="menu-item">👨‍✈️ Shuttle driver management</a></li>
         </ul>
+
         <div class="sidebar-spacer"></div>
-        <div class="sidebar-footer">
-            <a href="#" class="menu-item" id="btnSidebarSupport">❓ Support & Help</a>
+
+        <ul class="menu-list bottom-menu">
+            <li><a href="#" class="menu-item" onclick="openSettingsModal()">⚙️ Settings</a></li>
+            <li><a href="#" class="menu-item" onclick="openSupportModal()">❓ Support Help</a></li>
+        </ul>
+
+        <div class="sidebar-profile-footer">
+            <div class="sidebar-profile-footer">
+                <!-- ✅ Added an ID to the trigger area if your dropdown toggle needs it -->
+                <div class="profile-trigger-area" id="profileTrigger" onclick="toggleProfileMenu()">
+                    <!-- Added placeholder initials 'SC' for Shuttle Coordinator -->
+                    <div class="avatar-placeholder" style="display: flex; align-items: center; justify-content: center; background: #cbd5e1; color: #0f172a; font-weight: 700; font-size: 12px;">SC</div>
+                    <div class="profile-info-text">
+                        <!-- ✅ FIX: Changed IDs from 'driver...' to 'coordinator...' to match JS -->
+                        <span class="user-display-name" id="coordinatorNameLabel">Loading profile...</span>
+                        <span class="user-display-email" id="coordinatorEmailLabel">connecting to database...</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="profile-dropdown-menu" id="profileDropdown">
+                <a href="#" class="dropdown-link" id="btnDropdownProfile" onclick="openProfileModal(event)">👤 View Profile</a>
+                <hr class="dropdown-divider">
+                <a href="#" class="dropdown-link logout-action" onclick="handleLogout()">🚪 Logout Portal</a>
+            </div>
         </div>
     </div>
 
     <div class="main-content">
         <div class="top-navbar">
-            <div class="nav-breadcrumb">Coordinator Portal > <strong>Dashboard Hub</strong></div>
+            <div class="nav-breadcrumb">Coordinator Portal &gt; <strong>Dashboard Hub</strong></div>
+
             <div class="top-navbar-right">
-                <button class="icon-btn">🔔</button>
-                <div class="profile-trigger" id="profileTrigger">
-                    <div class="avatar-circle">SC</div>
-                    <div class="dropdown-menu" id="coordinatorDropdown">
-                        <a href="#" id="btnDropdownProfile">👤 View Profile</a>
-                        <hr style="border: 0; border-top: 1px solid #f1f5f9; margin: 4px 0;">
-                        <a href="#" id="btnDropdownLogout" style="color: #dc2626;">🚪 Logout Session</a>
-                    </div>
+                <div class="portal-badge">
+                    <span id="liveClock" style="font-family: monospace; font-weight: 700; color: #ff7a00; margin-right: 15px;">00:00:00</span>
+                    Coordinator Portal
                 </div>
+                <button class="top-logout-btn" onclick="handleLogout()"> Logout</button>
             </div>
         </div>
 
@@ -51,16 +73,15 @@
 
             <div class="use-case-grid">
                 <div class="uc-card" id="cardManageShuttles">
-                    <div class="uc-badge easy">Use Case 1</div>
+                    <div class="uc-badge easy"></div>
                     <div class="uc-icon">🚌</div>
                     <h3>Manage Shuttles</h3>
                     <p>Configure, update configurations, monitor operational capacities, or track maintenance states across your vehicle assets fleet.</p>
                     <a href="manage-shuttles.html" class="uc-link-text" style="text-decoration: none; display: inline-block;">Open Fleet Manager →</a>
-                  
                 </div>
 
                 <div class="uc-card" id="cardManageDrivers">
-                    <div class="uc-badge medium">Use Case 2</div>
+                    <div class="uc-badge medium"></div>
                     <div class="uc-icon">👨‍✈️</div>
                     <h3>Manage Shuttle Drivers</h3>
                     <p>Oversee authorized transport personnel, link operators to profiles, track shift states, and verify active assignments.</p>
@@ -68,11 +89,11 @@
                 </div>
 
                 <div class="uc-card" id="cardScheduleShuttles">
-                    <div class="uc-badge complex">Use Case 3</div>
+                    <div class="uc-badge complex"></div>
                     <div class="uc-icon">📅</div>
                     <h3>Schedule Shuttles</h3>
                     <p>Map vehicle entities to routes, establish departure timelines, and prevent dispatch conflicts.</p>
-                    <span class="uc-link-text">Open Assignment Scheduler →</span>
+                    <a href="schedule-shuttles.html" class="uc-link-text" style="text-decoration: none; display: inline-block;">Open Assignment Scheduler →</a>
                 </div>
             </div>
 
@@ -87,44 +108,66 @@
         </div>
     </div>
 
-    <div class="modal-overlay" id="profileModal">
-        <div class="modal-card">
-            <h3>Coordinator Profile</h3>
+    <div class="profile-modal-overlay" id="profileModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); justify-content: center; align-items: center; z-index: 9999;">
+        <div class="profile-modal-card">
+            <h3>Coordinator Profile Card</h3>
             <hr style="border:0; border-top:1px solid #e2e8f0; margin: 12px 0 20px 0;">
+
             <div style="text-align: center; margin-bottom: 20px;">
                 <div class="avatar-circle" style="width: 64px; height: 64px; font-size: 1.5rem; margin: 0 auto 12px auto; display: flex; align-items: center; justify-content: center; background: #e2e8f0; border-radius: 50%;">SC</div>
-                <h4 style="margin: 0; font-size: 1.2rem; color: #0f172a;">Sibusiso Cele</h4>
-                <p style="margin: 4px 0 0 0; font-size: 0.85rem; color: #64748b;">Logistics Operations Division</p>
             </div>
-            <div class="form-group">
-                <label>Staff Personnel Number</label>
-                <input type="text" value="COORD-2026-88" readonly style="background: #f8fafc; color: #64748b; cursor: not-allowed;">
+
+            <div class="modal-body-content" style="margin-bottom: 20px; line-height: 1.8;">
+                <p><strong>Full Name:</strong> <span id="modalFullName" style="color: #334155; font-weight: 600;">Loading...</span></p>
+                <p><strong>Personnel ID Number:</strong> <span id="modalIdNumber" style="color: #334155; font-weight: 600;">Loading...</span></p>
+                <p><strong>System Email:</strong> <span id="modalEmail" style="color: #334155; font-weight: 600;">Loading...</span></p>
+                <p><strong>Assigned Role:</strong> <span id="modalRole" style="background: #e0f2fe; color: #0369a1; padding: 2px 8px; border-radius: 4px; font-size: 12px; font-weight: 600;">Loading...</span></p>
             </div>
-            <div class="form-group">
-                <label>Official Email Address</label>
-                <input type="text" value="coordinator@ride.com" readonly style="background: #f8fafc; color: #64748b; cursor: not-allowed;">
-            </div>
+
             <div class="modal-actions">
-                <button type="button" class="btn btn-secondary" id="btnCloseProfile" style="width: 100%;">Close Profile View</button>
+                <button type="button" class="close-modal-btn" onclick="closeProfileModal()" style="width: 100%; background: #64748b; color: white; border: none; padding: 10px; border-radius: 6px; font-weight: 600; cursor: pointer;">Close Reference</button>
             </div>
         </div>
     </div>
 
-    <div class="modal-overlay" id="supportModal">
-        <div class="modal-card">
-            <h3>Support & System Help</h3>
-            <hr style="border:0; border-top:1px solid #e2e8f0; margin: 12px 0 20px 0;">
-            <p style="font-size: 0.9rem; color: #475569; line-height: 1.5; margin-bottom: 16px;">Operational procedures summary:</p>
-            <ul style="font-size: 0.85rem; color: #64748b; padding-left: 20px; line-height: 1.8;">
-                <li><strong>Manage Shuttles:</strong> Add or alter fleet vehicles.</li>
-                <li><strong>Manage Drivers:</strong> Link verified driver personnel accounts.</li>
-            </ul>
-            <div class="modal-actions">
-                <button type="button" class="btn btn-secondary" id="btnCloseSupport" style="width: 100%;">Got It</button>
+    <div class="profile-modal-overlay" id="settingsModal">
+        <div class="profile-modal-card">
+            <h3>⚙️ Portal Settings</h3>
+            <div class="modal-body-content">
+                <label style="display:block; margin: 10px 0 5px; font-weight:600; font-size:13px;">Dashboard Theme</label>
+                <select id="themeSelect" style="width:100%; padding:8px; border-radius:6px; border:1px solid #cbd5e1; outline:none;">
+                    <option value="light">Default Light Mode</option>
+                    <option value="dark">High Contrast Dark Mode</option>
+                </select>
+                <label style="display:block; margin: 15px 0 5px; font-weight:600; font-size:13px;">Refresh Frequency</label>
+                <select id="refreshSelect" style="width:100%; padding:8px; border-radius:6px; border:1px solid #cbd5e1; outline:none;">
+                    <option value="30000">Every 30 Seconds</option>
+                    <option value="60000">Every Minute</option>
+                    <option value="manual">Manual Refresh</option>
+                </select>
             </div>
+            <button class="close-modal-btn" onclick="closeSettingsModal()">Save & Close</button>
+        </div>
+    </div>
+    <div class="profile-modal-overlay" id="supportModal">
+        <div class="profile-modal-card">
+            <h3>❓ Dispatch Support Help</h3>
+            <div class="modal-body-content">
+                <p style="font-size:13px; color:#64748b;">Need immediate assistance with a transit route layout or emergency check-in failure?</p>
+                <div style="background:#f8fafc; padding:12px; border-radius:6px; border-left:4px solid #ff7a00; margin:10px 0;">
+                    <strong>📞 Transit Control Line:</strong><br>+27 (0) 41 504 1111
+                </div>
+                <div style="background:#f8fafc; padding:12px; border-radius:6px; border-left:4px solid #10b981; margin:10px 0;">
+                    <strong>✉️ Emergency Support:</strong><br>support@getyourride.com
+                </div>
+            </div>
+            <button class="close-modal-btn" onclick="closeSupportModal()">Close Help Desk</button>
         </div>
     </div>
 
+
+    <script src="../assets/js/coordinator-schedules.js"></script>
     <script src="../assets/js/coordinator-dashboard.js"></script>
+    <script src="../assets/js/admin-dropdown.js"></script>
 </body>
 </html>

@@ -83,7 +83,8 @@ app.MapGet("/api/driver/profile", async (string email, IConfiguration config) =>
     using var connection = new MySqlConnection(connectionString);
     await connection.OpenAsync();
 
-    string query = "SELECT UserID, FullName, Email, Role FROM Users WHERE Email = @Email LIMIT 1;";
+    // CONCAT applied here to return fName and lName combined as 'FullName' to your frontend
+    string query = "SELECT UserID, CONCAT(fName, ' ', lName) AS FullName, Email, Role FROM Users WHERE Email = @Email LIMIT 1;";
     using var command = new MySqlCommand(query, connection);
     command.Parameters.AddWithValue("@Email", email);
 
@@ -110,56 +111,47 @@ app.MapGet("/api/driver/bookings", async (IConfiguration config) => {
 
     try
     {
+        // Beautiful, accurate join utilizing the new database operational link
         string query = @"
-            SELECT b.BookingID, u.FullName, u.StudentNumber, r.DepartureFrom, r.ArrivalAt, r.DepartureTime, b.BookingDate, b.Status 
+            SELECT b.BookingID, 
+                   CONCAT(u.fName, ' ', u.lName) AS FullName, 
+                   u.StudentNumber, 
+                   r.DepartureFrom, 
+                   r.ArrivalAt, 
+                   sch.DepartureTime, 
+                   b.BookingDate, 
+                   b.Status,
+                   s.ShuttleName
             FROM Bookings b
             JOIN Users u ON b.StudentID = u.UserID
-            JOIN Routes r ON b.RouteID = r.RouteID
-            ORDER BY r.DepartureTime ASC;";
+            JOIN ShuttleSchedules sch ON b.ScheduleID = sch.ScheduleID
+            JOIN Routes r ON sch.RouteID = r.RouteID
+            JOIN Shuttles s ON sch.ShuttleID = s.ShuttleID
+            ORDER BY sch.DepartureTime ASC;";
 
         using var command = new MySqlCommand(query, connection);
         using var reader = await command.ExecuteReaderAsync();
 
-        int idOrdinal = reader.GetOrdinal("BookingID");
-        int nameOrdinal = reader.GetOrdinal("FullName");
-        int numOrdinal = reader.GetOrdinal("StudentNumber");
-        int fromOrdinal = reader.GetOrdinal("DepartureFrom");
-        int atOrdinal = reader.GetOrdinal("ArrivalAt");
-        int timeOrdinal = reader.GetOrdinal("DepartureTime");
-        int dateOrdinal = reader.GetOrdinal("BookingDate");
-        int statusOrdinal = reader.GetOrdinal("Status");
-
         while (await reader.ReadAsync())
         {
-            int bookingId = reader.GetInt32(idOrdinal);
-            string studentName = reader.GetString(nameOrdinal);
-            string studentNumber = !reader.IsDBNull(numOrdinal) ? reader.GetValue(numOrdinal).ToString() : "N/A";
-            string departureFrom = reader.GetString(fromOrdinal);
-            string arrivalAt = reader.GetString(atOrdinal);
-
-            string departureTime = reader.GetValue(timeOrdinal).ToString();
+            string departureTime = reader["DepartureTime"].ToString();
             if (departureTime.Length >= 5) departureTime = departureTime.Substring(0, 5);
 
-            string bookingDate = "2026-06-26";
-            if (!reader.IsDBNull(dateOrdinal))
-            {
-                var rawDate = reader.GetValue(dateOrdinal);
-                bookingDate = rawDate is DateTime dt ? dt.ToString("yyyy-MM-dd") : Convert.ToDateTime(rawDate).ToString("yyyy-MM-dd");
-            }
-
-            string status = !reader.IsDBNull(statusOrdinal) ? reader.GetString(statusOrdinal) : "Booked";
+            string bookingDate = reader["BookingDate"] != DBNull.Value
+                ? Convert.ToDateTime(reader["BookingDate"]).ToString("yyyy-MM-dd")
+                : "2026-06-26";
 
             bookings.Add(new
             {
-                bookingId = bookingId,
-                studentName = studentName,
-                studentNumber = studentNumber,
-                shuttle = "Shuttle Bus A",
-                departureFrom = departureFrom,
-                arrivalAt = arrivalAt,
+                bookingId = Convert.ToInt32(reader["BookingID"]),
+                studentName = reader["FullName"].ToString(),
+                studentNumber = reader["StudentNumber"] != DBNull.Value ? reader["StudentNumber"].ToString() : "N/A",
+                shuttle = reader["ShuttleName"].ToString(),     // Done! Pulls "Blue Line Alpha", etc.
+                departureFrom = reader["DepartureFrom"].ToString(),
+                arrivalAt = reader["ArrivalAt"].ToString(),
                 departureTime = departureTime,
                 bookingDate = bookingDate,
-                status = status
+                status = reader["Status"].ToString()
             });
         }
     }
@@ -182,8 +174,9 @@ app.MapGet("/api/admin/driver-ratings", async (IConfiguration config) => {
     using var connection = new MySqlConnection(connectionString);
     await connection.OpenAsync();
 
+    // CONCAT applied here to combine fName and lName as 'FullName'
     string query = @"
-        SELECT FullName, StudentNumber, JoinDate, AverageRating, TotalTrips, TotalRatingsCount 
+        SELECT CONCAT(fName, ' ', lName) AS FullName, StudentNumber, JoinDate, AverageRating, TotalTrips, TotalRatingsCount 
         FROM Users 
         WHERE LOWER(Role) = 'driver' AND IsVerified = 1
         ORDER BY AverageRating DESC;";
@@ -213,8 +206,9 @@ app.MapGet("/api/admin/unverified-drivers", async (IConfiguration config) => {
     using var connection = new MySqlConnection(connectionString);
     await connection.OpenAsync();
 
+    // CONCAT applied here to combine fName and lName as 'FullName'
     string query = @"
-        SELECT UserID, FullName, StudentNumber, Email 
+        SELECT UserID, CONCAT(fName, ' ', lName) AS FullName, StudentNumber, Email 
         FROM Users 
         WHERE LOWER(Role) = 'driver' AND IsVerified = 0;";
 
@@ -256,8 +250,9 @@ app.MapGet("/api/admin/drivers/{studentId}", async (string studentId, IConfigura
     using var connection = new MySqlConnection(connectionString);
     await connection.OpenAsync();
 
+    // CONCAT applied here to combine fName and lName as 'FullName'
     string query = @"
-        SELECT u.FullName, u.StudentNumber, u.Email, 
+        SELECT CONCAT(u.fName, ' ', u.lName) AS FullName, u.StudentNumber, u.Email, 
                da.ContactNumber, da.VehicleMakeModel, da.RegistrationNumber, 
                da.SeatingCapacity, da.VehicleColor, da.LicenseImagePath, 
                da.RegistrationFilePath, da.ApplicationStatus
@@ -406,9 +401,31 @@ app.MapDelete("/api/coordinator/shuttles/{id:int}", async (int id, IConfiguratio
 
     return Results.Ok(new { message = "Asset successfully deleted." });
 });
+// Add this so the frontend dropdown can actually fetch your routes!
+app.MapGet("/api/coordinator/routes", async (IConfiguration config) => {
+    string connectionString = config.GetConnectionString("DefaultConnection");
+    var routes = new List<object>();
 
+    using var connection = new MySqlConnection(connectionString);
+    await connection.OpenAsync();
+
+    string query = "SELECT RouteID, RouteName, DepartureFrom, ArrivalAt FROM Routes;";
+    using var command = new MySqlCommand(query, connection);
+    using var reader = await command.ExecuteReaderAsync();
+
+    while (await reader.ReadAsync())
+    {
+        routes.Add(new
+        {
+            routeId = Convert.ToInt32(reader["RouteID"]),
+            // Creates the "Main Gate ➔ North Residence" string pattern the POST endpoint looks for
+            routeName = $"{reader["DepartureFrom"]} ➔ {reader["ArrivalAt"]}"
+        });
+    }
+    return Results.Ok(routes);
+});
 // ---------------------------------------------------------
-// SHUTTLE COORDINATOR SCHEDULING ENDPOINTS (ShuttleSchedules Table Alignment)
+// SHUTTLE COORDINATOR SCHEDULING ENDPOINTS
 // ---------------------------------------------------------
 app.MapGet("/api/coordinator/schedules", async (IConfiguration config) => {
     string connectionString = config.GetConnectionString("DefaultConnection");
@@ -419,11 +436,11 @@ app.MapGet("/api/coordinator/schedules", async (IConfiguration config) => {
 
     try
     {
-        // Targets ShuttleSchedules and brings in route, shuttle, and driver descriptions safely
+        // CONCAT applied here to combine u.fName and u.lName as 'DriverName'
         string query = @"
             SELECT sch.ScheduleID, r.DepartureFrom, r.ArrivalAt, sch.DepartureTime, sch.ScheduleDate,
                    COALESCE(s.ShuttleName, 'Unassigned') AS ShuttleName, 
-                   COALESCE(u.FullName, 'Unassigned') AS DriverName
+                   COALESCE(CONCAT(u.fName, ' ', u.lName), 'Unassigned') AS DriverName
             FROM ShuttleSchedules sch
             INNER JOIN Routes r ON sch.RouteID = r.RouteID
             LEFT JOIN Shuttles s ON sch.ShuttleID = s.ShuttleID
@@ -470,7 +487,8 @@ app.MapGet("/api/coordinator/schedules", async (IConfiguration config) => {
     }
     return Results.Ok(schedules);
 });
-// 5. Fetch all verified drivers for the coordinator roster (GET)
+
+// 5. Fetch all verified drivers for the coordinator roster (GET) - UPDATED TO DYNAMICALLY LOAD ASSIGNED SHUTTLES
 app.MapGet("/api/coordinator/drivers", async (IConfiguration config) => {
     string connectionString = config.GetConnectionString("DefaultConnection");
     var drivers = new List<object>();
@@ -480,9 +498,18 @@ app.MapGet("/api/coordinator/drivers", async (IConfiguration config) => {
 
     try
     {
+        // Using a clean isolated subquery to pull the exact live shuttle asset match safely
         string query = @"
-            SELECT u.UserID, u.StudentNumber, u.FullName, u.IsVerified, u.Email,
-                   COALESCE(da.ContactNumber, 'N/A') AS ContactNumber
+            SELECT u.UserID, u.StudentNumber, CONCAT(u.fName, ' ', u.lName) AS FullName, u.Email,
+                   COALESCE(da.ContactNumber, 'N/A') AS ContactNumber,
+                   COALESCE(
+                       (SELECT s.ShuttleName 
+                        FROM ShuttleSchedules sch 
+                        JOIN Shuttles s ON sch.ShuttleID = s.ShuttleID 
+                        WHERE sch.DriverID = u.UserID 
+                        LIMIT 1), 
+                       'Unassigned'
+                   ) AS MappedShuttle
             FROM Users u
             LEFT JOIN DriverApplications da ON u.UserID = da.UserID
             WHERE LOWER(u.Role) = 'driver' AND u.IsVerified = 1;";
@@ -494,23 +521,15 @@ app.MapGet("/api/coordinator/drivers", async (IConfiguration config) => {
         {
             drivers.Add(new
             {
-                // JavaScript fields are case-sensitive. Let's provide BOTH standard naming styles 
-                // so your script catches what it needs regardless of its variable setup:
                 id = Convert.ToInt32(reader["UserID"]),
                 driverId = Convert.ToInt32(reader["UserID"]),
-
-                // Mappings for Name & Email subtext fields
                 name = reader["FullName"].ToString(),
                 fullName = reader["FullName"].ToString(),
                 email = reader["Email"].ToString(),
-
-                // Mappings for Employee ID columns
                 employeeId = reader["StudentNumber"] != DBNull.Value ? reader["StudentNumber"].ToString() : $"EMP-{reader["UserID"]}",
                 studentNumber = reader["StudentNumber"] != DBNull.Value ? reader["StudentNumber"].ToString() : $"EMP-{reader["UserID"]}",
-
-                // Other dashboard attributes
                 contactNumber = reader["ContactNumber"].ToString(),
-                assignedShuttle = "Unassigned",
+                assignedShuttle = reader["MappedShuttle"].ToString(), //
                 status = "Active"
             });
         }
@@ -533,32 +552,36 @@ app.MapPost("/api/coordinator/schedules", async (ScheduleDirectDto req, IConfigu
     if (standardizedTime.Length == 5) standardizedTime += ":00";
 
     string incoming = req.RouteName;
-    string fromLocation = incoming.Contains('➔') ? incoming.Split('➔')[0].Trim() : incoming.Trim();
-    string toLocation = incoming.Contains('➔') ? incoming.Split('➔')[1].Trim() : "Campus Hub";
+
+    // Split safely across any common arrow indicator variations (thin, thick, or dash)
+    string[] separators = new string[] { "→", "➔", "->" };
+    string[] locations = incoming.Split(separators, StringSplitOptions.RemoveEmptyEntries);
+
+    string fromLocation = locations.Length > 0 ? locations[0].Trim() : incoming.Trim();
+    string toLocation = locations.Length > 1 ? locations[1].Trim() : "Campus Hub";
 
     try
     {
-        // Find existing RouteID matching the stop tracking locations
-        int routeId = 1;
-        string findRouteQuery = "SELECT RouteID FROM Routes WHERE DepartureFrom = @From AND ArrivalAt = @To LIMIT 1;";
-        using (var findCmd = new MySqlCommand(findRouteQuery, connection))
-        {
-            findCmd.Parameters.AddWithValue("@From", fromLocation);
-            findCmd.Parameters.AddWithValue("@To", toLocation);
-            var result = await findCmd.ExecuteScalarAsync();
-            if (result != null)
-            {
-                routeId = Convert.ToInt32(result);
-            }
-        }
-
-        // Inserts data directly into the matching ShuttleSchedules schema allocation table
-        string insertQuery = @"INSERT INTO ShuttleSchedules (RouteID, ScheduleDate, DepartureTime, ShuttleID, DriverID) 
-                               VALUES (@RouteID, @ScheduleDate, @DepartureTime, @ShuttleID, @DriverID);";
+        // Fallback protection: Dynamically resolve RouteID by looking up matching text segments
+        string insertQuery = @"
+            INSERT INTO ShuttleSchedules (RouteID, ScheduleDate, DepartureTime, ShuttleID, DriverID) 
+            VALUES (
+                COALESCE(
+                    (SELECT RouteID FROM Routes 
+                     WHERE (LOWER(DepartureFrom) LIKE CONCAT('%', LOWER(@From), '%') 
+                        OR LOWER(RouteName) LIKE CONCAT('%', LOWER(@From), '%'))
+                     LIMIT 1),
+                    1
+                ), 
+                @ScheduleDate, 
+                @DepartureTime, 
+                @ShuttleID, 
+                @DriverID
+            );";
 
         using var command = new MySqlCommand(insertQuery, connection);
-        command.Parameters.AddWithValue("@RouteID", routeId);
-        command.Parameters.AddWithValue("@ScheduleDate", string.IsNullOrEmpty(req.ScheduleDate) ? "2026-06-26" : req.ScheduleDate);
+        command.Parameters.AddWithValue("@From", fromLocation);
+        command.Parameters.AddWithValue("@ScheduleDate", string.IsNullOrEmpty(req.ScheduleDate) ? "2026-07-01" : req.ScheduleDate);
         command.Parameters.AddWithValue("@DepartureTime", standardizedTime);
         command.Parameters.AddWithValue("@ShuttleID", req.ShuttleID);
         command.Parameters.AddWithValue("@DriverID", req.DriverID);
@@ -572,11 +595,73 @@ app.MapPost("/api/coordinator/schedules", async (ScheduleDirectDto req, IConfigu
         return Results.Json(new { success = false, message = ex.Message }, statusCode: 500);
     }
 });
+app.MapGet("/api/coordinator/profile", async (string email, IConfiguration config) => {
+    string connectionString = config.GetConnectionString("DefaultConnection");
+    using var connection = new MySqlConnection(connectionString);
+    await connection.OpenAsync();
+
+    string query = "SELECT UserID, StudentNumber, CONCAT(fName, ' ', lName) AS FullName, Email, Role FROM Users WHERE Email = @Email LIMIT 1;";
+    using var command = new MySqlCommand(query, connection);
+    command.Parameters.AddWithValue("@Email", email);
+
+    using var reader = await command.ExecuteReaderAsync();
+    if (await reader.ReadAsync())
+    {
+        return Results.Ok(new
+        {
+            userId = Convert.ToInt32(reader["UserID"]),
+            employeeId = reader["StudentNumber"] != DBNull.Value ? reader["StudentNumber"].ToString() : $"COORD-{reader["UserID"]}",
+            fullName = reader["FullName"].ToString(),
+            email = reader["Email"].ToString(),
+            role = reader["Role"].ToString()
+        });
+    }
+    return Results.NotFound(new { message = "Coordinator user record not located." });
+});
+// ---------------------------------------------------------
+// REVISED DRIVER UPSERT / POST ENDPOINT (Splitting Name)
+// ---------------------------------------------------------
+app.MapPost("/api/admin/drivers/upsert", async (DriverUpsertDto req, IConfiguration config) => {
+    string connectionString = config.GetConnectionString("DefaultConnection");
+    using var connection = new MySqlConnection(connectionString);
+    await connection.OpenAsync();
+
+    // Here we split the requested incoming frontend 'FullName' string by space safely
+    string firstName = req.FullName;
+    string lastName = "Driver"; // Safe fallback string case if no spaces exist
+
+    string[] nameParts = req.FullName.Trim().Split(' ', 2);
+    if (nameParts.Length > 1)
+    {
+        firstName = nameParts[0];
+        lastName = nameParts[1];
+    }
+
+    string insertQuery = @"
+        INSERT INTO Users (StudentNumber, fName, lName, Email, Password, Role, IsVerified) 
+        VALUES (@StudentNumber, @fName, @lName, @Email, '1234', 'Driver', 1);";
+
+    using var command = new MySqlCommand(insertQuery, connection);
+    command.Parameters.AddWithValue("@StudentNumber", req.StudentNumber);
+    command.Parameters.AddWithValue("@fName", firstName);
+    command.Parameters.AddWithValue("@lName", lastName);
+    command.Parameters.AddWithValue("@Email", req.Email);
+
+    try
+    {
+        await command.ExecuteNonQueryAsync();
+        return Results.Ok(new { success = true, message = "Driver data split and saved into database successfully." });
+    }
+    catch (Exception ex)
+    {
+        return Results.Json(new { success = false, message = ex.Message }, statusCode: 500);
+    }
+});
 
 app.Run();
 
 // ---------------------------------------------------------
-// DATA TRANSFER RECORDS (DTOs)
+// DATA TRANSFER RECORDS (DTOs - Unchanged for frontend compatibility)
 // ---------------------------------------------------------
 public record ScheduleDirectDto(string RouteName, string ScheduleDate, string DepartureTime, int ShuttleID, int DriverID);
 public record LoginRequest(string Email, string Password);
@@ -584,3 +669,41 @@ public record VerifyActionRequest(int UserId);
 public record DynamicStatusUpdate(string Status);
 public record ShuttleDto(string ShuttleName, string LicensePlate, int Capacity, string Status);
 public record DriverUpsertDto(string StudentNumber, string FullName, string Email);
+// Kept precisely as FullName
+// Add this Record to the bottom of your Program.cs
+public record ForgotPasswordRequest(string Email);
+public record ResetPasswordRequest(string Token, string NewPassword);
+
+// ---------------------------------------------------------
+// FORGOT/RESET PASSWORD ENDPOINTS
+// ---------------------------------------------------------
+app.MapGet("/Forgot.html", () => Results.File(Path.Combine(Directory.GetCurrentDirectory(), "Forgot.html"), "text/html"));
+
+// Endpoint 1: Generate and "Send" Token
+app.MapPost("/api/auth/forgot-password", async (ForgotPasswordRequest req, IConfiguration config) => {
+    string connectionString = config.GetConnectionString("DefaultConnection");
+    using var connection = new MySqlConnection(connectionString);
+    await connection.OpenAsync();
+
+    // Check if user exists in your core 'users' table
+    string checkQuery = "SELECT user_id FROM users WHERE email = @Email LIMIT 1;";
+    using var checkCmd = new MySqlCommand(checkQuery, connection);
+    checkCmd.Parameters.AddWithValue("@Email", req.Email);
+    var userId = await checkCmd.ExecuteScalarAsync();
+
+    if (userId != null)
+    {
+        // Generate a random 6-character token for simplicity
+        string token = Guid.NewGuid().ToString().Substring(0, 6).ToUpper();
+
+        // ⚠️ NOTE: For production, you would add a 'reset_token' column to your 'users' table.
+        // For testing, we print the functional link to your IDE console:
+        Console.WriteLine("\n==========================================");
+        Console.WriteLine($"[EMAIL SIMULATOR] To reset password, open:");
+        Console.WriteLine($"http://localhost:5000/reset-password.html?token={token}&email={req.Email}");
+        Console.WriteLine("==========================================\n");
+    }
+
+    // Always return OK to protect user privacy
+    return Results.Ok(new { success = true });
+});

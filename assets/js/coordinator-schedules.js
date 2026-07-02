@@ -1,102 +1,93 @@
-﻿document.addEventListener("DOMContentLoaded", () => {
-    // 1. Initial table and modal dropdown populate on boot load
+﻿const COORDINATOR_PROFILE_API_URL = '/api/coordinator/profile';
+window.activeCoordinatorProfile = null;
+
+// Clean loading lifecycle hooks
+document.addEventListener("DOMContentLoaded", () => {
+    console.log("🚀 GetYourRide Scheduler System Initialized.");
+    loadCoordinatorProfile();
     loadSchedulesTable();
     populateFormDropdowns();
-
-    const modal = document.getElementById("scheduleModal");
-
-    // 2. Open Modal Event listener
-    document.getElementById("btnOpenScheduleModal").addEventListener("click", () => {
-        document.getElementById("frmScheduleAsset").reset();
-        modal.classList.add("show"); // Adds bootstrap utility visibility rule
-    });
-
-    // 3. Cancel/Close Modal Event listener
-    document.getElementById("btnCancelModal").addEventListener("click", () => {
-        modal.classList.remove("show"); // Hides view overlay popup window
-    });
-
-    // 4. Form Submission tracking
-    document.getElementById("frmScheduleAsset").addEventListener("submit", handleScheduleFormSubmit);
 });
 
-// ✅ Renders the Dashboard Grid Table Rows
-async function loadSchedulesTable() {
-    try {
-        const response = await fetch("/api/coordinator/schedules");
-        const schedules = await response.json();
-        const tbody = document.getElementById("scheduleTableBody");
-        tbody.innerHTML = "";
-
-        if (schedules.length === 0) {
-            tbody.innerHTML = `<tr><td colspan="5" style="text-align:center; padding:24px; color:#64748b;">No transit operational schedules created yet.</td></tr>`;
-            return;
-        }
-
-        schedules.forEach(s => {
-            const tr = document.createElement("tr");
-            tr.style.borderBottom = "1px solid #f1f5f9";
-            tr.innerHTML = `
-                <td style="padding:14px;"><strong>${s.routeName}</strong></td>
-                <td style="padding:14px; color:#334155;">📅 ${s.scheduleDate}</td>
-                <td style="padding:14px;"><strong>${s.departureTime}</strong></td>
-                <td style="padding:14px;"><span style="color:#0284c7; font-weight:500;">🚌 ${s.shuttleName}</span></td>
-                <td style="padding:14px; color:#475569;">👨‍✈️ ${s.driverName}</td>
-            `;
-            tbody.appendChild(tr);
-        });
-    } catch (err) {
-        console.error("Failed to load schedules table context window:", err);
+// ==========================================================================
+// EXPLICIT HTML MODAL CONTROLLERS
+// ==========================================================================
+window.openScheduleModalContainer = function () {
+    console.log("🎯 Form window requested.");
+    const modal = document.getElementById("scheduleModal");
+    if (modal) {
+        document.getElementById("frmScheduleAsset")?.reset();
+        modal.style.setProperty("display", "flex", "important");
     }
-}
+};
 
-// ✅ Loads choices dynamically into HTML Select Elements
+window.closeScheduleModalContainer = function () {
+    const modal = document.getElementById("scheduleModal");
+    if (modal) {
+        modal.style.setProperty("display", "none", "important");
+    }
+};
+
+// ==========================================================================
+// DATA FETCHERS & DROPDOWNS (MAPPED TO YOUR PROGRAM.CS OBJECTS)
+// ==========================================================================
 async function populateFormDropdowns() {
+    // 1. Load Routes
     try {
-        // Fetch and map routes lookup dropdown elements
-        const routeRes = await fetch("/api/coordinator/routes");
-        const routes = await routeRes.json();
-        document.getElementById("ddlRouteAsset").innerHTML = routes.map(r =>
-            `<option value="${r.routeId}">${r.routeName}</option>`
-        ).join('');
+        const res = await fetch("/api/coordinator/routes");
+        if (res.ok) {
+            const routes = await res.json();
+            document.getElementById("ddlRouteAsset").innerHTML =
+                `<option value="">-- Select Route Corridor --</option>` +
+                routes.map(r => `<option value="${r.routeName}">${r.routeName}</option>`).join('');
+        }
+    } catch (err) { console.error("Routes display processing error:", err); }
 
-        // Fetch and map shuttles vehicle dropdown entries
-        const shuttleRes = await fetch("/api/coordinator/shuttles");
-        const shuttles = await shuttleRes.json();
-        document.getElementById("ddlShuttleAsset").innerHTML = shuttles.map(s =>
-            `<option value="${s.shuttleId}">${s.shuttleName} (${s.licensePlate})</option>`
-        ).join('');
+    // 2. Load Shuttles
+    try {
+        const res = await fetch("/api/coordinator/shuttles");
+        if (res.ok) {
+            const shuttles = await res.json();
+            document.getElementById("ddlShuttleAsset").innerHTML =
+                `<option value="">-- Select Vehicle Asset --</option>` +
+                shuttles.map(s => `<option value="${s.shuttleId}">${s.shuttleName} (${s.licensePlate})</option>`).join('');
+        }
+    } catch (err) { console.error("Shuttles drop-down parsing error:", err); }
 
-        // Fetch and map verified system driver accounts
-        const driverRes = await fetch("/api/coordinator/drivers");
-        const drivers = await driverRes.json();
-
-        // Supports both pre-seed raw users or custom schema configurations
-        document.getElementById("ddlDriverAsset").innerHTML = drivers.map(d =>
-            `<option value="${d.userId}">${d.fullName}</option>`
-        ).join('');
-
-    } catch (err) {
-        console.error("Dropdown rendering synchronization failed:", err);
-    }
+    // 3. Load Drivers
+    try {
+        const res = await fetch("/api/coordinator/drivers");
+        if (res.ok) {
+            const drivers = await res.json();
+            document.getElementById("ddlDriverAsset").innerHTML =
+                `<option value="">-- Select Roster Operator --</option>` +
+                drivers.map(d => `<option value="${d.driverId}">${d.fullName}</option>`).join('');
+        }
+    } catch (err) { console.error("Drivers collection loading error:", err); }
 }
 
-// ✅ Handles Save Assignment button transaction requests
-async function handleScheduleFormSubmit(e) {
+// ==========================================================================
+// TRANSACTION FORM FORM SUBMISSION HANDLER
+// ==========================================================================
+window.handleScheduleFormSubmit = async function (e) {
     e.preventDefault();
 
-    // Grabs the dynamic select element reference
     const routeSelect = document.getElementById("ddlRouteAsset");
+    const shuttleSelect = document.getElementById("ddlShuttleAsset");
+    const driverSelect = document.getElementById("ddlDriverAsset");
 
-    // Extracts the actual Text Option (e.g. "CAMPUS NORTH") instead of numeric primary keys
-    const chosenRouteText = routeSelect.options[routeSelect.selectedIndex].text;
+    if (!routeSelect.value || !shuttleSelect.value || !driverSelect.value) {
+        alert("Please complete all configuration fields before saving.");
+        return;
+    }
 
+    // This matches the exact naming constraints expected by your ScheduleDirectDto C# record
     const payload = {
-        routeName: chosenRouteText,
-        scheduleDate: document.getElementById("txtScheduleDate").value,
-        departureTime: document.getElementById("txtDepartureTime").value,
-        shuttleId: parseInt(document.getElementById("ddlShuttleAsset").value),
-        driverId: parseInt(document.getElementById("ddlDriverAsset").value)
+        RouteName: routeSelect.value,
+        ScheduleDate: document.getElementById("txtScheduleDate").value,
+        DepartureTime: document.getElementById("txtDepartureTime").value,
+        ShuttleID: parseInt(shuttleSelect.value),
+        DriverID: parseInt(driverSelect.value)
     };
 
     try {
@@ -107,12 +98,56 @@ async function handleScheduleFormSubmit(e) {
         });
 
         if (response.ok) {
-            document.getElementById("scheduleModal").classList.remove("show"); // Close modal popup frame
-            loadSchedulesTable(); // Instantly update view tracking lines
+            closeScheduleModalContainer();
+            loadSchedulesTable(); // Instantly update view grid array tracking logs 
         } else {
-            alert("Error logging system transaction assignment request.");
+            const data = await response.json();
+            alert("Save operational assignment failed: " + (data.message || "Invalid setup."));
         }
     } catch (err) {
-        console.error("Transmission Failure:", err);
+        console.error("Network write fault:", err);
     }
+};
+
+// ==========================================================================
+// BACKGROUND METRIC TRACKERS
+// ==========================================================================
+async function loadSchedulesTable() {
+    try {
+        const response = await fetch("/api/coordinator/schedules");
+        if (!response.ok) return;
+        const schedules = await response.json();
+        const tbody = document.getElementById("scheduleTableBody");
+        if (!tbody) return;
+
+        tbody.innerHTML = "";
+        if (schedules.length === 0) {
+            tbody.innerHTML = `<tr><td colspan="5" style="text-align:center; padding:24px; color:#64748b;">No active transit routes logged.</td></tr>`;
+            return;
+        }
+
+        schedules.forEach(s => {
+            tbody.innerHTML += `
+                <tr style="border-bottom: 1px solid #f1f5f9;">
+                    <td style="padding:14px;"><strong>${s.routeName}</strong></td>
+                    <td style="padding:14px; color:#334155;">📅 ${s.scheduleDate}</td>
+                    <td style="padding:14px;"><strong>${s.departureTime}</strong></td>
+                    <td style="padding:14px;"><span style="color:#0284c7; font-weight:500;">🚌 ${s.shuttleName}</span></td>
+                    <td style="padding:14px; color:#475569;">👨‍✈️ ${s.driverName}</td>
+                </tr>`;
+        });
+    } catch (err) { console.error(err); }
+}
+
+async function loadCoordinatorProfile() {
+    try {
+        const urlParams = new URLSearchParams(window.location.search);
+        let loggedInEmail = urlParams.get('email') || 'coord@getyourride.com';
+        const response = await fetch(`/api/coordinator/profile?email=${encodeURIComponent(loggedInEmail)}`);
+        if (response.ok) {
+            activeCoordinatorProfile = await response.json();
+            if (document.getElementById('coordinatorNameLabel')) document.getElementById('coordinatorNameLabel').innerText = activeCoordinatorProfile.fullName;
+            if (document.getElementById('coordinatorEmailLabel')) document.getElementById('coordinatorEmailLabel').innerText = activeCoordinatorProfile.email;
+        }
+    } catch (err) { console.error(err); }
 }

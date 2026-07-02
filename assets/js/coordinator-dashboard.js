@@ -1,4 +1,101 @@
-﻿document.addEventListener("DOMContentLoaded", () => {
+﻿const COORDINATOR_PROFILE_API_URL = '/api/coordinator/profile'; // Your endpoint
+// 🚌 FIX: Change 'let' to 'window.' so other scripts can read this data context
+window.activeCoordinatorProfile = null;
+// Add these control functions to your file
+function openProfileModal() {
+    const profileModal = document.getElementById("profileModal");
+    if (profileModal) profileModal.style.setProperty("display", "flex", "important");
+}
+
+function closeProfileModal() {
+    const profileModal = document.getElementById("profileModal");
+    if (profileModal) profileModal.style.setProperty("display", "none", "important");
+}
+
+// Inside your loadCoordinatorProfile() function, make sure these assignments exist:
+if (document.getElementById('modalFullName')) document.getElementById('modalFullName').innerText = activeCoordinatorProfile.fullName;
+if (document.getElementById('modalIdNumber')) document.getElementById('modalIdNumber').innerText = activeCoordinatorProfile.employeeId;
+if (document.getElementById('modalEmail')) document.getElementById('modalEmail').innerText = activeCoordinatorProfile.email;
+if (document.getElementById('modalRole')) document.getElementById('modalRole').innerText = activeCoordinatorProfile.role;
+
+// Inside your DOMContentLoaded listener, ensure the link is wired up:
+const viewProfileLink = document.getElementById("btnDropdownProfile");
+if (viewProfileLink) {
+    viewProfileLink.addEventListener("click", (e) => {
+        e.preventDefault();
+        openProfileModal();
+    });
+}
+// Run everything safely on DOM Content Loaded
+document.addEventListener("DOMContentLoaded", async () => {
+    // 1. Run profile session load first
+    await loadCoordinatorProfile();
+
+    // 2. Initialize your regular dashboard components
+    loadSchedulesTable();
+    populateFormDropdowns();
+
+    // 3. Modal UI Management Wireframes
+    const modal = document.getElementById("scheduleModal");
+
+    const openBtn = document.getElementById("btnOpenScheduleModal");
+    if (openBtn) {
+        openBtn.addEventListener("click", () => {
+            document.getElementById("frmScheduleAsset").reset();
+            modal.style.setProperty("display", "flex", "important");
+        });
+    }
+
+    const cancelBtn = document.getElementById("btnCancelModal");
+    if (cancelBtn) {
+        cancelBtn.addEventListener("click", () => {
+            modal.style.setProperty("display", "none", "important");
+        });
+    }
+
+    const formAsset = document.getElementById("frmScheduleAsset");
+    if (formAsset) {
+        formAsset.addEventListener("submit", handleScheduleFormSubmit);
+    }
+});
+
+// ✅ Dynamic URL Session Parser Function
+async function loadCoordinatorProfile() {
+    try {
+        // 1. Look directly at the browser URL bar (e.g., schedule-shuttles.html?email=coord@getyourride.com)
+        const urlParams = new URLSearchParams(window.location.search);
+        let loggedInEmail = urlParams.get('email');
+
+        // 2. Fallback default if someone types the address manually without logging in
+        if (!loggedInEmail) {
+            loggedInEmail = 'coord@getyourride.com';
+        }
+
+        // 3. Request profile information from C# API backend
+        const targetUrl = `${window.location.origin}${COORDINATOR_PROFILE_API_URL}?email=${encodeURIComponent(loggedInEmail)}`;
+        const response = await fetch(targetUrl);
+        if (!response.ok) throw new Error('Profile response status not ok.');
+
+        activeCoordinatorProfile = await response.json();
+
+        // 4. Safely push data properties out to your sidebar layout components
+        if (document.getElementById('coordinatorNameLabel')) {
+            document.getElementById('coordinatorNameLabel').innerText = activeCoordinatorProfile.fullName;
+        }
+        if (document.getElementById('coordinatorEmailLabel')) {
+            document.getElementById('coordinatorEmailLabel').innerText = activeCoordinatorProfile.email;
+        }
+    } catch (error) {
+        console.error('Error fetching coordinator session profile info:', error);
+        if (document.getElementById('coordinatorNameLabel')) {
+            document.getElementById('coordinatorNameLabel').innerText = "Session Offline";
+        }
+        if (document.getElementById('coordinatorEmailLabel')) {
+            document.getElementById('coordinatorEmailLabel').innerText = "reconnecting...";
+        }
+    }
+}
+document.addEventListener("DOMContentLoaded", () => {
     // Nav Card Triggers
     document.getElementById("cardManageShuttles").addEventListener("click", () => {
         window.location.href = "manage-shuttles.html";

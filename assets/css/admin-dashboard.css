@@ -1,5 +1,9 @@
-﻿:root {
+﻿/* ==========================================================================
+   Design Tokens & Color Palette
+   ========================================================================== */
+:root {
     --bg-sidebar: #1a2238;
+    --bg-sidebar-hover: #242f4d;
     --bg-main: #f4f6fa;
     --primary-orange: #ff7a00;
     --text-main: #1e293b;
@@ -8,7 +12,7 @@
 }
 
 body {
-    font-family: 'Segoe UI', system-ui, sans-serif;
+    font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
     background-color: var(--bg-main);
     margin: 0;
     display: flex;
@@ -17,7 +21,9 @@ body {
     color: var(--text-main);
 }
 
-/* Sidebar Framework */
+/* ==========================================================================
+   Sidebar Framework Layout
+   ========================================================================== */
 .sidebar {
     width: 260px;
     background-color: var(--bg-sidebar);
@@ -26,6 +32,7 @@ body {
     flex-direction: column;
     padding: 24px 0;
     box-sizing: border-box;
+    height: 100vh;
 }
 
 .brand {
@@ -65,7 +72,7 @@ body {
 }
 
     .menu-item:hover {
-        background: #242f4d;
+        background: var(--bg-sidebar-hover);
         color: #ffffff;
     }
 
@@ -77,16 +84,108 @@ body {
         margin-right: 15px;
     }
 
+/* Pushes the bottom menu down perfectly */
 .sidebar-spacer {
     flex: 1;
 }
 
-.sidebar-profile-footer {
-    padding: 16px 24px;
-    border-top: 1px solid #242f4d;
+/* Anchors navigation links to the bottom edge */
+.sidebar .bottom-menu {
+    border-top: 1px solid var(--bg-sidebar-hover);
+    padding-top: 10px;
+    margin-bottom: 20px;
 }
 
-/* Main Area Framework */
+/* Custom visibility accent for the explicit logout action item */
+.menu-item.logout-action-link {
+    color: #f87171 !important;
+    font-weight: 600;
+}
+
+    .menu-item.logout-action-link:hover {
+        background-color: #451a1a !important;
+        color: #ef4444 !important;
+    }
+
+/* ==========================================================================
+   Sidebar Profile Footer Area
+   ========================================================================== */
+.sidebar-profile-footer {
+    padding: 16px 24px;
+    border-top: 1px solid var(--bg-sidebar-hover);
+    position: relative;
+}
+
+.profile-trigger-area {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    cursor: pointer;
+    user-select: none;
+}
+
+.profile-info-text {
+    display: flex;
+    flex-direction: column;
+}
+
+.user-display-name {
+    font-size: 13px;
+    font-weight: 600;
+    color: #ffffff;
+}
+
+.user-display-email {
+    font-size: 11px;
+    color: #94a3b8;
+    margin-top: 2px;
+}
+
+/* Sidebar Floating Dropup Profile List Menu Context */
+.sidebar-profile-footer .profile-dropdown-menu {
+    display: none;
+    position: absolute;
+    bottom: 75px;
+    left: 16px;
+    right: 16px;
+    background: #ffffff;
+    border-radius: 8px;
+    box-shadow: 0 -10px 20px rgba(0, 0, 0, 0.2);
+    z-index: 1000;
+    padding: 6px 0;
+    flex-direction: column;
+    width: auto;
+}
+
+    .sidebar-profile-footer .profile-dropdown-menu.show {
+        display: flex;
+    }
+
+.dropdown-link {
+    padding: 10px 16px;
+    font-size: 13px;
+    color: var(--text-main);
+    text-decoration: none;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    cursor: pointer;
+    transition: background 0.15s;
+}
+
+    .dropdown-link:hover {
+        background: #f8fafc;
+        color: var(--primary-orange);
+    }
+
+    .dropdown-link.logout-action {
+        color: #ef4444 !important;
+        font-weight: 600;
+    }
+
+/* ==========================================================================
+   Main Content & Top Navigation Panel Frameworks
+   ========================================================================== */
 .main-content {
     flex: 1;
     display: flex;
@@ -105,6 +204,12 @@ body {
     box-sizing: border-box;
 }
 
+.search-box-wrapper {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
 .search-bar {
     background: #f8fafc;
     border: 1px solid var(--border-color);
@@ -115,7 +220,17 @@ body {
     outline: none;
 }
 
-/* Profile Container & Dropdown System */
+.date-filter {
+    background: #f8fafc;
+    border: 1px solid var(--border-color);
+    padding: 9px 12px;
+    border-radius: 8px;
+    font-size: 13px;
+    color: var(--text-main);
+    outline: none;
+    font-family: inherit;
+}
+
 .top-navbar-right {
     display: flex;
     align-items: center;
@@ -123,90 +238,42 @@ body {
     position: relative;
 }
 
-.admin-profile-trigger {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    background: #f1f5f9;
-    padding: 6px 12px;
-    border-radius: 20px;
-    cursor: pointer;
-    user-select: none;
-    transition: background 0.2s;
-    border: 1px solid transparent;
-}
-
-    .admin-profile-trigger:hover {
-        background: #e2e8f0;
-        border-color: #cbd5e1;
-    }
-
-.avatar-circle {
-    width: 28px;
-    height: 28px;
-    background: var(--primary-orange);
-    color: #ffffff;
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 12px;
-    font-weight: 700;
-}
-
-.profile-label {
-    font-size: 12px;
+.portal-badge {
     font-weight: 600;
-    color: var(--text-main);
+    font-size: 14px;
+    color: #334155;
 }
 
-.profile-dropdown-menu {
-    display: none;
-    position: absolute;
-    top: 42px;
-    right: 0;
-    background: #ffffff;
-    border: 1px solid var(--border-color);
-    border-radius: 8px;
-    width: 200px;
-    box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1);
-    z-index: 1000;
-    padding: 6px 0;
-}
-
-    .profile-dropdown-menu.show {
-        display: block;
-    }
-
-.dropdown-item {
-    padding: 10px 16px;
+.top-logout-btn {
+    background-color: #fee2e2;
+    color: #b91c1c;
+    border: 1px solid #fca5a5;
+    padding: 8px 16px;
+    border-radius: 6px;
     font-size: 13px;
-    color: var(--text-main);
-    text-decoration: none;
+    font-weight: 600;
+    cursor: pointer;
     display: flex;
     align-items: center;
-    gap: 10px;
-    cursor: pointer;
-    transition: background 0.15s;
+    gap: 6px;
+    transition: all 0.2s ease;
 }
 
-    .dropdown-item:hover {
-        background: #f8fafc;
-        color: var(--primary-orange);
+    .top-logout-btn:hover {
+        background-color: #fca5a5;
+        color: #991b1b;
+        box-shadow: 0 2px 4px rgba(239, 68, 68, 0.1);
     }
 
-.dropdown-divider {
-    border-top: 1px solid var(--border-color);
-    margin: 6px 0;
-}
-
-/* Dashboard Modules Layout */
 .content-body {
     padding: 30px;
     box-sizing: border-box;
     width: 100%;
 }
 
+/* ==========================================================================
+   Data Presentation Modules (Tables, Highlights, Cards)
+   ========================================================================== */
 .view-header {
     display: flex;
     justify-content: space-between;
@@ -348,3 +415,140 @@ td {
     background: #f8fafc;
     border-top: 1px solid var(--border-color);
 }
+
+/* ==========================================================================
+   GLOBAL OVERLAY MODAL CARDS SYSTEM (FORCED FIXED CENTERING VIEW)
+   ========================================================================== */
+.profile-modal-overlay {
+    position: fixed !important;
+    top: 0 !important;
+    left: 0 !important;
+    right: 0 !important;
+    bottom: 0 !important;
+    background-color: rgba(15, 23, 42, 0.6) !important; /* Dark screen tint back drop */
+    display: none; /* Managed via script setup calls */
+    align-items: center !important;
+    justify-content: center !important;
+    z-index: 99999 !important; /* Locks popups dynamically over layouts */
+}
+
+    /* Displays flex view layout explicitly during active visibility updates */
+    .profile-modal-overlay.active {
+        display: flex !important;
+    }
+
+/* Centralized Card Layout Structure Box */
+.profile-modal-card {
+    background: #ffffff !important;
+    padding: 24px !important;
+    border-radius: 12px !important;
+    width: 100% !important;
+    max-width: 420px !important; /* Direct card design layout restriction width matching driver profile card */
+    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.15), 0 10px 10px -5px rgba(0, 0, 0, 0.04) !important;
+    box-sizing: border-box !important;
+    display: block !important;
+}
+
+    .profile-modal-card h3 {
+        margin-top: 0 !important;
+        margin-bottom: 20px !important;
+        color: #0f172a !important;
+        font-size: 20px !important;
+        font-weight: 700 !important;
+        border-bottom: 1px solid #e2e8f0 !important;
+        padding-bottom: 12px !important;
+    }
+
+/* Interior Description Layout Rules */
+.modal-body-content p {
+    margin: 12px 0 !important;
+    font-size: 14px !important;
+    color: #334155 !important;
+    line-height: 1.5 !important;
+}
+
+.modal-body-content strong {
+    color: #1e293b !important;
+    font-weight: 600 !important;
+    display: inline-block !important;
+    width: 120px !important; /* Organizes label targets cleanly into explicit visual alignment column fields */
+}
+
+.modal-body-content span {
+    color: #64748b !important;
+}
+
+/* Dark, sleek call-to-action button matching driver card image specifications */
+.close-modal-btn {
+    width: 100% !important;
+    padding: 12px !important;
+    background-color: #111625 !important; /* Rich deep black/slate action tone button */
+    color: #ffffff !important;
+    border: none !important;
+    border-radius: 8px !important;
+    font-weight: 600 !important;
+    font-size: 14px !important;
+    cursor: pointer !important;
+    margin-top: 20px !important;
+    transition: background 0.15s ease-in-out !important;
+}
+
+    .close-modal-btn:hover {
+        background-color: #1e2538 !important;
+    }
+/* ==========================================================================
+   DYNAMIC DARK MODE PROPAGATION TEXT CONFIGURATIONS
+   ========================================================================== */
+body.dark-mode {
+    color: #f8fafc;
+}
+
+    /* Ensure navbar components invert perfectly */
+    body.dark-mode .top-navbar {
+        color: #ffffff;
+    }
+
+    body.dark-mode .portal-badge {
+        color: #cbd5e1;
+    }
+
+    /* View Headings and text layout adjustments */
+    body.dark-mode .view-header h2,
+    body.dark-mode .content-body h2,
+    body.dark-mode .content-body h3,
+    body.dark-mode .profile-modal-card h3 {
+        color: #ffffff !important;
+    }
+
+    body.dark-mode .subtitle,
+    body.dark-mode .modal-body-content label,
+    body.dark-mode .modal-body-content p strong {
+        color: #94a3b8 !important;
+    }
+
+    body.dark-mode .modal-body-content p span {
+        color: #e2e8f0 !important;
+    }
+
+    /* Operational Metric Card Containers styling */
+    body.dark-mode .metric-card {
+        background-color: #111625 !important;
+        border: 1px solid #1e2538 !important;
+        color: #ffffff !important;
+    }
+
+    /* Table layout adjustments */
+    body.dark-mode tr:hover {
+        background-color: #1e2538;
+    }
+
+    body.dark-mode .student-profile span {
+        color: #ffffff;
+    }
+
+    /* Form selectors background controls inside options container */
+    body.dark-mode select {
+        background-color: #1e2538 !important;
+        border-color: #334155 !important;
+        color: #ffffff !important;
+    }

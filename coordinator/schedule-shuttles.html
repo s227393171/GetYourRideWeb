@@ -6,6 +6,7 @@
     <title>Coordinator Portal - Schedule Shuttles</title>
     <link rel="stylesheet" href="../assets/css/styles.css">
     <link rel="stylesheet" href="../assets/css/coordinator.css">
+    <link rel="stylesheet" href="../assets/css/driver-dashboard.css">
 </head>
 <body>
     <div class="sidebar">
@@ -20,34 +21,57 @@
             <li><a href="manage-drivers.html" class="menu-item">👤 Shuttle Driver Management</a></li>
         </ul>
 
-        <div class="sidebar-footer">
-            <a href="#" class="footer-link">
-                <span class="footer-icon icon-support">❓</span> Support & Help
-            </a>
-            <a href="../Login.html" class="footer-link">
-                <span class="footer-icon icon-logout">🚪</span> Logout
-            </a>
+        <div class="sidebar-spacer"></div>
+
+        <ul class="menu-list bottom-menu">
+            <li><a href="#" class="menu-item" onclick="openSettingsModal()">⚙️ Settings</a></li>
+            <li><a href="#" class="menu-item" onclick="openSupportModal()">❓ Support Help</a></li>
+        </ul>
+
+        <div class="sidebar-profile-footer">
+            <div class="sidebar-profile-footer">
+                <!-- ✅ Added an ID to the trigger area if your dropdown toggle needs it -->
+                <div class="profile-trigger-area" id="profileTrigger" onclick="toggleProfileMenu()">
+                    <!-- Added placeholder initials 'SC' for Shuttle Coordinator -->
+                    <div class="avatar-placeholder" style="display: flex; align-items: center; justify-content: center; background: #cbd5e1; color: #0f172a; font-weight: 700; font-size: 12px;">SC</div>
+                    <div class="profile-info-text">
+                        <!-- ✅ FIX: Changed IDs from 'driver...' to 'coordinator...' to match JS -->
+                        <span class="user-display-name" id="coordinatorNameLabel">Loading profile...</span>
+                        <span class="user-display-email" id="coordinatorEmailLabel">connecting to database...</span>
+                    </div>
+                </div>
+            </div>
+            <div class="profile-dropdown-menu" id="profileDropdown">
+                <a href="#" class="dropdown-link" id="btnDropdownProfile" onclick="openProfileModal(event)">👤 View Profile</a>
+
+                <hr class="dropdown-divider">
+                <a href="#" class="dropdown-link logout-action" onclick="handleLogout()">🚪 Logout Portal</a>
+            </div>
         </div>
     </div>
 
     <div class="main-content">
         <div class="top-navbar">
-            <div class="nav-breadcrumb">Management > <strong>Assignment Scheduler</strong></div>
+            <div class="nav-breadcrumb">Management &gt; <strong>Assignment Scheduler</strong></div>
 
-            <div class="nav-profile-section">
-                <span class="notification-bell">🔔</span>
-                <div class="user-avatar">SC</div>
-                <a href="#" class="view-profile-link">View Profile</a>
+            <div class="top-navbar-right">
+                <div class="portal-badge">
+                    <span id="liveClock" style="font-family: monospace; font-weight: 700; color: #ff7a00; margin-right: 15px;">00:00:00</span>
+                    Coordinator Portal
+                </div>
+                <button class="top-logout-btn" onclick="handleLogout()"> Logout</button>
             </div>
         </div>
 
         <div class="content-body">
-            <div class="scheduler-header">
+            <div class="scheduler-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px;">
                 <div>
                     <h2>Schedule Transit Routes</h2>
                     <p class="subtitle">Map fleet vehicles and authorized operators to active departure routes.</p>
                 </div>
-                <button class="btn-primary" id="btnOpenScheduleModal">+ Create New Schedule</button>
+                <button class="btn btn-primary" id="btnOpenScheduleModal" onclick="openScheduleModalContainer()" style="background: #f97316; border: none; font-weight: 600; padding: 10px 20px; border-radius: 8px; color: white; cursor: pointer;">
+                    + Create New Schedule
+                </button>
             </div>
 
             <div class="table-card">
@@ -62,45 +86,108 @@
                         </tr>
                     </thead>
                     <tbody id="scheduleTableBody">
+                        <tr>
+                            <td colspan="5" style="text-align: center; color: var(--text-muted); padding: 20px;">Streaming master dispatch allocations...</td>
+                        </tr>
                     </tbody>
                 </table>
             </div>
         </div>
     </div>
 
-    <div class="modal-overlay" id="scheduleModal">
-        <div class="modal-card">
+    <div class="modal-overlay profile-modal-overlay" id="scheduleModal">
+        <div class="profile-modal-card modal-card">
             <h3>Generate Fleet Route Dispatch</h3>
-            <hr class="modal-divider">
-            <form id="frmScheduleAsset">
-                <div class="form-group">
-                    <label>Select Route Path Corridor</label>
-                    <select id="ddlRouteAsset" required></select>
+            <hr class="dropdown-divider" style="margin-bottom: 15px;">
+            <form id="frmScheduleAsset" onsubmit="handleScheduleFormSubmit(event)">
+                <div class="form-group" style="margin-bottom: 12px;">
+                    <label style="display:block; margin-bottom:5px; font-weight:600; font-size:13px;">Select Route Path Corridor</label>
+                    <select id="ddlRouteAsset" required style="width:100%; padding:8px; border-radius:6px; border:1px solid #cbd5e1; outline:none; box-sizing:border-box;"></select>
                 </div>
-                <div class="form-group">
-                    <label>Target Calendar Run Date</label>
-                    <input type="date" id="txtScheduleDate" required>
+                <div class="form-group" style="margin-bottom: 12px;">
+                    <label style="display:block; margin-bottom:5px; font-weight:600; font-size:13px;">Target Calendar Run Date</label>
+                    <input type="date" id="txtScheduleDate" required style="width:100%; padding:8px; border-radius:6px; border:1px solid #cbd5e1; box-sizing:border-box;">
                 </div>
-                <div class="form-group">
-                    <label>Departure Clock Timestamp</label>
-                    <input type="time" id="txtDepartureTime" required>
+                <div class="form-group" style="margin-bottom: 12px;">
+                    <label style="display:block; margin-bottom:5px; font-weight:600; font-size:13px;">Departure Clock Timestamp</label>
+                    <input type="time" id="txtDepartureTime" required style="width:100%; padding:8px; border-radius:6px; border:1px solid #cbd5e1; box-sizing:border-box;">
                 </div>
-                <div class="form-group">
-                    <label>Assign Fleet Vehicle Asset</label>
-                    <select id="ddlShuttleAsset" required></select>
+                <div class="form-group" style="margin-bottom: 12px;">
+                    <label style="display:block; margin-bottom:5px; font-weight:600; font-size:13px;">Assign Fleet Vehicle Asset</label>
+                    <select id="ddlShuttleAsset" required style="width:100%; padding:8px; border-radius:6px; border:1px solid #cbd5e1; outline:none; box-sizing:border-box;"></select>
                 </div>
-                <div class="form-group">
-                    <label>Assign Verified Driver</label>
-                    <select id="ddlDriverAsset" required></select>
+                <div class="form-group" style="margin-bottom: 20px;">
+                    <label style="display:block; margin-bottom:5px; font-weight:600; font-size:13px;">Assign Verified Driver</label>
+                    <select id="ddlDriverAsset" required style="width:100%; padding:8px; border-radius:6px; border:1px solid #cbd5e1; outline:none; box-sizing:border-box;"></select>
                 </div>
-                <div class="modal-actions">
-                    <button type="button" id="btnCancelModal" class="btn-secondary">Cancel</button>
-                    <button type="submit" class="btn-submit">Save Assignment</button>
+                <div class="modal-actions" style="display:flex; gap:10px; justify-content:flex-end;">
+                    <button type="button" id="btnCancelModal" onclick="closeScheduleModalContainer()" class="close-modal-btn btn-secondary" style="margin:0; background:#64748b; width:auto; padding:8px 16px;">Cancel</button>
+                    <button type="submit" class="close-modal-btn btn-submit" style="margin:0; background:#f97316; width:auto; padding:8px 16px; color: white; border: none; border-radius: 6px; font-weight: 600; cursor: pointer;">Save Assignment</button>
                 </div>
             </form>
         </div>
     </div>
 
+    <div class="profile-modal-overlay" id="profileModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); justify-content: center; align-items: center; z-index: 9999;">
+        <div class="profile-modal-card">
+            <h3>Coordinator Profile Card</h3>
+            <hr style="border:0; border-top:1px solid #e2e8f0; margin: 12px 0 20px 0;">
+
+            <div style="text-align: center; margin-bottom: 20px;">
+                <div class="avatar-circle" style="width: 64px; height: 64px; font-size: 1.5rem; margin: 0 auto 12px auto; display: flex; align-items: center; justify-content: center; background: #e2e8f0; border-radius: 50%;">SC</div>
+            </div>
+
+            <div class="modal-body-content" style="margin-bottom: 20px; line-height: 1.8;">
+                <p><strong>Full Name:</strong> <span id="modalFullName" style="color: #334155; font-weight: 600;">Loading...</span></p>
+                <p><strong>Personnel ID Number:</strong> <span id="modalIdNumber" style="color: #334155; font-weight: 600;">Loading...</span></p>
+                <p><strong>System Email:</strong> <span id="modalEmail" style="color: #334155; font-weight: 600;">Loading...</span></p>
+                <p><strong>Assigned Role:</strong> <span id="modalRole" style="background: #e0f2fe; color: #0369a1; padding: 2px 8px; border-radius: 4px; font-size: 12px; font-weight: 600;">Loading...</span></p>
+            </div>
+
+            <div class="modal-actions">
+                <button type="button" class="close-modal-btn" onclick="closeProfileModal()" style="width: 100%; background: #64748b; color: white; border: none; padding: 10px; border-radius: 6px; font-weight: 600; cursor: pointer;">Close Reference</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="profile-modal-overlay" id="settingsModal">
+        <div class="profile-modal-card">
+            <h3>⚙️ Portal Settings</h3>
+            <div class="modal-body-content">
+                <label style="display:block; margin: 10px 0 5px; font-weight:600; font-size:13px;">Dashboard Theme</label>
+                <select id="themeSelect" style="width:100%; padding:8px; border-radius:6px; border:1px solid #cbd5e1; outline:none;">
+                    <option value="light">Default Light Mode</option>
+                    <option value="dark">High Contrast Dark Mode</option>
+                </select>
+                <label style="display:block; margin: 15px 0 5px; font-weight:600; font-size:13px;">Refresh Frequency</label>
+                <select id="refreshSelect" style="width:100%; padding:8px; border-radius:6px; border:1px solid #cbd5e1; outline:none;">
+                    <option value="30000">Every 30 Seconds</option>
+                    <option value="60000">Every Minute</option>
+                    <option value="manual">Manual Refresh</option>
+                </select>
+            </div>
+            <button class="close-modal-btn" onclick="closeSettingsModal()">Save & Close</button>
+        </div>
+    </div>
+
+    <div class="profile-modal-overlay" id="supportModal">
+        <div class="profile-modal-card">
+            <h3>❓ Dispatch Support Help</h3>
+            <div class="modal-body-content">
+                <p style="font-size:13px; color:#64748b;">Need immediate assistance with a transit route layout or emergency check-in failure?</p>
+                <div style="background:#f8fafc; padding:12px; border-radius:6px; border-left:4px solid #ff7a00; margin:10px 0;">
+                    <strong>📞 Transit Control Line:</strong><br>+27 (0) 41 504 1111
+                </div>
+                <div style="background:#f8fafc; padding:12px; border-radius:6px; border-left:4px solid #10b981; margin:10px 0;">
+                    <strong>✉️ Emergency Support:</strong><br>support@getyourride.com
+                </div>
+            </div>
+            <button class="close-modal-btn" onclick="closeSupportModal()">Close Help Desk</button>
+        </div>
+    </div>
+
     <script src="../assets/js/coordinator-schedules.js"></script>
+
+    <script src="../assets/js/admin-dropdown.js"></script>
 </body>
 </html>
