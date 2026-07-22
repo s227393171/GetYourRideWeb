@@ -1,141 +1,275 @@
-﻿const API_URL = '/api/coordinator/drivers';
-let driverCache = [];
-// Add these control functions to your file
-function openProfileModal() {
-    const profileModal = document.getElementById("profileModal");
-    if (profileModal) profileModal.style.setProperty("display", "flex", "important");
-}
+﻿const API_URL = '/api/coordinator/shuttles';
+const DRIVERS_API_URL = '/api/coordinator/drivers';
+let fleetCache = [];
+let driverCache = []; // FIX: holds the driver list so the dropdown can be populated
 
-function closeProfileModal() {
-    const profileModal = document.getElementById("profileModal");
-    if (profileModal) profileModal.style.setProperty("display", "none", "important");
-}
-
-// Inside your loadCoordinatorProfile() function, make sure these assignments exist:
-if (document.getElementById('modalFullName')) document.getElementById('modalFullName').innerText = activeCoordinatorProfile.fullName;
-if (document.getElementById('modalIdNumber')) document.getElementById('modalIdNumber').innerText = activeCoordinatorProfile.employeeId;
-if (document.getElementById('modalEmail')) document.getElementById('modalEmail').innerText = activeCoordinatorProfile.email;
-if (document.getElementById('modalRole')) document.getElementById('modalRole').innerText = activeCoordinatorProfile.role;
-
-// Inside your DOMContentLoaded listener, ensure the link is wired up:
-const viewProfileLink = document.getElementById("btnDropdownProfile");
-if (viewProfileLink) {
-    viewProfileLink.addEventListener("click", (e) => {
-        e.preventDefault();
-        openProfileModal();
-    });
-}
 document.addEventListener("DOMContentLoaded", () => {
-    // Initial data stream load
-    loadDriverFleet();
+    // 1. Initial data stream load
+    loadShuttleFleet();
+    loadDriverOptions(); // FIX: populate the "Assigned Driver" dropdown
 
-    // Event binding controllers for interface triggers
-    document.getElementById("driverSearchInput").addEventListener("keyup", searchDrivers);
-    document.getElementById("btnOpenAddModal").addEventListener("click", openAddModal);
-    document.getElementById("btnCancelDriverModal").addEventListener("click", closeModal);
-    document.getElementById("driverForm").addEventListener("submit", saveDriverForm);
+    // 2. Safe event binding for core interface triggers
+    safeBindListener("shuttleSearchInput", "keyup", searchShuttles);
+    safeBindListener("btnOpenAddModal", "click", openAddModal);
+    safeBindListener("btnCancelShuttleModal", "click", closeModal);
+    safeBindListener("shuttleForm", "submit", saveShuttleForm);
 
-    // Global navigation event setups
-    const dropdown = document.getElementById("coordinatorDropdown");
-    if (document.getElementById("profileTrigger")) {
-        document.getElementById("profileTrigger").addEventListener("click", (e) => {
-            e.stopPropagation();
-            dropdown.classList.toggle("show");
-        });
-    }
-    window.addEventListener("click", () => { if (dropdown) dropdown.classList.remove("show"); });
-
-    if (document.getElementById("btnDropdownLogout")) document.getElementById("btnDropdownLogout").addEventListener("click", executeLogout);
-    if (document.getElementById("btnDropdownProfile")) document.getElementById("btnDropdownProfile").addEventListener("click", () => document.getElementById("profileModal").classList.add("show"));
-    if (document.getElementById("btnCloseProfile")) document.getElementById("btnCloseProfile").addEventListener("click", () => document.getElementById("profileModal").classList.remove("show"));
-    if (document.getElementById("btnSidebarSupport")) document.getElementById("btnSidebarSupport").addEventListener("click", () => document.getElementById("supportModal").classList.add("show"));
-    if (document.getElementById("btnCloseSupport")) document.getElementById("btnCloseSupport").addEventListener("click", () => document.getElementById("supportModal").classList.remove("show"));
+    // 3. Setup Live Clock if it exists
+    startLiveClock();
 });
 
-async function loadDriverFleet() {
-    try {
-        const response = await fetch(API_URL);
-        driverCache = await response.json();
-        renderDriverTable(driverCache);
-    } catch (err) {
-        console.error("Error loading driver array values:", err);
+// Helper function to safely bind listeners without crashing if an ID is missing
+function safeBindListener(elementId, eventType, callback) {
+    const element = document.getElementById(elementId);
+    if (element) {
+        element.addEventListener(eventType, callback);
     }
 }
 
-function renderDriverTable(drivers) {
-    const tableBody = document.getElementById("driverTableBody");
+// FIX: fetch verified drivers and populate the <select id="formDriver"> dropdown
+async function loadDriverOptions() {
+    const select = document.getElementById("formDriver");
+    if (!select) return;
+
+    try {
+        const response = await fetch(DRIVERS_API_URL);
+        if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+
+        driverCache = await response.json();
+
+        select.innerHTML = '<option value="">Select a driver...</option>';
+        driverCache.forEach(driver => {
+            const option = document.createElement("option");
+            option.value = driver.driverId;
+            option.textContent = `${driver.fullName} (${driver.employeeId})`;
+            select.appendChild(option);
+        });
+    } catch (err) {
+        console.error("Error loading driver list:", err);
+        select.innerHTML = '<option value="">Unable to load drivers</option>';
+    }
+}
+
+async function loadShuttleFleet() {
+    try {
+        const response = await fetch(API_URL);
+        if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+
+        fleetCache = await response.json();
+        renderFleetTable(fleetCache);
+        calculateMetrics(fleetCache);
+    } catch (err) {
+        console.error("Error loading shuttle array values:", err);
+        const tableBody = document.getElementById("shuttleTableBody");
+        if (tableBody) {
+            tableBody.innerHTML = `<tr><td colspan="5" style="text-align:center; padding:20px; color:#ef4444;">⚠️ Unable to connect to backend server.</td></tr>`;
+        }
+    }
+}
+
+function renderFleetTable(shuttles) {
+    const tableBody = document.getElementById("shuttleTableBody");
+    if (!tableBody) return;
+
     tableBody.innerHTML = "";
 
-    if (drivers.length === 0) {
-        tableBody.innerHTML = `<tr><td colspan="6" style="text-align:center; padding:20px;">No verified operators found in roster registry.</td></tr>`;
+    if (!shuttles || shuttles.length === 0) {
+        tableBody.innerHTML = `<tr><td colspan="5" style="text-align:center; padding:20px; color:#64748b;">No vehicles found in fleet registry.</td></tr>`;
         return;
     }
 
-    drivers.forEach(driver => {
+    shuttles.forEach(bus => {
         const row = document.createElement("tr");
-
         let statusClass = "status-active";
-        if (driver.status === "Inactive") statusClass = "status-inactive";
+        if (bus.status === "Maintenance") statusClass = "status-maintenance";
+        if (bus.status === "Inactive") statusClass = "status-inactive";
 
-        // ✅ Uses properties exactly matching the anonymous object returned by C# app.MapGet("/api/coordinator/drivers")
         row.innerHTML = `
-            <td><strong>${driver.fullName}</strong></td>
-            <td><code>${driver.employeeId}</code></td>
-            <td>${driver.email}</td>
-            <td>${driver.contactNumber}</td>
-            <td><span class="shuttle-badge">${driver.assignedShuttle}</span></td>
-            <td><span class="status-badge ${statusClass}">${driver.status}</span></td>
+            <td style="padding:12px; vertical-align:middle;"><strong>🚌 ${bus.shuttleName}</strong></td>
+            <td style="padding:12px; vertical-align:middle;"><code>${bus.licensePlate}</code></td>
+            <td style="padding:12px; vertical-align:middle;">${bus.capacity} Seats</td>
+            <td style="padding:12px; vertical-align:middle;"><span class="status-badge ${statusClass}">${bus.status}</span></td>
+            <td style="padding:12px; vertical-align:middle;">
+                <button class="action-btn-inline edit-trigger" style="background:none; border:none; cursor:pointer; font-size:1.1rem; margin-right:8px;">✏️</button>
+                <button class="action-btn-inline delete-trigger" style="background:none; border:none; cursor:pointer; font-size:1.1rem;">🗑️</button>
+            </td>
         `;
+
+        // Safely bind actions to the row buttons
+        row.querySelector(".edit-trigger").addEventListener("click", () => {
+            // FIX: pass driverId through too, so editing preselects the right driver
+            openEditModal(bus.shuttleId, bus.shuttleName, bus.licensePlate, bus.capacity, bus.status, bus.driverId);
+        });
+        row.querySelector(".delete-trigger").addEventListener("click", () => {
+            deleteShuttle(bus.shuttleId);
+        });
 
         tableBody.appendChild(row);
     });
 }
 
-function searchDrivers() {
-    const term = document.getElementById("driverSearchInput").value.toLowerCase();
-    const filtered = driverCache.filter(d => d.fullName.toLowerCase().includes(term) || d.employeeId.toLowerCase().includes(term));
-    renderDriverTable(filtered);
-}
+function calculateMetrics(shuttles) {
+    const txtTotal = document.getElementById("txtTotalFleet");
+    const txtActive = document.getElementById("txtActiveFleet");
+    const txtMaint = document.getElementById("txtMaintenanceFleet");
+    const txtCap = document.getElementById("txtTotalCapacity");
 
-function openAddModal() {
-    document.getElementById("driverForm").reset();
-    document.getElementById("modalTitle").textContent = "Add New Driver Profile";
-    document.getElementById("driverModal").classList.add("show");
-}
+    if (txtTotal) txtTotal.textContent = shuttles.length;
+    if (txtActive) txtActive.textContent = shuttles.filter(b => b.status === "Active").length;
 
-function closeModal() {
-    document.getElementById("driverModal").classList.remove("show");
-}
+    const maintenanceList = shuttles.filter(b => b.status === "Maintenance");
+    if (txtMaint) txtMaint.textContent = maintenanceList.length;
+    if (txtCap) txtCap.textContent = shuttles.reduce((acc, curr) => acc + (parseInt(curr.capacity) || 0), 0);
 
-async function saveDriverForm(e) {
-    e.preventDefault();
+    const alertBox = document.getElementById("maintenanceAlertBox");
+    const alertText = document.getElementById("maintenanceAlertText");
 
-    // Packages payload fields to map strictly onto C#'s DriverUpsertDto record
-    const payload = {
-        studentNumber: document.getElementById("formEmployeeNumber").value,
-        fullName: document.getElementById("formFullName").value,
-        email: document.getElementById("formEmail").value
-    };
-
-    // ✅ Form redirects strictly to your backend registration endpoint mapping path
-    const url = '/api/admin/drivers/upsert';
-
-    const response = await fetch(url, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload)
-    });
-
-    if (response.ok) {
-        closeModal();
-        loadDriverFleet(); // Reload roster layout directly
-    } else {
-        const errorText = await response.text();
-        console.error("Backend Error Details:", errorText);
-        alert(`Server Error (${response.status}): ${errorText || 'Error processing transaction request.'}`);
+    if (alertBox && alertText) {
+        if (maintenanceList.length > 0) {
+            alertText.textContent = `${maintenanceList[0].shuttleName} (${maintenanceList[0].licensePlate}) is currently marked under service maintenance checks.`;
+            alertBox.style.display = "flex";
+        } else {
+            alertBox.style.display = "none";
+        }
     }
 }
 
-function executeLogout() {
+function searchShuttles() {
+    const searchInput = document.getElementById("shuttleSearchInput");
+    if (!searchInput) return;
+
+    const term = searchInput.value.toLowerCase();
+    const filtered = fleetCache.filter(b =>
+        (b.shuttleName && b.shuttleName.toLowerCase().includes(term)) ||
+        (b.licensePlate && b.licensePlate.toLowerCase().includes(term))
+    );
+    renderFleetTable(filtered);
+}
+
+// Global modal operations triggered by your HTML onclicks
+function openAddModal() {
+    const form = document.getElementById("shuttleForm");
+    if (form) form.reset();
+
+    const formId = document.getElementById("formShuttleId");
+    if (formId) formId.value = "";
+
+    const title = document.getElementById("modalTitle");
+    if (title) title.textContent = "Add New Shuttle";
+
+    // FIX: this CSS has a second .modal-overlay rule further down the file
+    // that requires the "show" class to actually become visible/clickable
+    // (it controls opacity and pointer-events). Setting inline display
+    // alone left the modal present but invisible and unclickable.
+    const modal = document.getElementById("shuttleModal");
+    if (modal) modal.classList.add("show");
+}
+
+// FIX: now accepts driverId so the Edit form can preselect the assigned driver
+function openEditModal(id, name, plate, capacity, status, driverId) {
+    if (document.getElementById("formShuttleId")) document.getElementById("formShuttleId").value = id;
+    if (document.getElementById("formName")) document.getElementById("formName").value = name;
+    if (document.getElementById("formPlate")) document.getElementById("formPlate").value = plate;
+    if (document.getElementById("formCapacity")) document.getElementById("formCapacity").value = capacity;
+    if (document.getElementById("formStatus")) document.getElementById("formStatus").value = status;
+    if (document.getElementById("formDriver") && driverId) document.getElementById("formDriver").value = driverId;
+
+    const title = document.getElementById("modalTitle");
+    if (title) title.textContent = "Edit Shuttle Details";
+
+    // FIX: same as openAddModal -- toggle the "show" class, not inline display
+    const modal = document.getElementById("shuttleModal");
+    if (modal) modal.classList.add("show");
+}
+
+function closeModal() {
+    // FIX: remove the "show" class to hide/disable the modal again
+    const modal = document.getElementById("shuttleModal");
+    if (modal) modal.classList.remove("show");
+}
+
+async function saveShuttleForm(e) {
+    e.preventDefault();
+    const id = document.getElementById("formShuttleId").value;
+
+    // Driver is optional -- can be assigned later during scheduling
+    const driverSelect = document.getElementById("formDriver");
+    const driverId = driverSelect && driverSelect.value ? parseInt(driverSelect.value) : null;
+
+    // Build payload including the missing status property
+    const payload = {
+        shuttleName: document.getElementById("formName").value,
+        licensePlate: document.getElementById("formPlate").value,
+        capacity: parseInt(document.getElementById("formCapacity").value),
+        status: document.getElementById("formStatus").value, // Fixed: Sends the availability status to C#
+        driverId: driverId
+    };
+
+    const method = id ? "PUT" : "POST";
+    const url = id ? `${API_URL}/${id}` : API_URL;
+
+    try {
+        const response = await fetch(url, {
+            method: method,
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(payload)
+        });
+
+        if (response.ok) {
+            closeModal();
+            loadShuttleFleet(); // Refreshes the table view instantly
+        } else {
+            const errorText = await response.text();
+            console.error("Save failed:", errorText);
+            alert("Action dropped due to data verification issues.");
+        }
+    } catch (err) {
+        console.error("Error saving form:", err);
+    }
+}
+async function deleteShuttle(id) {
+    if (!confirm("Permanently strip this vehicle asset record from core fleet logs?")) return;
+
+    try {
+        const response = await fetch(`${API_URL}/${id}`, {
+            method: "DELETE"
+        });
+
+        if (response.ok) {
+            console.log(`Shuttle ${id} deleted successfully.`);
+            loadShuttleFleet(); // Refresh table view instantly
+        } else {
+            const errorText = await response.text();
+            console.error("Backend rejection on delete:", errorText);
+            alert(`Server refused deletion: ${errorText || response.statusText}`);
+        }
+    } catch (err) {
+        console.error("Network or execution error running delete:", err);
+        alert("Network error: Could not reach the backend server.");
+    }
+}
+// Sidebar Modal controls mapping directly to your HTML onclick attributes
+function openSettingsModal() { document.getElementById("settingsModal")?.style.setProperty("display", "flex", "important"); }
+function closeSettingsModal() { document.getElementById("settingsModal")?.style.setProperty("display", "none", "important"); }
+function openSupportModal() { document.getElementById("supportModal")?.style.setProperty("display", "flex", "important"); }
+function closeSupportModal() { document.getElementById("supportModal")?.style.setProperty("display", "none", "important"); }
+function openProfileModal() { document.getElementById("profileModal")?.style.setProperty("display", "flex", "important"); }
+function closeProfileModal() { document.getElementById("profileModal")?.style.setProperty("display", "none", "important"); }
+
+function toggleProfileMenu() {
+    const dropdown = document.getElementById("profileDropdown");
+    if (dropdown) dropdown.classList.toggle("show");
+}
+
+function handleLogout() {
     if (confirm("Log out of Coordinator Session?")) window.location.href = "../Login.html";
+}
+
+function startLiveClock() {
+    const clockEl = document.getElementById("liveClock");
+    if (!clockEl) return;
+    setInterval(() => {
+        const now = new Date();
+        clockEl.innerText = now.toTimeString().split(' ')[0];
+    }, 1000);
 }

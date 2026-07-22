@@ -1,0 +1,57 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Coordinator Portal - Create Dispatch Schedule</title>
+    <link rel="stylesheet" href="../assets/css/styles.css">
+    <link rel="stylesheet" href="../assets/css/coordinator.css">
+</head>
+<body>
+    <div class="main-content" style="padding: 40px; max-width: 800px; margin: 0 auto;">
+
+        <div class="form-header" style="margin-bottom: 25px;">
+            <a href="schedule-shuttles.html" style="text-decoration: none; color: #64748b; font-weight: 600; font-size: 14px;">← Back to Schedule Overview</a>
+            <h2 style="margin-top: 15px;">Generate New Fleet Route Dispatch</h2>
+            <p style="color: #64748b; font-size: 14px;">Map a fleet vehicle and an authorized driver operator to an active corridor route.</p>
+        </div>
+
+        <div class="form-card" style="background: white; padding: 30px; border-radius: 12px; box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);">
+            <form id="frmCreateSchedule">
+                <div class="form-group" style="margin-bottom: 18px;">
+                    <label style="display:block; margin-bottom:6px; font-weight:600; font-size:13px;">Select Route Path Corridor</label>
+                    <select id="ddlRouteAsset" required style="width:100%; padding:10px; border-radius:6px; border:1px solid #cbd5e1; outline:none; box-sizing:border-box;"></select>
+                </div>
+
+                <div class="form-group" style="margin-bottom: 18px;">
+                    <label style="display:block; margin-bottom:6px; font-weight:600; font-size:13px;">Target Calendar Run Date</label>
+                    <input type="date" id="txtScheduleDate" required style="width:100%; padding:10px; border-radius:6px; border:1px solid #cbd5e1; box-sizing:border-box;">
+                </div>
+
+                <div class="form-group" style="margin-bottom: 18px;">
+                    <label style="display:block; margin-bottom:6px; font-weight:600; font-size:13px;">Departure Clock Timestamp</label>
+                    <input type="time" id="txtDepartureTime" required style="width:100%; padding:10px; border-radius:6px; border:1px solid #cbd5e1; box-sizing:border-box;">
+                </div>
+
+                <div class="form-group" style="margin-bottom: 18px;">
+                    <label style="display:block; margin-bottom:6px; font-weight:600; font-size:13px;">Assign Fleet Vehicle Asset</label>
+                    <select id="ddlShuttleAsset" required style="width:100%; padding:10px; border-radius:6px; border:1px solid #cbd5e1; outline:none; box-sizing:border-box;"></select>
+                </div>
+
+                <div class="form-group" style="margin-bottom: 25px;">
+                    <label style="display:block; margin-bottom:6px; font-weight:600; font-size:13px;">Assign Verified Driver</label>
+                    <select id="ddlDriverAsset" required style="width:100%; padding:10px; border-radius:6px; border:1px solid #cbd5e1; outline:none; box-sizing:border-box;"></select>
+                </div>
+
+                <div class="modal-actions" style="display:flex; gap:12px; justify-content:flex-end;">
+                    <a href="schedule-shuttles.html" class="btn btn-secondary" style="display: inline-block; padding:10px 20px; background:#64748b; color:white; text-decoration:none; border-radius:6px; font-weight:600; font-size:14px;">Cancel</a>
+                    <button type="submit" style="padding:10px 20px; background:#f97316; color: white; border: none; border-radius: 6px; font-weight: 600; cursor: pointer; font-size:14px;">Save Assignment</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Isolated script file handling ONLY form options load and submit actions -->
+    <script src="../assets/js/create-schedule.js"></script>
+</body>
+</html>

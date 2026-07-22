@@ -68,7 +68,7 @@
                     <h2>Manage Shuttles</h2>
                     <p class="subtitle">Configure and monitor the university shuttle fleet.</p>
                 </div>
-                <button class="btn btn-primary" id="btnOpenAddModal" style="background: #f97316; border: none; font-weight: 600; padding: 10px 20px; border-radius: 8px; color: white; cursor: pointer;">🧡 Add New Shuttle</button>
+                <button class="btn btn-primary" id="btnOpenAddModal" onclick="window.location.href='add-shuttle.html'" style="background: #f97316; border: none; font-weight: 600; padding: 10px 20px; border-radius: 8px; color: white; cursor: pointer;">🧡 Add New Shuttle</button>
             </div>
 
             <div class="metrics-grid">
@@ -153,6 +153,12 @@
                     <label for="formCapacity" style="display:block; margin-bottom:5px; font-weight:600; font-size:13px;">Seating Capacity</label>
                     <input type="number" id="formCapacity" required min="1" placeholder="e.g. 22" style="width:100%; padding:8px; border-radius:6px; border:1px solid #cbd5e1; box-sizing:border-box;">
                 </div>
+                <div class="form-group" style="margin-bottom: 15px;">
+                    <label for="formDriver" style="display:block; margin-bottom:5px; font-weight:600; font-size:13px;">Assigned Driver</label>
+                    <select id="formDriver" required style="width:100%; padding:8px; border-radius:6px; border:1px solid #cbd5e1; outline:none; box-sizing:border-box;">
+                        <option value="">Select a driver...</option>
+                    </select>
+                </div>
                 <div class="form-group" style="margin-bottom: 20px;">
                     <label for="formStatus" style="display:block; margin-bottom:5px; font-weight:600; font-size:13px;">Availability Status</label>
                     <select id="formStatus" style="width:100%; padding:8px; border-radius:6px; border:1px solid #cbd5e1; outline:none; box-sizing:border-box;">
@@ -227,7 +233,7 @@
         </div>
     </div>
 
-    <script src="../assets/js/coordinator-schedules.js"></script>
+  <script src="../assets/js/coordinator-schedules.js"></script>
     <script src="../assets/js/coordinator-shuttles.js"></script>
     <script src="../assets/js/admin-dropdown.js"></script>
 </body>

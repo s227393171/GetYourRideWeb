@@ -1,0 +1,209 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Add New Shuttle</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #f4f7f6;
+            display: flex;
+            justify-content: center;
+            padding: 40px 20px;
+        }
+
+        .card {
+            background: white;
+            border-radius: 10px;
+            padding: 30px;
+            width: 100%;
+            max-width: 480px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+        }
+
+        h2 {
+            margin-top: 0;
+        }
+
+        label {
+            display: block;
+            font-weight: 600;
+            font-size: 13px;
+            margin: 15px 0 5px;
+        }
+
+        input, select {
+            width: 100%;
+            padding: 10px;
+            border-radius: 6px;
+            border: 1px solid #cbd5e1;
+            box-sizing: border-box;
+            font-size: 14px;
+        }
+
+        button {
+            margin-top: 25px;
+            width: 100%;
+            background: #f97316;
+            color: white;
+            border: none;
+            padding: 12px;
+            border-radius: 6px;
+            font-weight: 600;
+            font-size: 15px;
+            cursor: pointer;
+        }
+
+            button:disabled {
+                background: #cbd5e1;
+                cursor: not-allowed;
+            }
+
+        #statusMessage {
+            margin-top: 15px;
+            padding: 10px;
+            border-radius: 6px;
+            font-size: 14px;
+            display: none;
+        }
+
+        .status-success {
+            background: #dcfce7;
+            color: #166534;
+            display: block !important;
+        }
+
+        .status-error {
+            background: #fee2e2;
+            color: #991b1b;
+            display: block !important;
+        }
+
+        a.back-link {
+            display: inline-block;
+            margin-bottom: 15px;
+            color: #64748b;
+            text-decoration: none;
+            font-size: 14px;
+        }
+    </style>
+</head>
+<body>
+    <div class="card">
+        <a href="manage-shuttles.html" class="back-link">&larr; Back to Shuttle Management</a>
+        <h2>Add New Shuttle</h2>
+
+        <form id="addShuttleForm">
+            <label for="shuttleName">Shuttle Name / Model</label>
+            <input type="text" id="shuttleName" placeholder="e.g. Toyota Quantum" required>
+
+            <label for="licensePlate">License Plate Number</label>
+            <input type="text" id="licensePlate" placeholder="e.g. NMU003EC" required>
+
+            <label for="capacity">Seating Capacity</label>
+            <input type="number" id="capacity" min="1" placeholder="e.g. 15" required>
+
+            <label for="driverSelect">Assigned Driver</label>
+            <select id="driverSelect" required>
+                <option value="">Loading drivers...</option>
+            </select>
+
+            <button type="submit" id="submitBtn">Save Shuttle</button>
+        </form>
+
+        <div id="statusMessage"></div>
+    </div>
+
+    <script>
+        const DRIVERS_API_URL = '/api/coordinator/drivers';
+        const SHUTTLES_API_URL = '/api/coordinator/shuttles';
+
+        const driverSelect = document.getElementById('driverSelect');
+        const statusMessage = document.getElementById('statusMessage');
+        const submitBtn = document.getElementById('submitBtn');
+
+        // Step 1: load the list of drivers into the dropdown as soon as the page opens
+        async function loadDrivers() {
+            try {
+                const response = await fetch(DRIVERS_API_URL);
+                if (!response.ok) {
+                    throw new Error('Server responded with status ' + response.status);
+                }
+                const drivers = await response.json();
+
+                driverSelect.innerHTML = '<option value="">Select a driver...</option>';
+
+                if (drivers.length === 0) {
+                    driverSelect.innerHTML = '<option value="">No verified drivers found</option>';
+                    return;
+                }
+
+                drivers.forEach(function (driver) {
+                    const option = document.createElement('option');
+                    option.value = driver.driverId;
+                    option.textContent = driver.fullName + ' (' + driver.employeeId + ')';
+                    driverSelect.appendChild(option);
+                });
+            } catch (err) {
+                console.error('Could not load drivers:', err);
+                driverSelect.innerHTML = '<option value="">Failed to load drivers</option>';
+                showMessage('Could not load the driver list. Is the API running? (' + err.message + ')', false);
+            }
+        }
+
+        // Step 2: when the form is submitted, send the data to the API
+        document.getElementById('addShuttleForm').addEventListener('submit', async function (e) {
+            e.preventDefault();
+
+            const payload = {
+                shuttleName: document.getElementById('shuttleName').value,
+                licensePlate: document.getElementById('licensePlate').value,
+                capacity: parseInt(document.getElementById('capacity').value),
+                driverId: parseInt(driverSelect.value)
+            };
+
+            if (!payload.driverId) {
+                showMessage('Please select a driver.', false);
+                return;
+            }
+
+            submitBtn.disabled = true;
+            submitBtn.textContent = 'Saving...';
+
+            try {
+                const response = await fetch(SHUTTLES_API_URL, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+
+                const data = await response.json().catch(function () { return {}; });
+
+                if (response.ok) {
+                    showMessage('Shuttle saved successfully! Redirecting...', true);
+                    setTimeout(function () {
+                        window.location.href = 'manage-shuttles.html';
+                    }, 1200);
+                } else {
+                    showMessage(data.message || 'Failed to save shuttle (status ' + response.status + ').', false);
+                    submitBtn.disabled = false;
+                    submitBtn.textContent = 'Save Shuttle';
+                }
+            } catch (err) {
+                console.error('Error saving shuttle:', err);
+                showMessage('Connection error: ' + err.message, false);
+                submitBtn.disabled = false;
+                submitBtn.textContent = 'Save Shuttle';
+            }
+        });
+
+        function showMessage(text, isSuccess) {
+            statusMessage.textContent = text;
+            statusMessage.className = isSuccess ? 'status-success' : 'status-error';
+        }
+
+        loadDrivers();
+    </script>
+</body>
+</html>
