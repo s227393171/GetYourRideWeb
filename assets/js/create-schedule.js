@@ -1,37 +1,40 @@
 ﻿document.addEventListener("DOMContentLoaded", async () => {
-    // 1. FIX: Use a relative path so it automatically routes to port 7276 seamlessly
     const apiBaseUrl = "/api/coordinator";
 
-    // DOM Target Handles (Kept exactly as per your HTML)
     const routeSelect = document.getElementById("ddlRouteAsset");
     const shuttleSelect = document.getElementById("ddlShuttleAsset");
     const driverSelect = document.getElementById("ddlDriverAsset");
     const scheduleForm = document.getElementById("frmCreateSchedule");
-
-    // 1. Fetch lookups from database on load to populate dropdown options
+    await populateDropdowns();
     async function populateDropdowns() {
         try {
-            const [routesRes, shuttlesRes, driversRes] = await Promise.all([
-                fetch(`${apiBaseUrl}/routes`),
+            const [stopsRes, shuttlesRes, driversRes] = await Promise.all([
+                fetch(`${apiBaseUrl}/stops`),      // FIX: routes -> stops (shuttle_stop table, not old trip text)
                 fetch(`${apiBaseUrl}/shuttles`),
                 fetch(`${apiBaseUrl}/drivers`)
             ]);
 
-            const routes = await routesRes.json();
+            const stops = await stopsRes.json();
             const shuttles = await shuttlesRes.json();
             const drivers = await driversRes.json();
 
-            // FIX: Map using 'routeName' based on backend response structure
-            routeSelect.innerHTML = routes.map(r =>
-                `<option value="${r.routeName}">${r.routeName}</option>`
-            ).join('');
+            // FIX: Build "From ➔ To" combinations from shuttle_stop names client-side.
+            // Backend /schedules endpoint already splits RouteName on ➔, so no API change needed.
+            const routeOptions = [];
+            stops.forEach(from => {
+                stops.forEach(to => {
+                    if (from.stopId !== to.stopId) {
+                        const label = `${from.stopName} ➔ ${to.stopName}`;
+                        routeOptions.push(`<option value="${label}">${label}</option>`);
+                    }
+                });
+            });
+            routeSelect.innerHTML = routeOptions.join('');
 
-            // FIX: Map using 'shuttleId', 'shuttleName', and 'licensePlate' from backend
             shuttleSelect.innerHTML = shuttles.map(s =>
                 `<option value="${s.shuttleId}">${s.shuttleName} (${s.licensePlate})</option>`
             ).join('');
 
-            // FIX: Map using 'driverId' and 'fullName' from backend
             driverSelect.innerHTML = drivers.map(d =>
                 `<option value="${d.driverId}">${d.fullName}</option>`
             ).join('');
@@ -42,31 +45,30 @@
         }
     }
 
-    // 2. Handle Form Submission to Database Connection
     scheduleForm.addEventListener("submit", async (event) => {
         event.preventDefault();
 
-        // Validate that fields actually have selections before preparing payload
         if (!routeSelect.value || !shuttleSelect.value || !driverSelect.value) {
             alert("Please ensure all dropdown fields are populated before saving.");
             return;
         }
 
-        // FIX: Match the exact PascalCase keys expected by C#'s ScheduleDirectDto record
+        // Split "From ➔ To" back into two separate values to match the updated DTO
+        const [fromStop, toStop] = routeSelect.value.split(" ➔ ");
+
         const payload = {
-            RouteName: routeSelect.value, // Backend splits text string via arrows (➔)
-            ScheduleDate: document.getElementById("txtScheduleDate").value,
-            DepartureTime: document.getElementById("txtDepartureTime").value,
-            ShuttleID: parseInt(shuttleSelect.value, 10),
-            DriverID: parseInt(driverSelect.value, 10)
+            FromStop: document.getElementById("routeFrom").value,     // e.g. "North Campus"
+            ToStop: document.getElementById("routeTo").value,         // e.g. "South Campus"
+            ScheduleDate: document.getElementById("runDate").value,   // "yyyy-MM-dd"
+            DepartureTime: document.getElementById("clockTime").value,// "HH:mm"
+            ShuttleID: parseInt(document.getElementById("shuttleSelect").value),
+            DriverID: parseInt(document.getElementById("driverSelect").value)
         };
 
         try {
             const response = await fetch(`${apiBaseUrl}/schedules`, {
                 method: "POST",
-                headers: {
-                    "Content-Type": "application/json"
-                },
+                headers: { "Content-Type": "application/json" },
                 body: JSON.stringify(payload)
             });
 
@@ -74,7 +76,6 @@
 
             if (response.ok && result.success) {
                 alert("🎉 Fleet route dispatch successfully created!");
-                // Cleanly bounce back to your dashboard overview page
                 window.location.href = "schedule-shuttles.html";
             } else {
                 alert(`Failed to save dispatch allocation: ${result.message || "Unknown error occurred."}`);
@@ -84,7 +85,4 @@
             alert("Could not process submit packet. Confirm backend server connectivity.");
         }
     });
-
-    // Run lookups initialization immediately
-    populateDropdowns();
 });

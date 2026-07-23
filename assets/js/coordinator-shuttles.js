@@ -1,18 +1,22 @@
-﻿const API_URL = '/api/coordinator/shuttles';
+﻿const API_URL = '/api/coordinator/shuttle-assignments';
+const STOPS_API_URL = '/api/coordinator/shuttle-assignments/stops';
 const DRIVERS_API_URL = '/api/coordinator/drivers';
-let fleetCache = [];
-let driverCache = []; // FIX: holds the driver list so the dropdown can be populated
+
+let assignmentCache = [];
+let stopCache = [];
+let driverCache = [];
 
 document.addEventListener("DOMContentLoaded", () => {
     // 1. Initial data stream load
-    loadShuttleFleet();
-    loadDriverOptions(); // FIX: populate the "Assigned Driver" dropdown
+    loadAssignments();
+    loadStopOptions();
+    loadDriverOptions();
 
     // 2. Safe event binding for core interface triggers
-    safeBindListener("shuttleSearchInput", "keyup", searchShuttles);
+    safeBindListener("scheduleSearchInput", "keyup", searchAssignments);
     safeBindListener("btnOpenAddModal", "click", openAddModal);
-    safeBindListener("btnCancelShuttleModal", "click", closeModal);
-    safeBindListener("shuttleForm", "submit", saveShuttleForm);
+    safeBindListener("btnCancelScheduleModal", "click", closeModal);
+    safeBindListener("scheduleForm", "submit", saveScheduleForm);
 
     // 3. Setup Live Clock if it exists
     startLiveClock();
@@ -26,7 +30,30 @@ function safeBindListener(elementId, eventType, callback) {
     }
 }
 
-// FIX: fetch verified drivers and populate the <select id="formDriver"> dropdown
+// Populates "Select Route Path Corridor" (departure) dropdown from shuttle_stop
+async function loadStopOptions() {
+    const select = document.getElementById("formStop");
+    if (!select) return;
+
+    try {
+        const response = await fetch(STOPS_API_URL);
+        if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+        stopCache = await response.json();
+
+        select.innerHTML = '<option value="">Select a stop...</option>';
+        (stopCache || []).forEach(stop => {
+            const option = document.createElement("option");
+            option.value = stop.stopId || stop.id;
+            option.textContent = stop.stopName || stop.name || "Unknown Stop";
+            select.appendChild(option);
+        });
+    } catch (err) {
+        console.error("Error loading stop list:", err);
+        select.innerHTML = '<option value="">Unable to load stops</option>';
+    }
+}
+
+// Populates Drivers Dropdown (FIXED: Filters out student drivers and provides safe name fallbacks)
 async function loadDriverOptions() {
     const select = document.getElementById("formDriver");
     if (!select) return;
@@ -34,14 +61,22 @@ async function loadDriverOptions() {
     try {
         const response = await fetch(DRIVERS_API_URL);
         if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+        const rawDrivers = await response.json();
 
-        driverCache = await response.json();
+        // 🎯 FIX: Filter out student drivers using role and student email patterns
+        driverCache = (rawDrivers || []).filter(d => {
+            const role = (d.role || "").toUpperCase();
+            const email = (d.email || "").toLowerCase();
+            if (role === "STUDENT_DRIVER" || role === "STUDENT") return false;
+            if (/^s\d+@/i.test(email) || email.endsWith("@mandela.ac.za")) return false;
+            return true;
+        });
 
         select.innerHTML = '<option value="">Select a driver...</option>';
         driverCache.forEach(driver => {
             const option = document.createElement("option");
-            option.value = driver.driverId;
-            option.textContent = `${driver.fullName} (${driver.employeeId})`;
+            option.value = driver.driverId || driver.id;
+            option.textContent = driver.fullName || driver.driverName || driver.name || "Unknown Driver";
             select.appendChild(option);
         });
     } catch (err) {
@@ -50,159 +85,116 @@ async function loadDriverOptions() {
     }
 }
 
-async function loadShuttleFleet() {
+async function loadAssignments() {
     try {
         const response = await fetch(API_URL);
         if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
 
-        fleetCache = await response.json();
-        renderFleetTable(fleetCache);
-        calculateMetrics(fleetCache);
+        assignmentCache = await response.json();
+        renderAssignmentTable(assignmentCache);
     } catch (err) {
-        console.error("Error loading shuttle array values:", err);
-        const tableBody = document.getElementById("shuttleTableBody");
+        console.error("Error loading assignment array values:", err);
+        const tableBody = document.getElementById("assignmentTableBody");
         if (tableBody) {
-            tableBody.innerHTML = `<tr><td colspan="5" style="text-align:center; padding:20px; color:#ef4444;">⚠️ Unable to connect to backend server.</td></tr>`;
+            tableBody.innerHTML = `<tr><td colspan="4" style="text-align:center; padding:20px; color:#ef4444;">⚠️ Unable to connect to backend server.</td></tr>`;
         }
     }
 }
 
-function renderFleetTable(shuttles) {
-    const tableBody = document.getElementById("shuttleTableBody");
+function renderAssignmentTable(assignments) {
+    const tableBody = document.getElementById("assignmentTableBody");
     if (!tableBody) return;
 
     tableBody.innerHTML = "";
 
-    if (!shuttles || shuttles.length === 0) {
-        tableBody.innerHTML = `<tr><td colspan="5" style="text-align:center; padding:20px; color:#64748b;">No vehicles found in fleet registry.</td></tr>`;
+    if (!assignments || assignments.length === 0) {
+        tableBody.innerHTML = `<tr><td colspan="4" style="text-align:center; padding:20px; color:#64748b;">No routes scheduled.</td></tr>`;
         return;
     }
 
-    shuttles.forEach(bus => {
-        const row = document.createElement("tr");
-        let statusClass = "status-active";
-        if (bus.status === "Maintenance") statusClass = "status-maintenance";
-        if (bus.status === "Inactive") statusClass = "status-inactive";
+    assignments.forEach(a => {
+        const assignmentId = a.assignmentId || a.id;
+        const stopId = a.stopId;
+        const stopName = a.stopName || "Unknown Stop";
+        const destinationStop = a.destinationStop || "N/A";
+        const driverId = a.driverId;
+        const driverName = a.driverName || "Unassigned";
 
+        const row = document.createElement("tr");
         row.innerHTML = `
-            <td style="padding:12px; vertical-align:middle;"><strong>🚌 ${bus.shuttleName}</strong></td>
-            <td style="padding:12px; vertical-align:middle;"><code>${bus.licensePlate}</code></td>
-            <td style="padding:12px; vertical-align:middle;">${bus.capacity} Seats</td>
-            <td style="padding:12px; vertical-align:middle;"><span class="status-badge ${statusClass}">${bus.status}</span></td>
+            <td style="padding:12px; vertical-align:middle;"><strong>📍 ${stopName}</strong></td>
+            <td style="padding:12px; vertical-align:middle;">${destinationStop}</td>
+            <td style="padding:12px; vertical-align:middle;">👤 ${driverName}</td>
             <td style="padding:12px; vertical-align:middle;">
-                <button class="action-btn-inline edit-trigger" style="background:none; border:none; cursor:pointer; font-size:1.1rem; margin-right:8px;">✏️</button>
-                <button class="action-btn-inline delete-trigger" style="background:none; border:none; cursor:pointer; font-size:1.1rem;">🗑️</button>
+                <button class="action-btn-inline edit-trigger" style="background:none; border:none; cursor:pointer; font-size:1.1rem; margin-right:8px;" title="Edit">✏️</button>
+                <button class="action-btn-inline delete-trigger" style="background:none; border:none; cursor:pointer; font-size:1.1rem;" title="Delete">🗑️</button>
             </td>
         `;
 
-        // Safely bind actions to the row buttons
         row.querySelector(".edit-trigger").addEventListener("click", () => {
-            // FIX: pass driverId through too, so editing preselects the right driver
-            openEditModal(bus.shuttleId, bus.shuttleName, bus.licensePlate, bus.capacity, bus.status, bus.driverId);
+            openEditModal(assignmentId, stopId, destinationStop, driverId);
         });
         row.querySelector(".delete-trigger").addEventListener("click", () => {
-            deleteShuttle(bus.shuttleId);
+            deleteAssignment(assignmentId);
         });
 
         tableBody.appendChild(row);
     });
 }
 
-function calculateMetrics(shuttles) {
-    const txtTotal = document.getElementById("txtTotalFleet");
-    const txtActive = document.getElementById("txtActiveFleet");
-    const txtMaint = document.getElementById("txtMaintenanceFleet");
-    const txtCap = document.getElementById("txtTotalCapacity");
-
-    if (txtTotal) txtTotal.textContent = shuttles.length;
-    if (txtActive) txtActive.textContent = shuttles.filter(b => b.status === "Active").length;
-
-    const maintenanceList = shuttles.filter(b => b.status === "Maintenance");
-    if (txtMaint) txtMaint.textContent = maintenanceList.length;
-    if (txtCap) txtCap.textContent = shuttles.reduce((acc, curr) => acc + (parseInt(curr.capacity) || 0), 0);
-
-    const alertBox = document.getElementById("maintenanceAlertBox");
-    const alertText = document.getElementById("maintenanceAlertText");
-
-    if (alertBox && alertText) {
-        if (maintenanceList.length > 0) {
-            alertText.textContent = `${maintenanceList[0].shuttleName} (${maintenanceList[0].licensePlate}) is currently marked under service maintenance checks.`;
-            alertBox.style.display = "flex";
-        } else {
-            alertBox.style.display = "none";
-        }
-    }
-}
-
-function searchShuttles() {
-    const searchInput = document.getElementById("shuttleSearchInput");
+function searchAssignments() {
+    const searchInput = document.getElementById("scheduleSearchInput");
     if (!searchInput) return;
 
     const term = searchInput.value.toLowerCase();
-    const filtered = fleetCache.filter(b =>
-        (b.shuttleName && b.shuttleName.toLowerCase().includes(term)) ||
-        (b.licensePlate && b.licensePlate.toLowerCase().includes(term))
+    const filtered = assignmentCache.filter(a =>
+        ((a.stopName || "").toLowerCase().includes(term)) ||
+        ((a.destinationStop || "").toLowerCase().includes(term)) ||
+        ((a.driverName || "").toLowerCase().includes(term))
     );
-    renderFleetTable(filtered);
+    renderAssignmentTable(filtered);
 }
 
-// Global modal operations triggered by your HTML onclicks
 function openAddModal() {
-    const form = document.getElementById("shuttleForm");
+    const form = document.getElementById("scheduleForm");
     if (form) form.reset();
 
-    const formId = document.getElementById("formShuttleId");
+    const formId = document.getElementById("formAssignmentId");
     if (formId) formId.value = "";
 
     const title = document.getElementById("modalTitle");
-    if (title) title.textContent = "Add New Shuttle";
+    if (title) title.textContent = "Create New Schedule";
 
-    // FIX: this CSS has a second .modal-overlay rule further down the file
-    // that requires the "show" class to actually become visible/clickable
-    // (it controls opacity and pointer-events). Setting inline display
-    // alone left the modal present but invisible and unclickable.
-    const modal = document.getElementById("shuttleModal");
+    const modal = document.getElementById("scheduleModal");
     if (modal) modal.classList.add("show");
 }
 
-// FIX: now accepts driverId so the Edit form can preselect the assigned driver
-function openEditModal(id, name, plate, capacity, status, driverId) {
-    if (document.getElementById("formShuttleId")) document.getElementById("formShuttleId").value = id;
-    if (document.getElementById("formName")) document.getElementById("formName").value = name;
-    if (document.getElementById("formPlate")) document.getElementById("formPlate").value = plate;
-    if (document.getElementById("formCapacity")) document.getElementById("formCapacity").value = capacity;
-    if (document.getElementById("formStatus")) document.getElementById("formStatus").value = status;
-    if (document.getElementById("formDriver") && driverId) document.getElementById("formDriver").value = driverId;
+function openEditModal(id, stopId, destinationStop, driverId) {
+    if (document.getElementById("formAssignmentId")) document.getElementById("formAssignmentId").value = id || "";
+    if (document.getElementById("formStop")) document.getElementById("formStop").value = stopId || "";
+    if (document.getElementById("formDestination")) document.getElementById("formDestination").value = destinationStop || "";
+    if (document.getElementById("formDriver")) document.getElementById("formDriver").value = driverId || "";
 
     const title = document.getElementById("modalTitle");
-    if (title) title.textContent = "Edit Shuttle Details";
+    if (title) title.textContent = "Edit Scheduled Route";
 
-    // FIX: same as openAddModal -- toggle the "show" class, not inline display
-    const modal = document.getElementById("shuttleModal");
+    const modal = document.getElementById("scheduleModal");
     if (modal) modal.classList.add("show");
 }
 
 function closeModal() {
-    // FIX: remove the "show" class to hide/disable the modal again
-    const modal = document.getElementById("shuttleModal");
+    const modal = document.getElementById("scheduleModal");
     if (modal) modal.classList.remove("show");
 }
 
-async function saveShuttleForm(e) {
+async function saveScheduleForm(e) {
     e.preventDefault();
-    const id = document.getElementById("formShuttleId").value;
+    const id = document.getElementById("formAssignmentId").value;
 
-    // Driver is optional -- can be assigned later during scheduling
-    const driverSelect = document.getElementById("formDriver");
-    const driverId = driverSelect && driverSelect.value ? parseInt(driverSelect.value) : null;
-
-    // Build payload including the missing status property
     const payload = {
-        shuttleName: document.getElementById("formName").value,
-        licensePlate: document.getElementById("formPlate").value,
-        capacity: parseInt(document.getElementById("formCapacity").value),
-        status: document.getElementById("formStatus").value, // Fixed: Sends the availability status to C#
-        driverId: driverId
+        stopId: parseInt(document.getElementById("formStop").value),
+        destinationStop: document.getElementById("formDestination").value,
+        driverId: parseInt(document.getElementById("formDriver").value)
     };
 
     const method = id ? "PUT" : "POST";
@@ -217,7 +209,7 @@ async function saveShuttleForm(e) {
 
         if (response.ok) {
             closeModal();
-            loadShuttleFleet(); // Refreshes the table view instantly
+            loadAssignments();
         } else {
             const errorText = await response.text();
             console.error("Save failed:", errorText);
@@ -227,8 +219,9 @@ async function saveShuttleForm(e) {
         console.error("Error saving form:", err);
     }
 }
-async function deleteShuttle(id) {
-    if (!confirm("Permanently strip this vehicle asset record from core fleet logs?")) return;
+
+async function deleteAssignment(id) {
+    if (!confirm("Permanently remove this scheduled route?")) return;
 
     try {
         const response = await fetch(`${API_URL}/${id}`, {
@@ -236,8 +229,8 @@ async function deleteShuttle(id) {
         });
 
         if (response.ok) {
-            console.log(`Shuttle ${id} deleted successfully.`);
-            loadShuttleFleet(); // Refresh table view instantly
+            console.log(`Assignment ${id} deleted successfully.`);
+            loadAssignments();
         } else {
             const errorText = await response.text();
             console.error("Backend rejection on delete:", errorText);
@@ -248,7 +241,8 @@ async function deleteShuttle(id) {
         alert("Network error: Could not reach the backend server.");
     }
 }
-// Sidebar Modal controls mapping directly to your HTML onclick attributes
+
+// Sidebar Modal controls mapping directly to HTML onclick attributes
 function openSettingsModal() { document.getElementById("settingsModal")?.style.setProperty("display", "flex", "important"); }
 function closeSettingsModal() { document.getElementById("settingsModal")?.style.setProperty("display", "none", "important"); }
 function openSupportModal() { document.getElementById("supportModal")?.style.setProperty("display", "flex", "important"); }

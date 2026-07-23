@@ -17,7 +17,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
     const modal = document.getElementById("driverFormModal");
 
-    // 2. Open Add Driver Modal (Safe Check)
+    // 2. Open Add Driver Modal
     const addBtn = document.getElementById("btnOpenAddDriverModal");
     if (addBtn && modal) {
         addBtn.addEventListener("click", () => {
@@ -30,7 +30,7 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     }
 
-    // 3. Cancel/Close Modal (Safe Check)
+    // 3. Cancel/Close Modal
     const cancelBtn = document.getElementById("btnCancelDriverModal");
     if (cancelBtn && modal) {
         cancelBtn.addEventListener("click", () => {
@@ -38,13 +38,13 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     }
 
-    // 4. Form Action Processing Event Listener (Safe Check)
+    // 4. Form Action Processing Event Listener
     const driverForm = document.getElementById("frmDriverAsset");
     if (driverForm) {
         driverForm.addEventListener("submit", handleDriverFormSubmit);
     }
 
-    // 5. Profile Link Dropdown (Safe Check)
+    // 5. Profile Link Dropdown
     const viewProfileLink = document.getElementById("btnDropdownProfile");
     if (viewProfileLink) {
         viewProfileLink.addEventListener("click", (e) => {
@@ -65,19 +65,35 @@ async function loadDriversTable() {
 
         const response = await fetch(DRIVER_API_URL);
 
-        // If the backend returns an error, show it inside the table row directly!
         if (!response.ok) {
-            tbody.innerHTML = `<tr><td colspan="5" style="text-align:center; padding:30px; color:#ef4444;">⚠️ Backend API returned status error ${response.status}.</td></tr>`;
+            tbody.innerHTML = `<tr><td colspan="6" style="text-align:center; padding:30px; color:#ef4444;">⚠️ Backend API returned status error ${response.status}.</td></tr>`;
             return;
         }
 
-        const drivers = await response.json();
+        const allDrivers = await response.json();
 
-        // Clear the loading text now that we successfully have data
         tbody.innerHTML = "";
 
-        if (!drivers || drivers.length === 0) {
-            tbody.innerHTML = `<tr><td colspan="5" style="text-align:center; padding:30px; color:#94a3b8;">No registered drivers found in your database.</td></tr>`;
+        // 🎯 FIX: Filter out student drivers (Keep ONLY Shuttle Drivers)
+        const shuttleDrivers = (allDrivers || []).filter(d => {
+            const role = (d.role || "").toUpperCase();
+            const email = (d.email || "").toLowerCase();
+            const studentNum = d.studentNumber;
+
+            // 1. Exclude if explicit STUDENT_DRIVER role
+            if (role === "STUDENT_DRIVER" || role === "STUDENT") return false;
+
+            // 2. Exclude if email matches student format (e.g. s223456789@...)
+            if (/^s\d+@/i.test(email)) return false;
+
+            // 3. Exclude if email ends with mandela student domain
+            if (email.endsWith("@mandela.ac.za")) return false;
+
+            return true;
+        });
+
+        if (shuttleDrivers.length === 0) {
+            tbody.innerHTML = `<tr><td colspan="6" style="text-align:center; padding:30px; color:#94a3b8;">No registered shuttle drivers found in your database.</td></tr>`;
             return;
         }
 
@@ -85,7 +101,7 @@ async function loadDriversTable() {
         let breakCount = 0;
         let offDutyCount = 0;
 
-        drivers.forEach(d => {
+        shuttleDrivers.forEach(d => {
             let statusText = d.status || "Active";
             let badgeClass = "badge-active";
 
@@ -99,10 +115,12 @@ async function loadDriversTable() {
                 offDutyCount++;
                 badgeClass = "badge-inactive";
             }
-            let displayEmpId = d.employeeId || `DRV-${d.id}`;
-            let displayPhone = d.contactNumber || "N/A";
+
+            let displayEmpId = d.employeeId || `DRV-${d.id || d.driverId}`;
+            let displayPhone = d.contactNumber || d.phone || "N/A";
             let displayShuttle = d.assignedShuttle || "Unassigned";
             let currentId = d.id || d.driverId;
+            let displayStudentNum = d.studentNumber || "";
 
             const tr = document.createElement("tr");
             tr.innerHTML = `
@@ -120,7 +138,7 @@ async function loadDriversTable() {
                 <td><span style="color:#475569;">🚌 ${displayShuttle}</span></td>
                 <td><span class="badge ${badgeClass}">${statusText}</span></td>
                 <td class="actions-cell">
-                <button class="action-icon-btn" onclick="openDriverEditModal(${currentId}, '${d.fullName}', '${d.studentNumber}', '${d.email}', '${displayPhone}')" title="Edit Profile">✏️</button>
+                    <button class="action-icon-btn" onclick="openDriverEditModal(${currentId}, '${d.fullName}', '${displayStudentNum}', '${d.email}', '${displayPhone}')" title="Edit Profile">✏️</button>
                     <button class="action-icon-btn" onclick="deleteDriverProfile(${currentId})" title="Delete Profile">🗑️</button>
                 </td>
             `;
@@ -133,7 +151,7 @@ async function loadDriversTable() {
         const breakCard = document.getElementById("txtBreakDrivers");
         const offDutyCard = document.getElementById("txtOffDutyDrivers");
 
-        if (totalCard) totalCard.innerText = drivers.length;
+        if (totalCard) totalCard.innerText = shuttleDrivers.length;
         if (activeCard) activeCard.innerText = activeCount;
         if (breakCard) breakCard.innerText = breakCount;
         if (offDutyCard) offDutyCard.innerText = offDutyCount;
@@ -142,7 +160,7 @@ async function loadDriversTable() {
         console.error("Critical rendering failure:", err);
         const tbody = document.getElementById("driverTableBody");
         if (tbody) {
-            tbody.innerHTML = `<tr><td colspan="5" style="text-align:center; padding:30px; color:#ef4444;">⚠️ Connection failed. Is your C# backend server running?</td></tr>`;
+            tbody.innerHTML = `<tr><td colspan="6" style="text-align:center; padding:30px; color:#ef4444;">⚠️ Connection failed. Is your C# backend server running?</td></tr>`;
         }
     }
 }
@@ -152,9 +170,10 @@ async function handleDriverFormSubmit(e) {
     e.preventDefault();
     const id = document.getElementById("txtDriverId").value;
     const payload = {
-        studentNumber: document.getElementById("txtStudentNumber").value,
-        fullName: document.getElementById("txtDriverName").value,
-        email: document.getElementById("txtDriverEmail").value
+        studentNumber: document.getElementById("txtStudentNumber")?.value || "",
+        fullName: document.getElementById("txtDriverName")?.value || "",
+        email: document.getElementById("txtDriverEmail")?.value || "",
+        phone: document.getElementById("txtDriverPhone")?.value || ""
     };
 
     const isEditing = id !== "";
@@ -179,12 +198,15 @@ async function handleDriverFormSubmit(e) {
     }
 }
 
-function openDriverEditModal(id, name, studentNum, email) {
+// 🎯 FIX: Added 'phone' parameter to signature
+function openDriverEditModal(id, name, studentNum, email, phone) {
     document.getElementById("txtDriverId").value = id;
     document.getElementById("txtDriverName").value = name;
-    document.getElementById("txtStudentNumber").value = studentNum;
+    if (document.getElementById("txtStudentNumber")) document.getElementById("txtStudentNumber").value = studentNum;
     document.getElementById("txtDriverEmail").value = email;
-    document.getElementById("txtDriverPhone").value = phone === "N/A" ? "" : phone;
+    if (document.getElementById("txtDriverPhone")) {
+        document.getElementById("txtDriverPhone").value = (phone === "N/A" || !phone) ? "" : phone;
+    }
     document.getElementById("modalDriverFormTitle").innerText = "Edit Driver Profile Details";
     document.getElementById("driverFormModal").style.display = "flex";
 }

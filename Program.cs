@@ -174,41 +174,59 @@ app.MapGet("/api/driver/bookings", async (string? email, IConfiguration config) 
 // ---------------------------------------------------------
 app.MapGet("/api/admin/driver-ratings", async (IConfiguration config) => {
     string connectionString = config.GetConnectionString("DefaultConnection");
-    var drivers = new List<object>();
+    var list = new List<object>();
 
     using var connection = new MySqlConnection(connectionString);
-    await connection.OpenAsync();
-
-    string query = @"
-        SELECT d.driver_id,
-               CONCAT(d.first_name, ' ', d.last_name) AS FullName,
-               d.join_date,
-               d.total_trips,
-               COALESCE(AVG(tr.rating), 0) AS AverageRating,
-               COUNT(tr.review_id) AS TotalRatingsCount
-        FROM driver d
-        LEFT JOIN trip t ON t.driver_id = d.driver_id
-        LEFT JOIN trip_booking tb ON tb.trip_id = t.trip_id
-        LEFT JOIN trip_review tr ON tr.booking_id = tb.booking_id
-        WHERE d.is_verified = 1
-        GROUP BY d.driver_id, d.first_name, d.last_name, d.join_date, d.total_trips
-        ORDER BY AverageRating DESC;";
-
-    using var command = new MySqlCommand(query, connection);
-    using var reader = await command.ExecuteReaderAsync();
-
-    while (await reader.ReadAsync())
+    try
     {
-        drivers.Add(new
+        await connection.OpenAsync();
+
+        string query = @"
+            SELECT 
+                d.driver_id,
+                CONCAT(d.first_name, ' ', d.last_name) AS full_name,
+                d.email,
+                d.role,
+                d.join_date,
+                COALESCE(s.student_number, CONCAT('DRV-', d.driver_id)) AS display_id,
+                COUNT(DISTINCT t.trip_id) AS total_trips,
+                COALESCE(AVG(r.rating), 0.0) AS avg_rating,
+                COUNT(r.review_id) AS total_reviews
+            FROM driver d
+            LEFT JOIN student s ON d.email = s.email
+            LEFT JOIN trip t ON d.driver_id = t.driver_id
+            LEFT JOIN trip_booking tb ON tb.trip_id = t.trip_id
+            LEFT JOIN trip_review r ON r.booking_id = tb.booking_id
+            WHERE d.is_verified = 1 
+              AND (d.role = 'SHUTTLE_DRIVER' OR d.role IS NULL OR d.role != 'STUDENT_DRIVER')
+            GROUP BY d.driver_id, d.first_name, d.last_name, d.email, d.role, d.join_date, s.student_number;";
+
+        using var command = new MySqlCommand(query, connection);
+        using var reader = await command.ExecuteReaderAsync();
+
+        while (await reader.ReadAsync())
         {
-            FullName = reader["FullName"].ToString(),
-            JoinDateText = reader["join_date"] != DBNull.Value ? Convert.ToDateTime(reader["join_date"]).ToString("MMM yyyy") : "",
-            AverageRating = Math.Round(Convert.ToDouble(reader["AverageRating"]), 2),
-            TotalTrips = Convert.ToInt32(reader["total_trips"]),
-            TotalRatingsCount = Convert.ToInt32(reader["TotalRatingsCount"])
-        });
+            list.Add(new
+            {
+                driverId = Convert.ToInt32(reader["driver_id"]),
+                fullName = reader["full_name"].ToString(),
+                studentNumber = reader["display_id"].ToString(),
+                joinDateText = reader["join_date"] != DBNull.Value
+                    ? Convert.ToDateTime(reader["join_date"]).ToString("MMM yyyy")
+                    : "Jan 2025",
+                totalTrips = Convert.ToInt32(reader["total_trips"]),
+                averageRating = Math.Round(Convert.ToDouble(reader["avg_rating"]), 1),
+                totalRatingsCount = Convert.ToInt32(reader["total_reviews"])
+            });
+        }
     }
-    return Results.Ok(drivers);
+    catch (Exception ex)
+    {
+        Console.WriteLine($"[API Error] /api/admin/driver-ratings execution failed: {ex.Message}");
+        return Results.Ok(new List<object>());
+    }
+
+    return Results.Ok(list);
 });
 
 app.MapGet("/api/admin/unverified-drivers", async (IConfiguration config) => {
@@ -408,7 +426,42 @@ app.MapPut("/api/coordinator/drivers/{id:int}", async (int id, DriverUpsertDto r
     int rowsAffected = await command.ExecuteNonQueryAsync();
     return rowsAffected > 0 ? Results.Ok(new { success = true }) : Results.NotFound();
 });
+// POST: Create a new shuttle driver profile from the coordinator portal
+app.MapPost("/api/coordinator/drivers", async (DriverUpsertDto req, IConfiguration config) => {
+    string connectionString = config.GetConnectionString("DefaultConnection");
+    using var connection = new MySqlConnection(connectionString);
+    await connection.OpenAsync();
 
+    string firstName = req.FullName;
+    string lastName = "Driver";
+    string[] nameParts = req.FullName.Trim().Split(' ', 2);
+    if (nameParts.Length > 1) { firstName = nameParts[0]; lastName = nameParts[1]; }
+
+    string insertQuery = @"
+        INSERT INTO driver (first_name, last_name, email, phone, role, is_verified, join_date, password, total_trips)
+        VALUES (@First, @Last, @Email, @Phone, 'SHUTTLE_DRIVER', 1, CURDATE(), 'Driver@GetYourRide2026', 0);";
+
+    using var command = new MySqlCommand(insertQuery, connection);
+    command.Parameters.AddWithValue("@First", firstName);
+    command.Parameters.AddWithValue("@Last", lastName);
+    command.Parameters.AddWithValue("@Email", req.Email);
+    command.Parameters.AddWithValue("@Phone", string.IsNullOrEmpty(req.Phone) ? (object)DBNull.Value : req.Phone);
+
+    try
+    {
+        await command.ExecuteNonQueryAsync();
+        return Results.Ok(new { success = true, message = "Driver added successfully." });
+    }
+    catch (MySqlException ex) when (ex.Number == 1062)
+    {
+        return Results.BadRequest(new { success = false, message = "A driver with this email already exists." });
+    }
+    catch (Exception ex)
+    {
+        Console.WriteLine($"[API Error] Add driver failed: {ex.Message}");
+        return Results.Json(new { success = false, message = ex.Message }, statusCode: 500);
+    }
+});
 // DELETE: Remove a driver profile from the roster
 app.MapDelete("/api/coordinator/drivers/{id:int}", async (int id, IConfiguration config) => {
     string connectionString = config.GetConnectionString("DefaultConnection");
@@ -429,29 +482,27 @@ app.MapDelete("/api/coordinator/drivers/{id:int}", async (int id, IConfiguration
     return rowsAffected > 0 ? Results.Ok(new { success = true }) : Results.NotFound();
 });
 // "Routes" aren't a table -- they're derived from the distinct departure/destination pairs
-app.MapGet("/api/coordinator/routes", async (IConfiguration config) => {
+// Route dropdown now sourced from shuttle_stop, not distinct trip text pairs
+app.MapGet("/api/coordinator/stops", async (IConfiguration config) => {
     string connectionString = config.GetConnectionString("DefaultConnection");
-    var routes = new List<object>();
+    var stops = new List<object>();
 
     using var connection = new MySqlConnection(connectionString);
     await connection.OpenAsync();
 
-    string query = @"
-        SELECT ROW_NUMBER() OVER (ORDER BY departure_stop, destination_stop) AS RouteID,
-               departure_stop, destination_stop
-        FROM (SELECT DISTINCT departure_stop, destination_stop FROM trip WHERE trip_type = 'SHUTTLE') AS r;";
+    string query = "SELECT stop_id, stop_name FROM shuttle_stop ORDER BY stop_name;";
     using var command = new MySqlCommand(query, connection);
     using var reader = await command.ExecuteReaderAsync();
 
     while (await reader.ReadAsync())
     {
-        routes.Add(new
+        stops.Add(new
         {
-            routeId = Convert.ToInt32(reader["RouteID"]),
-            routeName = $"{reader["departure_stop"]} ➔ {reader["destination_stop"]}"
+            stopId = Convert.ToInt32(reader["stop_id"]),
+            stopName = reader["stop_name"].ToString()
         });
     }
-    return Results.Ok(routes);
+    return Results.Ok(stops);
 });
 
 // ---------------------------------------------------------
@@ -517,13 +568,15 @@ app.MapGet("/api/coordinator/drivers", async (IConfiguration config) => {
                    CONCAT(d.first_name, ' ', d.last_name) AS FullName, 
                    d.email, 
                    d.phone,
+                   d.role,
                    s.student_number,
                    COALESCE(GROUP_CONCAT(v.model SEPARATOR ', '), 'Unassigned') AS ShuttleName
             FROM driver d
             LEFT JOIN student s ON d.email = s.email
             LEFT JOIN vehicle v ON d.driver_id = v.driver_id
-            WHERE d.is_verified = 1
-            GROUP BY d.driver_id, d.first_name, d.last_name, d.email, d.phone, s.student_number;";
+            WHERE d.is_verified = 1 
+              AND (d.role = 'SHUTTLE_DRIVER' OR d.role IS NULL OR d.role != 'STUDENT_DRIVER') -- 👈 FILTERS OUT STUDENT DRIVERS
+            GROUP BY d.driver_id, d.first_name, d.last_name, d.email, d.phone, d.role, s.student_number;";
 
         using var command = new MySqlCommand(query, connection);
         using var reader = await command.ExecuteReaderAsync();
@@ -536,6 +589,7 @@ app.MapGet("/api/coordinator/drivers", async (IConfiguration config) => {
                 driverId = Convert.ToInt32(reader["driver_id"]),
                 fullName = reader["FullName"].ToString(),
                 email = reader["email"].ToString(),
+                role = reader["role"] != DBNull.Value ? reader["role"].ToString() : "SHUTTLE_DRIVER",
                 employeeId = $"DRV-{reader["driver_id"]}",
                 studentNumber = reader["student_number"] != DBNull.Value ? reader["student_number"].ToString() : "N/A",
                 assignedShuttle = reader["ShuttleName"] != DBNull.Value ? reader["ShuttleName"].ToString() : "Unassigned",
@@ -552,18 +606,13 @@ app.MapGet("/api/coordinator/drivers", async (IConfiguration config) => {
 
     return Results.Ok(drivers);
 });
-
 app.MapPost("/api/coordinator/schedules", async (ScheduleDirectDto req, IConfiguration config) => {
     string connectionString = config.GetConnectionString("DefaultConnection");
     using var connection = new MySqlConnection(connectionString);
     await connection.OpenAsync();
 
-    string incoming = req.RouteName ?? "";
-    string[] separators = new string[] { "→", "➔", "->", "-" };
-    string[] locations = incoming.Split(separators, StringSplitOptions.RemoveEmptyEntries);
-
-    string fromLocation = locations.Length > 0 ? locations[0].Trim() : incoming.Trim();
-    string toLocation = locations.Length > 1 ? locations[1].Trim() : "";
+    string fromLocation = req.FromStop?.Trim() ?? "";
+    string toLocation = req.ToStop?.Trim() ?? "";
 
     string dateString = string.IsNullOrEmpty(req.ScheduleDate) ? DateTime.Today.ToString("yyyy-MM-dd") : req.ScheduleDate;
     string timeString = req.DepartureTime.Length == 5 ? req.DepartureTime + ":00" : req.DepartureTime;
@@ -576,7 +625,6 @@ app.MapPost("/api/coordinator/schedules", async (ScheduleDirectDto req, IConfigu
     string regNumber = "";
     int capacity = 0;
 
-    // Fixed query logic template parameters
     string vehicleQuery = "SELECT registration_number, capacity FROM vehicle WHERE vehicle_id = @VehId OR registration_number = @RegNum LIMIT 1;";
     using (var vehCmd = new MySqlCommand(vehicleQuery, connection))
     {
@@ -749,6 +797,44 @@ app.MapPost("/api/auth/reset-password", async (ResetPasswordRequest req, IConfig
     }
     return Results.BadRequest(new { success = false, message = "Invalid or expired reset token." });
 });
+app.MapGet("/api/admin/drivers/{driverId:long}/trips", async (long driverId, IConfiguration config) => {
+    string connectionString = config.GetConnectionString("DefaultConnection");
+    var trips = new List<object>();
+
+    using var connection = new MySqlConnection(connectionString);
+    await connection.OpenAsync();
+
+    string query = @"
+        SELECT t.trip_id, t.departure_stop, t.destination_stop, t.departure_time, t.status,
+               r.rating, r.review
+        FROM trip t
+        LEFT JOIN trip_booking tb ON tb.trip_id = t.trip_id
+        LEFT JOIN trip_review r ON r.booking_id = tb.booking_id
+        WHERE t.driver_id = @DriverId
+        ORDER BY t.departure_time DESC
+        LIMIT 20;";
+
+    using var command = new MySqlCommand(query, connection);
+    command.Parameters.AddWithValue("@DriverId", driverId);
+    using var reader = await command.ExecuteReaderAsync();
+
+    while (await reader.ReadAsync())
+    {
+        trips.Add(new
+        {
+            tripId = Convert.ToInt64(reader["trip_id"]),
+            departureStop = reader["departure_stop"].ToString(),
+            destinationStop = reader["destination_stop"].ToString(),
+            departureTime = reader["departure_time"] != DBNull.Value
+                ? Convert.ToDateTime(reader["departure_time"]).ToString("yyyy-MM-dd HH:mm")
+                : "",
+            status = reader["status"].ToString(),
+            rating = reader["rating"] != DBNull.Value ? Convert.ToInt32(reader["rating"]) : (int?)null,
+            review = reader["review"] != DBNull.Value ? reader["review"].ToString() : null
+        });
+    }
+    return Results.Ok(trips);
+});
 
 app.Run();
 
@@ -759,7 +845,8 @@ public record LoginRequest(string Email, string Password);
 public record VerifyActionRequest(int DriverId);
 public record DynamicStatusUpdate(string Status);
 public record ShuttleDto(int? DriverId, string ShuttleName, string LicensePlate, int Capacity, string? Status);
-public record ScheduleDirectDto(string RouteName, string DepartureTime, string ScheduleDate, object ShuttleID, int DriverID);
+//public record ScheduleDirectDto(string RouteName, string DepartureTime, string ScheduleDate, object ShuttleID, int DriverID);
+public record ScheduleDirectDto(string FromStop, string ToStop, string ScheduleDate, string DepartureTime, object ShuttleID, int DriverID);
 public record DriverUpsertDto(string FullName, string Email, string? Phone);
 public record ForgotPasswordRequest(string Email);
 public record ResetPasswordRequest(string Token, string NewPassword);
