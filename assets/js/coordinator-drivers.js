@@ -1,6 +1,5 @@
 ﻿const DRIVER_API_URL = "/api/coordinator/drivers";
 
-// Add these control functions to your file
 function openProfileModal() {
     const profileModal = document.getElementById("profileModal");
     if (profileModal) profileModal.style.setProperty("display", "flex", "important");
@@ -11,62 +10,90 @@ function closeProfileModal() {
     if (profileModal) profileModal.style.setProperty("display", "none", "important");
 }
 
-// Inside your loadCoordinatorProfile() function, make sure these assignments exist:
-if (document.getElementById('modalFullName')) document.getElementById('modalFullName').innerText = activeCoordinatorProfile.fullName;
-if (document.getElementById('modalIdNumber')) document.getElementById('modalIdNumber').innerText = activeCoordinatorProfile.employeeId;
-if (document.getElementById('modalEmail')) document.getElementById('modalEmail').innerText = activeCoordinatorProfile.email;
-if (document.getElementById('modalRole')) document.getElementById('modalRole').innerText = activeCoordinatorProfile.role;
-
-// Inside your DOMContentLoaded listener, ensure the link is wired up:
-const viewProfileLink = document.getElementById("btnDropdownProfile");
-if (viewProfileLink) {
-    viewProfileLink.addEventListener("click", (e) => {
-        e.preventDefault();
-        openProfileModal();
-    });
-}
-
-// Standard unified initialization wrapper block
+// Unified initialization wrapper block
 document.addEventListener("DOMContentLoaded", () => {
-    // 1. Initial backend database table loop call on boot load
+    // 1. Load the drivers table first
     loadDriversTable();
 
     const modal = document.getElementById("driverFormModal");
 
-    // 2. Open Add Driver View Modal Window Click Trigger
-    document.getElementById("btnOpenAddDriverModal").addEventListener("click", () => {
-        document.getElementById("frmDriverAsset").reset();
-        document.getElementById("txtDriverId").value = "";
-        document.getElementById("modalDriverFormTitle").innerText = "Add New Driver Profile";
-        // FIXED: Explicitly force display flex properties to bypass stylesheet restrictions
-        modal.style.display = "flex";
-    });
+    // 2. Open Add Driver Modal
+    const addBtn = document.getElementById("btnOpenAddDriverModal");
+    if (addBtn && modal) {
+        addBtn.addEventListener("click", () => {
+            document.getElementById("frmDriverAsset").reset();
+            const idField = document.getElementById("txtDriverId");
+            if (idField) idField.value = "";
+            const titleField = document.getElementById("modalDriverFormTitle");
+            if (titleField) titleField.innerText = "Add New Driver Profile";
+            modal.style.display = "flex";
+        });
+    }
 
-    // 3. Close / Drop Down Modal View Overlay
-    document.getElementById("btnCancelDriverModal").addEventListener("click", () => {
-        // FIXED: Clear display rules to drop the modal overlay back out of visibility layer
-        modal.style.display = "none";
-    });
+    // 3. Cancel/Close Modal
+    const cancelBtn = document.getElementById("btnCancelDriverModal");
+    if (cancelBtn && modal) {
+        cancelBtn.addEventListener("click", () => {
+            modal.style.display = "none";
+        });
+    }
 
     // 4. Form Action Processing Event Listener
     const driverForm = document.getElementById("frmDriverAsset");
     if (driverForm) {
         driverForm.addEventListener("submit", handleDriverFormSubmit);
     }
+
+    // 5. Profile Link Dropdown
+    const viewProfileLink = document.getElementById("btnDropdownProfile");
+    if (viewProfileLink) {
+        viewProfileLink.addEventListener("click", (e) => {
+            e.preventDefault();
+            openProfileModal();
+        });
+    }
 });
 
-// ✅ Renders the Interactive Operator Control Sheets and Count Badges
+// ✅ Renders the Interactive Operator Control Sheets safely
 async function loadDriversTable() {
     try {
-        const response = await fetch(DRIVER_API_URL);
-        if (!response.ok) throw new Error("API Pipeline Connection Disconnected.");
-
-        const drivers = await response.json();
         const tbody = document.getElementById("driverTableBody");
+        if (!tbody) {
+            console.error("Could not find table body element with ID 'driverTableBody'");
+            return;
+        }
+
+        const response = await fetch(DRIVER_API_URL);
+
+        if (!response.ok) {
+            tbody.innerHTML = `<tr><td colspan="6" style="text-align:center; padding:30px; color:#ef4444;">⚠️ Backend API returned status error ${response.status}.</td></tr>`;
+            return;
+        }
+
+        const allDrivers = await response.json();
+
         tbody.innerHTML = "";
 
-        if (drivers.length === 0) {
-            tbody.innerHTML = `<tr><td colspan="5" style="text-align:center; padding:30px; color:#94a3b8;">No registered drivers found in your database.</td></tr>`;
+        // 🎯 FIX: Filter out student drivers (Keep ONLY Shuttle Drivers)
+        const shuttleDrivers = (allDrivers || []).filter(d => {
+            const role = (d.role || "").toUpperCase();
+            const email = (d.email || "").toLowerCase();
+            const studentNum = d.studentNumber;
+
+            // 1. Exclude if explicit STUDENT_DRIVER role
+            if (role === "STUDENT_DRIVER" || role === "STUDENT") return false;
+
+            // 2. Exclude if email matches student format (e.g. s223456789@...)
+            if (/^s\d+@/i.test(email)) return false;
+
+            // 3. Exclude if email ends with mandela student domain
+            if (email.endsWith("@mandela.ac.za")) return false;
+
+            return true;
+        });
+
+        if (shuttleDrivers.length === 0) {
+            tbody.innerHTML = `<tr><td colspan="6" style="text-align:center; padding:30px; color:#94a3b8;">No registered shuttle drivers found in your database.</td></tr>`;
             return;
         }
 
@@ -74,7 +101,7 @@ async function loadDriversTable() {
         let breakCount = 0;
         let offDutyCount = 0;
 
-        drivers.forEach(d => {
+        shuttleDrivers.forEach(d => {
             let statusText = d.status || "Active";
             let badgeClass = "badge-active";
 
@@ -89,8 +116,11 @@ async function loadDriversTable() {
                 badgeClass = "badge-inactive";
             }
 
-            // Dynamically pulls your C# SQL Left Join property variable
-            let displayShuttle = d.shuttleName ? `🚌 ${d.shuttleName}` : `<span style="color:#64748b; font-style:italic;">Unassigned</span>`;
+            let displayEmpId = d.employeeId || `DRV-${d.id || d.driverId}`;
+            let displayPhone = d.contactNumber || d.phone || "N/A";
+            let displayShuttle = d.assignedShuttle || "Unassigned";
+            let currentId = d.id || d.driverId;
+            let displayStudentNum = d.studentNumber || "";
 
             const tr = document.createElement("tr");
             tr.innerHTML = `
@@ -98,41 +128,52 @@ async function loadDriversTable() {
                     <div style="display:flex; align-items:center; gap:10px;">
                         <span style="font-size:1.5rem;">👤</span>
                         <div>
-                            <strong>${d.fullName}</strong><br>
-                            <small style="color:#64748b;">${d.email}</small>
+                            <strong>${d.fullName || "Unknown"}</strong><br>
+                            <small style="color:#64748b;">${d.email || ""}</small>
                         </div>
                     </div>
                 </td>
-                <td><strong>${d.studentNumber}</strong></td>
-                <td><span style="font-weight:500; color:#0284c7;">${displayShuttle}</span></td>
+                <td><strong>${displayEmpId}</strong></td>
+                <td>${displayPhone}</td>
+                <td><span style="color:#475569;">🚌 ${displayShuttle}</span></td>
                 <td><span class="badge ${badgeClass}">${statusText}</span></td>
                 <td class="actions-cell">
-                    <button class="action-icon-btn" onclick="openDriverEditModal(${d.userId}, '${d.fullName}', '${d.studentNumber}', '${d.email}')" title="Edit Profile">✏️</button>
-                    <button class="action-icon-btn" onclick="deleteDriverProfile(${d.userId})" title="Delete Profile">🗑️</button>
+                    <button class="action-icon-btn" onclick="openDriverEditModal(${currentId}, '${d.fullName}', '${displayStudentNum}', '${d.email}', '${displayPhone}')" title="Edit Profile">✏️</button>
+                    <button class="action-icon-btn" onclick="deleteDriverProfile(${currentId})" title="Delete Profile">🗑️</button>
                 </td>
             `;
             tbody.appendChild(tr);
         });
 
-        // Write live calculation counters straight into metric panels
-        document.getElementById("txtTotalDrivers").innerText = drivers.length;
-        document.getElementById("txtActiveDrivers").innerText = activeCount;
-        document.getElementById("txtBreakDrivers").innerText = breakCount;
-        document.getElementById("txtOffDutyDrivers").innerText = offDutyCount;
+        // Safe metric counter updates
+        const totalCard = document.getElementById("txtTotalDrivers");
+        const activeCard = document.getElementById("txtActiveDrivers");
+        const breakCard = document.getElementById("txtBreakDrivers");
+        const offDutyCard = document.getElementById("txtOffDutyDrivers");
+
+        if (totalCard) totalCard.innerText = shuttleDrivers.length;
+        if (activeCard) activeCard.innerText = activeCount;
+        if (breakCard) breakCard.innerText = breakCount;
+        if (offDutyCard) offDutyCard.innerText = offDutyCount;
 
     } catch (err) {
         console.error("Critical rendering failure:", err);
+        const tbody = document.getElementById("driverTableBody");
+        if (tbody) {
+            tbody.innerHTML = `<tr><td colspan="6" style="text-align:center; padding:30px; color:#ef4444;">⚠️ Connection failed. Is your C# backend server running?</td></tr>`;
+        }
     }
 }
 
-// ✅ Form action save route handler routing payload data objects
+// ✅ Form Action Handler
 async function handleDriverFormSubmit(e) {
     e.preventDefault();
     const id = document.getElementById("txtDriverId").value;
     const payload = {
-        studentNumber: document.getElementById("txtStudentNumber").value,
-        fullName: document.getElementById("txtDriverName").value,
-        email: document.getElementById("txtDriverEmail").value
+        studentNumber: document.getElementById("txtStudentNumber")?.value || "",
+        fullName: document.getElementById("txtDriverName")?.value || "",
+        email: document.getElementById("txtDriverEmail")?.value || "",
+        phone: document.getElementById("txtDriverPhone")?.value || ""
     };
 
     const isEditing = id !== "";
@@ -147,7 +188,6 @@ async function handleDriverFormSubmit(e) {
         });
 
         if (response.ok) {
-            // FIXED: Using standard native style visibility manipulation targets
             document.getElementById("driverFormModal").style.display = "none";
             loadDriversTable();
         } else {
@@ -158,22 +198,21 @@ async function handleDriverFormSubmit(e) {
     }
 }
 
-// ✅ Triggers entry edit form modal configurations
-function openDriverEditModal(id, name, studentNum, email) {
+// 🎯 FIX: Added 'phone' parameter to signature
+function openDriverEditModal(id, name, studentNum, email, phone) {
     document.getElementById("txtDriverId").value = id;
     document.getElementById("txtDriverName").value = name;
-    document.getElementById("txtStudentNumber").value = studentNum;
+    if (document.getElementById("txtStudentNumber")) document.getElementById("txtStudentNumber").value = studentNum;
     document.getElementById("txtDriverEmail").value = email;
-
+    if (document.getElementById("txtDriverPhone")) {
+        document.getElementById("txtDriverPhone").value = (phone === "N/A" || !phone) ? "" : phone;
+    }
     document.getElementById("modalDriverFormTitle").innerText = "Edit Driver Profile Details";
-    // FIXED: Form window display configuration target matched to display engine layer rules
     document.getElementById("driverFormModal").style.display = "flex";
 }
 
-// ✅ Action query request managing backend schema target removals
 async function deleteDriverProfile(id) {
     if (!confirm("Are you sure you want to permanently delete this driver account asset record?")) return;
-
     try {
         const response = await fetch(`${DRIVER_API_URL}/${id}`, { method: "DELETE" });
         if (response.ok) {

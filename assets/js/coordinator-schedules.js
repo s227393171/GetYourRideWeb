@@ -39,7 +39,10 @@ async function populateFormDropdowns() {
             const routes = await res.json();
             document.getElementById("ddlRouteAsset").innerHTML =
                 `<option value="">-- Select Route Corridor --</option>` +
-                routes.map(r => `<option value="${r.routeName}">${r.routeName}</option>`).join('');
+                routes.map(r => {
+                    const name = r.routeName || r.RouteName || `${r.fromStop || ''} -> ${r.toStop || ''}`;
+                    return `<option value="${name}">${name}</option>`;
+                }).join('');
         }
     } catch (err) { console.error("Routes display processing error:", err); }
 
@@ -50,24 +53,39 @@ async function populateFormDropdowns() {
             const shuttles = await res.json();
             document.getElementById("ddlShuttleAsset").innerHTML =
                 `<option value="">-- Select Vehicle Asset --</option>` +
-                shuttles.map(s => `<option value="${s.shuttleId}">${s.shuttleName} (${s.licensePlate})</option>`).join('');
+                shuttles.map(s => {
+                    const id = s.shuttleId ?? s.shuttleID ?? s.vehicleId ?? s.id;
+                    const name = s.shuttleName || s.vehicleName || "Shuttle";
+                    const plate = s.licensePlate || s.registrationNumber || "";
+                    return `<option value="${id}">${name} (${plate})</option>`;
+                }).join('');
         }
     } catch (err) { console.error("Shuttles drop-down parsing error:", err); }
 
-    // 3. Load Drivers
+    // 3. Load Drivers (Filters out student drivers if backend returns role)
     try {
         const res = await fetch("/api/coordinator/drivers");
         if (res.ok) {
-            const drivers = await res.json();
+            let drivers = await res.json();
+
+            // Filter to shuttle drivers only if role exists
+            if (drivers.length > 0 && drivers[0].role) {
+                drivers = drivers.filter(d => d.role === "SHUTTLE_DRIVER");
+            }
+
             document.getElementById("ddlDriverAsset").innerHTML =
                 `<option value="">-- Select Roster Operator --</option>` +
-                drivers.map(d => `<option value="${d.driverId}">${d.fullName}</option>`).join('');
+                drivers.map(d => {
+                    const id = d.driverId ?? d.driverID ?? d.id;
+                    const name = d.fullName || `${d.firstName || ''} ${d.lastName || ''}`.trim();
+                    return `<option value="${id}">${name}</option>`;
+                }).join('');
         }
     } catch (err) { console.error("Drivers collection loading error:", err); }
 }
 
 // ==========================================================================
-// TRANSACTION FORM FORM SUBMISSION HANDLER
+// TRANSACTION FORM SUBMISSION HANDLER
 // ==========================================================================
 window.handleScheduleFormSubmit = async function (e) {
     e.preventDefault();
@@ -75,19 +93,35 @@ window.handleScheduleFormSubmit = async function (e) {
     const routeSelect = document.getElementById("ddlRouteAsset");
     const shuttleSelect = document.getElementById("ddlShuttleAsset");
     const driverSelect = document.getElementById("ddlDriverAsset");
+    const rawDate = document.getElementById("txtScheduleDate").value;
+    const rawTime = document.getElementById("txtDepartureTime").value;
 
-    if (!routeSelect.value || !shuttleSelect.value || !driverSelect.value) {
+    if (!routeSelect.value || !shuttleSelect.value || !driverSelect.value || !rawDate || !rawTime) {
         alert("Please complete all configuration fields before saving.");
         return;
     }
 
-    // This matches the exact naming constraints expected by your ScheduleDirectDto C# record
+    const shuttleId = parseInt(shuttleSelect.value);
+    const driverId = parseInt(driverSelect.value);
+
+    if (isNaN(shuttleId) || isNaN(driverId)) {
+        alert("Invalid Shuttle or Driver selection.");
+        return;
+    }
+
+    // Split "2nd Avenue -> Forest Hill" into FromStop and ToStop
+    const routeParts = routeSelect.value.split("->").map(s => s.trim());
+    const fromStop = routeParts[0] || routeSelect.value;
+    const toStop = routeParts[1] || "";
+
+    // Matches ScheduleDirectDto C# record
     const payload = {
-        RouteName: routeSelect.value,
-        ScheduleDate: document.getElementById("txtScheduleDate").value,
-        DepartureTime: document.getElementById("txtDepartureTime").value,
-        ShuttleID: parseInt(shuttleSelect.value),
-        DriverID: parseInt(driverSelect.value)
+        FromStop: fromStop,
+        ToStop: toStop,
+        ScheduleDate: rawDate.replace(/\//g, "-"), // Ensure yyyy-MM-dd format
+        DepartureTime: rawTime,
+        ShuttleID: shuttleId,
+        DriverID: driverId
     };
 
     try {
@@ -99,7 +133,7 @@ window.handleScheduleFormSubmit = async function (e) {
 
         if (response.ok) {
             closeScheduleModalContainer();
-            loadSchedulesTable(); // Instantly update view grid array tracking logs 
+            loadSchedulesTable();
         } else {
             const data = await response.json();
             alert("Save operational assignment failed: " + (data.message || "Invalid setup."));
@@ -127,13 +161,14 @@ async function loadSchedulesTable() {
         }
 
         schedules.forEach(s => {
+            const routeDisplay = s.routeName || `${s.fromStop || ''} → ${s.toStop || ''}`;
             tbody.innerHTML += `
                 <tr style="border-bottom: 1px solid #f1f5f9;">
-                    <td style="padding:14px;"><strong>${s.routeName}</strong></td>
+                    <td style="padding:14px;"><strong>${routeDisplay}</strong></td>
                     <td style="padding:14px; color:#334155;">📅 ${s.scheduleDate}</td>
                     <td style="padding:14px;"><strong>${s.departureTime}</strong></td>
-                    <td style="padding:14px;"><span style="color:#0284c7; font-weight:500;">🚌 ${s.shuttleName}</span></td>
-                    <td style="padding:14px; color:#475569;">👨‍✈️ ${s.driverName}</td>
+                    <td style="padding:14px;"><span style="color:#0284c7; font-weight:500;">🚌 ${s.shuttleName || 'Unassigned'}</span></td>
+                    <td style="padding:14px; color:#475569;">👨‍✈️ ${s.driverName || 'Unassigned'}</td>
                 </tr>`;
         });
     } catch (err) { console.error(err); }

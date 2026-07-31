@@ -1,6 +1,7 @@
 ﻿const BOOKINGS_API_URL = '/api/driver/bookings';
 const PROFILE_API_URL = '/api/driver/profile';
 let activeDriverProfile = null;
+let loggedInDriverEmail = null; // FIX: shared across functions so bookings can be filtered per-driver
 
 // 1. Fetch Dynamic User Session Metrics from Database
 async function loadDriverProfile() {
@@ -11,8 +12,11 @@ async function loadDriverProfile() {
 
         // 2. Fallback only if someone goes directly to dashboard.html without logging in
         if (!loggedInEmail) {
-            loggedInEmail = 'driver@ride.com';
+            loggedInEmail = localStorage.getItem('userEmail') || 'driver@ride.com';
         }
+
+        // FIX: remember the email so loadDriverDashboard() can use it too
+        loggedInDriverEmail = loggedInEmail;
 
         // 3. Request the profile from the backend
         const targetUrl = `${window.location.origin}${PROFILE_API_URL}?email=${encodeURIComponent(loggedInEmail)}`;
@@ -36,7 +40,12 @@ async function loadDriverDashboard() {
     const tableBody = document.getElementById('bookingsTableBody');
 
     try {
-        const targetUrl = `${window.location.origin}${BOOKINGS_API_URL}`;
+        // FIX: scope the request to this driver's own trips instead of everyone's
+        const emailToUse = loggedInDriverEmail || activeDriverProfile?.email;
+        const targetUrl = emailToUse
+            ? `${window.location.origin}${BOOKINGS_API_URL}?email=${encodeURIComponent(emailToUse)}`
+            : `${window.location.origin}${BOOKINGS_API_URL}`;
+
         const response = await fetch(targetUrl);
         if (!response.ok) throw new Error('Network fault.');
 
@@ -162,7 +171,7 @@ window.onload = async function () {
     startLiveClock();
     const dateInput = document.getElementById('manifestDateFilter');
     if (dateInput) dateInput.valueAsDate = new Date();
-    await loadDriverProfile();
+    await loadDriverProfile();   // FIX: must run first so loggedInDriverEmail is set
     await loadDriverDashboard();
 };
 // Global execution window handles

@@ -1,6 +1,7 @@
 using MySqlConnector;
 using System.Data;
 using Microsoft.Extensions.FileProviders;
+//using MySql.Data.MySqlClient; // Ensure your MySQL import is present
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -15,10 +16,10 @@ builder.Services.AddCors(options => {
 var app = builder.Build();
 app.UseCors();
 
-// ✅ 1. Serve static files from wwwroot if it exists
+// 1. Serve static files from wwwroot if it exists
 app.UseStaticFiles();
 
-// ✅ 2. Serve static files from project root (Login.html, etc.)
+// 2. Serve static files from project root (Login.html, etc.)
 app.UseFileServer(new FileServerOptions
 {
     FileProvider = new PhysicalFileProvider(
@@ -27,7 +28,7 @@ app.UseFileServer(new FileServerOptions
     EnableDefaultFiles = true
 });
 
-// ✅ 3. Explicitly map and serve the 'admin' directory assets securely
+// 3. Explicitly map and serve the 'admin' directory assets securely
 app.UseStaticFiles(new StaticFileOptions
 {
     FileProvider = new PhysicalFileProvider(
@@ -35,7 +36,7 @@ app.UseStaticFiles(new StaticFileOptions
     RequestPath = "/admin"
 });
 
-// ✅ 4. Serve static files from assets folder (css, js)
+// 4. Serve static files from assets folder (css, js)
 app.UseStaticFiles(new StaticFileOptions
 {
     FileProvider = new PhysicalFileProvider(
@@ -55,7 +56,13 @@ app.MapPost("/api/login", async (LoginRequest request, IConfiguration config) =>
     using var connection = new MySqlConnection(connectionString);
     await connection.OpenAsync();
 
-    string query = "SELECT Role FROM Users WHERE Email = @Email AND Password = @Password";
+    string query = @"
+        SELECT role AS Role FROM users WHERE email = @Email AND password = @Password
+        UNION ALL
+        SELECT role AS Role FROM driver WHERE email = @Email AND password = @Password
+        UNION ALL
+        SELECT 'STUDENT' AS Role FROM student WHERE email = @Email AND password = @Password
+        LIMIT 1;";
 
     using var command = new MySqlCommand(query, connection);
     command.Parameters.AddWithValue("@Email", request.Email);
@@ -77,14 +84,15 @@ app.MapPost("/api/login", async (LoginRequest request, IConfiguration config) =>
 // ---------------------------------------------------------
 app.MapGet("/api/driver/profile", async (string email, IConfiguration config) =>
 {
-    if (string.IsNullOrEmpty(email)) email = "driver@ride.com";
+    if (string.IsNullOrEmpty(email)) email = "thabo.nkosi@shuttle.nmu.ac.za";
 
     string connectionString = config.GetConnectionString("DefaultConnection");
     using var connection = new MySqlConnection(connectionString);
     await connection.OpenAsync();
 
-    // CONCAT applied here to return fName and lName combined as 'FullName' to your frontend
-    string query = "SELECT UserID, CONCAT(fName, ' ', lName) AS FullName, Email, Role FROM Users WHERE Email = @Email LIMIT 1;";
+    string query = @"
+        SELECT driver_id, CONCAT(first_name, ' ', last_name) AS FullName, email, role
+        FROM driver WHERE email = @Email LIMIT 1;";
     using var command = new MySqlCommand(query, connection);
     command.Parameters.AddWithValue("@Email", email);
 
@@ -93,16 +101,17 @@ app.MapGet("/api/driver/profile", async (string email, IConfiguration config) =>
     {
         return Results.Ok(new
         {
-            idNumber = $"EMP-{reader["UserID"]}",
+            idNumber = $"DRV-{reader["driver_id"]}",
             fullName = reader["FullName"].ToString(),
-            email = reader["Email"].ToString(),
-            role = reader["Role"].ToString()
+            email = reader["email"].ToString(),
+            role = reader["role"].ToString()
         });
     }
     return Results.NotFound();
 });
 
-app.MapGet("/api/driver/bookings", async (IConfiguration config) => {
+// Bookings for the trips this driver runs. Pass ?email=driver@example.com
+app.MapGet("/api/driver/bookings", async (string? email, IConfiguration config) => {
     string connectionString = config.GetConnectionString("DefaultConnection");
     var bookings = new List<object>();
 
@@ -111,47 +120,43 @@ app.MapGet("/api/driver/bookings", async (IConfiguration config) => {
 
     try
     {
-        // Beautiful, accurate join utilizing the new database operational link
         string query = @"
-            SELECT b.BookingID, 
-                   CONCAT(u.fName, ' ', u.lName) AS FullName, 
-                   u.StudentNumber, 
-                   r.DepartureFrom, 
-                   r.ArrivalAt, 
-                   sch.DepartureTime, 
-                   b.BookingDate, 
-                   b.Status,
-                   s.ShuttleName
-            FROM Bookings b
-            JOIN Users u ON b.StudentID = u.UserID
-            JOIN ShuttleSchedules sch ON b.ScheduleID = sch.ScheduleID
-            JOIN Routes r ON sch.RouteID = r.RouteID
-            JOIN Shuttles s ON sch.ShuttleID = s.ShuttleID
-            ORDER BY sch.DepartureTime ASC;";
+            SELECT tb.booking_id,
+                   CONCAT(s.first_name, ' ', s.last_name) AS FullName,
+                   s.student_number,
+                   t.departure_stop,
+                   t.destination_stop,
+                   t.departure_time,
+                   tb.booking_date,
+                   tb.booking_status,
+                   v.model AS VehicleModel
+            FROM trip_booking tb
+            JOIN student s ON tb.student_id = s.student_id
+            JOIN trip t ON tb.trip_id = t.trip_id
+            JOIN driver d ON t.driver_id = d.driver_id
+            LEFT JOIN vehicle v ON t.registration_number = v.registration_number
+            WHERE (@Email IS NULL OR d.email = @Email)
+            ORDER BY t.departure_time ASC;";
 
         using var command = new MySqlCommand(query, connection);
+        command.Parameters.AddWithValue("@Email", string.IsNullOrEmpty(email) ? (object)DBNull.Value : email);
         using var reader = await command.ExecuteReaderAsync();
 
         while (await reader.ReadAsync())
         {
-            string departureTime = reader["DepartureTime"].ToString();
-            if (departureTime.Length >= 5) departureTime = departureTime.Substring(0, 5);
-
-            string bookingDate = reader["BookingDate"] != DBNull.Value
-                ? Convert.ToDateTime(reader["BookingDate"]).ToString("yyyy-MM-dd")
-                : "2026-06-26";
-
             bookings.Add(new
             {
-                bookingId = Convert.ToInt32(reader["BookingID"]),
+                bookingId = Convert.ToInt32(reader["booking_id"]),
                 studentName = reader["FullName"].ToString(),
-                studentNumber = reader["StudentNumber"] != DBNull.Value ? reader["StudentNumber"].ToString() : "N/A",
-                shuttle = reader["ShuttleName"].ToString(),     // Done! Pulls "Blue Line Alpha", etc.
-                departureFrom = reader["DepartureFrom"].ToString(),
-                arrivalAt = reader["ArrivalAt"].ToString(),
-                departureTime = departureTime,
-                bookingDate = bookingDate,
-                status = reader["Status"].ToString()
+                studentNumber = reader["student_number"] != DBNull.Value ? reader["student_number"].ToString() : "N/A",
+                shuttle = reader["VehicleModel"] != DBNull.Value ? reader["VehicleModel"].ToString() : "Unassigned",
+                departureFrom = reader["departure_stop"].ToString(),
+                arrivalAt = reader["destination_stop"].ToString(),
+                departureTime = Convert.ToDateTime(reader["departure_time"]).ToString("HH:mm"),
+                bookingDate = reader["booking_date"] != DBNull.Value
+                    ? Convert.ToDateTime(reader["booking_date"]).ToString("yyyy-MM-dd")
+                    : "",
+                status = reader["booking_status"].ToString()
             });
         }
     }
@@ -169,34 +174,59 @@ app.MapGet("/api/driver/bookings", async (IConfiguration config) => {
 // ---------------------------------------------------------
 app.MapGet("/api/admin/driver-ratings", async (IConfiguration config) => {
     string connectionString = config.GetConnectionString("DefaultConnection");
-    var drivers = new List<object>();
+    var list = new List<object>();
 
     using var connection = new MySqlConnection(connectionString);
-    await connection.OpenAsync();
-
-    // CONCAT applied here to combine fName and lName as 'FullName'
-    string query = @"
-        SELECT CONCAT(fName, ' ', lName) AS FullName, StudentNumber, JoinDate, AverageRating, TotalTrips, TotalRatingsCount 
-        FROM Users 
-        WHERE LOWER(Role) = 'driver' AND IsVerified = 1
-        ORDER BY AverageRating DESC;";
-
-    using var command = new MySqlCommand(query, connection);
-    using var reader = await command.ExecuteReaderAsync();
-
-    while (await reader.ReadAsync())
+    try
     {
-        drivers.Add(new
+        await connection.OpenAsync();
+
+        string query = @"
+            SELECT 
+                d.driver_id,
+                CONCAT(d.first_name, ' ', d.last_name) AS full_name,
+                d.email,
+                d.role,
+                d.join_date,
+                COALESCE(s.student_number, CONCAT('DRV-', d.driver_id)) AS display_id,
+                COUNT(DISTINCT t.trip_id) AS total_trips,
+                COALESCE(AVG(r.rating), 0.0) AS avg_rating,
+                COUNT(r.review_id) AS total_reviews
+            FROM driver d
+            LEFT JOIN student s ON d.email = s.email
+            LEFT JOIN trip t ON d.driver_id = t.driver_id
+            LEFT JOIN trip_booking tb ON tb.trip_id = t.trip_id
+            LEFT JOIN trip_review r ON r.booking_id = tb.booking_id
+            WHERE d.is_verified = 1 
+              AND (d.role = 'SHUTTLE_DRIVER' OR d.role IS NULL OR d.role != 'STUDENT_DRIVER')
+            GROUP BY d.driver_id, d.first_name, d.last_name, d.email, d.role, d.join_date, s.student_number;";
+
+        using var command = new MySqlCommand(query, connection);
+        using var reader = await command.ExecuteReaderAsync();
+
+        while (await reader.ReadAsync())
         {
-            FullName = reader["FullName"].ToString(),
-            StudentNumber = reader["StudentNumber"] != DBNull.Value ? reader["StudentNumber"].ToString() : "N/A",
-            JoinDateText = reader["JoinDate"] != DBNull.Value ? Convert.ToDateTime(reader["JoinDate"]).ToString("MMM yyyy") : "Jan 2026",
-            AverageRating = Convert.ToDouble(reader["AverageRating"]),
-            TotalTrips = Convert.ToInt32(reader["TotalTrips"]),
-            TotalRatingsCount = Convert.ToInt32(reader["TotalRatingsCount"])
-        });
+            list.Add(new
+            {
+                driverId = Convert.ToInt32(reader["driver_id"]),
+                fullName = reader["full_name"].ToString(),
+                studentNumber = reader["display_id"].ToString(),
+                joinDateText = reader["join_date"] != DBNull.Value
+                    ? Convert.ToDateTime(reader["join_date"]).ToString("MMM yyyy")
+                    : "Jan 2025",
+                totalTrips = Convert.ToInt32(reader["total_trips"]),
+                averageRating = Math.Round(Convert.ToDouble(reader["avg_rating"]), 1),
+                totalRatingsCount = Convert.ToInt32(reader["total_reviews"])
+            });
+        }
     }
-    return Results.Ok(drivers);
+    catch (Exception ex)
+    {
+        Console.WriteLine($"[API Error] /api/admin/driver-ratings execution failed: {ex.Message}");
+        return Results.Ok(new List<object>());
+    }
+
+    return Results.Ok(list);
 });
 
 app.MapGet("/api/admin/unverified-drivers", async (IConfiguration config) => {
@@ -206,11 +236,10 @@ app.MapGet("/api/admin/unverified-drivers", async (IConfiguration config) => {
     using var connection = new MySqlConnection(connectionString);
     await connection.OpenAsync();
 
-    // CONCAT applied here to combine fName and lName as 'FullName'
     string query = @"
-        SELECT UserID, CONCAT(fName, ' ', lName) AS FullName, StudentNumber, Email 
-        FROM Users 
-        WHERE LOWER(Role) = 'driver' AND IsVerified = 0;";
+        SELECT driver_id, CONCAT(first_name, ' ', last_name) AS FullName, email, phone
+        FROM driver
+        WHERE is_verified = 0;";
 
     using var command = new MySqlCommand(query, connection);
     using var reader = await command.ExecuteReaderAsync();
@@ -219,10 +248,10 @@ app.MapGet("/api/admin/unverified-drivers", async (IConfiguration config) => {
     {
         unverified.Add(new
         {
-            UserId = Convert.ToInt32(reader["UserID"]),
+            DriverId = Convert.ToInt32(reader["driver_id"]),
             FullName = reader["FullName"].ToString(),
-            StudentNumber = reader["StudentNumber"] != DBNull.Value ? reader["StudentNumber"].ToString() : "N/A",
-            Email = reader["Email"].ToString()
+            Email = reader["email"].ToString(),
+            Phone = reader["phone"] != DBNull.Value ? reader["phone"].ToString() : "N/A"
         });
     }
     return Results.Ok(unverified);
@@ -234,34 +263,33 @@ app.MapPost("/api/admin/verify-driver", async (VerifyActionRequest req, IConfigu
     using var connection = new MySqlConnection(connectionString);
     await connection.OpenAsync();
 
-    string query = "UPDATE Users SET IsVerified = 1 WHERE UserID = @UserID;";
+    string query = "UPDATE driver SET is_verified = 1 WHERE driver_id = @DriverId;";
 
     using var command = new MySqlCommand(query, connection);
-    command.Parameters.AddWithValue("@UserID", req.UserId);
+    command.Parameters.AddWithValue("@DriverId", req.DriverId);
 
     int rowsAffected = await command.ExecuteNonQueryAsync();
     return rowsAffected > 0 ? Results.Ok(new { success = true }) : Results.BadRequest();
 });
 
-app.MapGet("/api/admin/drivers/{studentId}", async (string studentId, IConfiguration config) =>
+app.MapGet("/api/admin/drivers/{driverId:int}", async (int driverId, IConfiguration config) =>
 {
     string connectionString = config.GetConnectionString("DefaultConnection");
 
     using var connection = new MySqlConnection(connectionString);
     await connection.OpenAsync();
 
-    // CONCAT applied here to combine fName and lName as 'FullName'
     string query = @"
-        SELECT CONCAT(u.fName, ' ', u.lName) AS FullName, u.StudentNumber, u.Email, 
-               da.ContactNumber, da.VehicleMakeModel, da.RegistrationNumber, 
-               da.SeatingCapacity, da.VehicleColor, da.LicenseImagePath, 
+        SELECT CONCAT(d.first_name, ' ', d.last_name) AS FullName, d.email, d.phone AS ContactNumber,
+               da.VehicleMakeModel, da.RegistrationNumber,
+               da.SeatingCapacity, da.VehicleColor, da.LicenseImagePath,
                da.RegistrationFilePath, da.ApplicationStatus
-        FROM Users u
-        INNER JOIN DriverApplications da ON u.UserID = da.UserID
-        WHERE u.StudentNumber = @StudentNumber LIMIT 1;";
+        FROM driver d
+        INNER JOIN driverapplications da ON d.driver_id = da.DriverID
+        WHERE d.driver_id = @DriverId LIMIT 1;";
 
     using var command = new MySqlCommand(query, connection);
-    command.Parameters.AddWithValue("@StudentNumber", studentId);
+    command.Parameters.AddWithValue("@DriverId", driverId);
 
     using var reader = await command.ExecuteReaderAsync();
 
@@ -270,9 +298,8 @@ app.MapGet("/api/admin/drivers/{studentId}", async (string studentId, IConfigura
         return Results.Ok(new
         {
             fullName = reader["FullName"].ToString(),
-            studentNumber = reader["StudentNumber"].ToString(),
-            email = reader["Email"].ToString(),
-            contactNumber = reader["ContactNumber"].ToString(),
+            email = reader["email"].ToString(),
+            contactNumber = reader["ContactNumber"] != DBNull.Value ? reader["ContactNumber"].ToString() : "",
             vehicleMakeModel = reader["VehicleMakeModel"].ToString(),
             registrationNumber = reader["RegistrationNumber"].ToString(),
             seatingCapacity = Convert.ToInt32(reader["SeatingCapacity"]),
@@ -286,25 +313,25 @@ app.MapGet("/api/admin/drivers/{studentId}", async (string studentId, IConfigura
     return Results.NotFound(new { message = "Application profile details not found." });
 });
 
-app.MapPost("/api/admin/drivers/{studentId}/status", async (string studentId, DynamicStatusUpdate req, IConfiguration config) =>
+app.MapPost("/api/admin/drivers/{driverId:int}/status", async (int driverId, DynamicStatusUpdate req, IConfiguration config) =>
 {
     string connectionString = config.GetConnectionString("DefaultConnection");
 
     using var connection = new MySqlConnection(connectionString);
     await connection.OpenAsync();
 
-    int isVerifiedValue = (req.Status.Equals("Approved", StringComparison.OrdinalIgnoreCase)) ? 1 : 0;
+    int isVerifiedValue = req.Status.Equals("Approved", StringComparison.OrdinalIgnoreCase) ? 1 : 0;
 
     string updateQuery = @"
-        UPDATE Users u
-        INNER JOIN DriverApplications da ON u.UserID = da.UserID
-        SET da.ApplicationStatus = @Status, u.IsVerified = @IsVerified
-        WHERE u.StudentNumber = @StudentNumber;";
+        UPDATE driver dr
+        INNER JOIN driverapplications da ON dr.driver_id = da.DriverID
+        SET da.ApplicationStatus = @Status, dr.is_verified = @IsVerified
+        WHERE dr.driver_id = @DriverId;";
 
     using var command = new MySqlCommand(updateQuery, connection);
     command.Parameters.AddWithValue("@Status", req.Status);
     command.Parameters.AddWithValue("@IsVerified", isVerifiedValue);
-    command.Parameters.AddWithValue("@StudentNumber", studentId);
+    command.Parameters.AddWithValue("@DriverId", driverId);
 
     int rowsAffected = await command.ExecuteNonQueryAsync();
     return rowsAffected > 0 ? Results.Ok(new { success = true }) : Results.BadRequest();
@@ -313,6 +340,7 @@ app.MapPost("/api/admin/drivers/{studentId}/status", async (string studentId, Dy
 // ---------------------------------------------------------
 // SHUTTLE COORDINATOR FLEET ENDPOINTS
 // ---------------------------------------------------------
+// UPDATED GET: Filters out 'Inactive' soft-deleted vehicles from layout
 app.MapGet("/api/coordinator/shuttles", async (IConfiguration config) => {
     string connectionString = config.GetConnectionString("DefaultConnection");
     var shuttles = new List<object>();
@@ -320,7 +348,13 @@ app.MapGet("/api/coordinator/shuttles", async (IConfiguration config) => {
     using var connection = new MySqlConnection(connectionString);
     await connection.OpenAsync();
 
-    string query = "SELECT ShuttleID, ShuttleName, LicensePlate, Capacity, Status FROM Shuttles ORDER BY ShuttleID DESC;";
+    string query = @"
+        SELECT v.vehicle_id, v.model, v.registration_number, v.capacity, v.driver_id, v.status,
+               COALESCE(CONCAT(d.first_name, ' ', d.last_name), 'Unassigned') AS DriverName
+        FROM vehicle v
+        LEFT JOIN driver d ON v.driver_id = d.driver_id
+        WHERE v.status != 'Inactive'
+        ORDER BY v.vehicle_id DESC;";
 
     using var command = new MySqlCommand(query, connection);
     using var reader = await command.ExecuteReaderAsync();
@@ -329,11 +363,13 @@ app.MapGet("/api/coordinator/shuttles", async (IConfiguration config) => {
     {
         shuttles.Add(new
         {
-            shuttleId = Convert.ToInt32(reader["ShuttleID"]),
-            shuttleName = reader["ShuttleName"].ToString(),
-            licensePlate = reader["LicensePlate"].ToString(),
-            capacity = Convert.ToInt32(reader["Capacity"]),
-            status = reader["Status"].ToString()
+            shuttleId = Convert.ToInt32(reader["vehicle_id"]),
+            shuttleName = reader["model"].ToString(),
+            licensePlate = reader["registration_number"].ToString(),
+            capacity = Convert.ToInt32(reader["capacity"]),
+            status = reader["status"].ToString(),
+            driverId = reader["driver_id"] != DBNull.Value ? Convert.ToInt32(reader["driver_id"]) : (int?)null,
+            driverName = reader["DriverName"].ToString()
         });
     }
     return Results.Ok(shuttles);
@@ -344,14 +380,15 @@ app.MapPost("/api/coordinator/shuttles", async (ShuttleDto newShuttle, IConfigur
     using var connection = new MySqlConnection(connectionString);
     await connection.OpenAsync();
 
-    string query = @"INSERT INTO Shuttles (ShuttleName, LicensePlate, Capacity, Status) 
-                     VALUES (@Name, @Plate, @Capacity, @Status);";
+    string query = @"INSERT INTO vehicle (driver_id, registration_number, model, capacity, status)
+                     VALUES (@DriverId, @Plate, @Name, @Capacity, @Status);";
 
     using var command = new MySqlCommand(query, connection);
+    command.Parameters.AddWithValue("@DriverId", newShuttle.DriverId);
     command.Parameters.AddWithValue("@Name", newShuttle.ShuttleName);
     command.Parameters.AddWithValue("@Plate", newShuttle.LicensePlate);
     command.Parameters.AddWithValue("@Capacity", newShuttle.Capacity);
-    command.Parameters.AddWithValue("@Status", newShuttle.Status);
+    command.Parameters.AddWithValue("@Status", string.IsNullOrEmpty(newShuttle.Status) ? "Active" : newShuttle.Status);
 
     try
     {
@@ -364,66 +401,110 @@ app.MapPost("/api/coordinator/shuttles", async (ShuttleDto newShuttle, IConfigur
     }
 });
 
-app.MapPut("/api/coordinator/shuttles/{id:int}", async (int id, ShuttleDto updatedShuttle, IConfiguration config) => {
+// PUT: Update an existing driver's profile details
+app.MapPut("/api/coordinator/drivers/{id:int}", async (int id, DriverUpsertDto req, IConfiguration config) => {
     string connectionString = config.GetConnectionString("DefaultConnection");
     using var connection = new MySqlConnection(connectionString);
     await connection.OpenAsync();
 
-    string query = @"UPDATE Shuttles 
-                     SET ShuttleName = @Name, LicensePlate = @Plate, Capacity = @Capacity, Status = @Status 
-                     WHERE ShuttleID = @Id;";
+    string firstName = req.FullName;
+    string lastName = "Driver";
+    string[] nameParts = req.FullName.Trim().Split(' ', 2);
+    if (nameParts.Length > 1) { firstName = nameParts[0]; lastName = nameParts[1]; }
+
+    string query = @"UPDATE driver 
+                     SET first_name = @First, last_name = @Last, email = @Email, phone = @Phone 
+                     WHERE driver_id = @Id;";
 
     using var command = new MySqlCommand(query, connection);
     command.Parameters.AddWithValue("@Id", id);
-    command.Parameters.AddWithValue("@Name", updatedShuttle.ShuttleName);
-    command.Parameters.AddWithValue("@Plate", updatedShuttle.LicensePlate);
-    command.Parameters.AddWithValue("@Capacity", updatedShuttle.Capacity);
-    command.Parameters.AddWithValue("@Status", updatedShuttle.Status);
+    command.Parameters.AddWithValue("@First", firstName);
+    command.Parameters.AddWithValue("@Last", lastName);
+    command.Parameters.AddWithValue("@Email", req.Email);
+    command.Parameters.AddWithValue("@Phone", string.IsNullOrEmpty(req.Phone) ? (object)DBNull.Value : req.Phone);
 
     int rowsAffected = await command.ExecuteNonQueryAsync();
-    if (rowsAffected == 0) return Results.NotFound("Shuttle record not found.");
-
-    return Results.Ok(new { message = "Shuttle updated successfully." });
+    return rowsAffected > 0 ? Results.Ok(new { success = true }) : Results.NotFound();
 });
-
-app.MapDelete("/api/coordinator/shuttles/{id:int}", async (int id, IConfiguration config) => {
+// POST: Create a new shuttle driver profile from the coordinator portal
+app.MapPost("/api/coordinator/drivers", async (DriverUpsertDto req, IConfiguration config) => {
     string connectionString = config.GetConnectionString("DefaultConnection");
     using var connection = new MySqlConnection(connectionString);
     await connection.OpenAsync();
 
-    string query = "DELETE FROM Shuttles WHERE ShuttleID = @Id;";
+    string firstName = req.FullName;
+    string lastName = "Driver";
+    string[] nameParts = req.FullName.Trim().Split(' ', 2);
+    if (nameParts.Length > 1) { firstName = nameParts[0]; lastName = nameParts[1]; }
 
-    using var command = new MySqlCommand(query, connection);
-    command.Parameters.AddWithValue("@Id", id);
+    string insertQuery = @"
+        INSERT INTO driver (first_name, last_name, email, phone, role, is_verified, join_date, password, total_trips)
+        VALUES (@First, @Last, @Email, @Phone, 'SHUTTLE_DRIVER', 1, CURDATE(), 'Driver@GetYourRide2026', 0);";
 
-    int rowsAffected = await command.ExecuteNonQueryAsync();
-    if (rowsAffected == 0) return Results.NotFound("Target record does not exist.");
+    using var command = new MySqlCommand(insertQuery, connection);
+    command.Parameters.AddWithValue("@First", firstName);
+    command.Parameters.AddWithValue("@Last", lastName);
+    command.Parameters.AddWithValue("@Email", req.Email);
+    command.Parameters.AddWithValue("@Phone", string.IsNullOrEmpty(req.Phone) ? (object)DBNull.Value : req.Phone);
 
-    return Results.Ok(new { message = "Asset successfully deleted." });
+    try
+    {
+        await command.ExecuteNonQueryAsync();
+        return Results.Ok(new { success = true, message = "Driver added successfully." });
+    }
+    catch (MySqlException ex) when (ex.Number == 1062)
+    {
+        return Results.BadRequest(new { success = false, message = "A driver with this email already exists." });
+    }
+    catch (Exception ex)
+    {
+        Console.WriteLine($"[API Error] Add driver failed: {ex.Message}");
+        return Results.Json(new { success = false, message = ex.Message }, statusCode: 500);
+    }
 });
-// Add this so the frontend dropdown can actually fetch your routes!
-app.MapGet("/api/coordinator/routes", async (IConfiguration config) => {
+// DELETE: Remove a driver profile from the roster
+app.MapDelete("/api/coordinator/drivers/{id:int}", async (int id, IConfiguration config) => {
     string connectionString = config.GetConnectionString("DefaultConnection");
-    var routes = new List<object>();
+    using var connection = new MySqlConnection(connectionString);
+    await connection.OpenAsync();
+
+    // Set foreign key references in vehicle table to NULL first so it doesn't crash
+    string clearVehicleQuery = "UPDATE vehicle SET driver_id = NULL WHERE driver_id = @Id;";
+    using var clearCmd = new MySqlCommand(clearVehicleQuery, connection);
+    clearCmd.Parameters.AddWithValue("@Id", id);
+    await clearCmd.ExecuteNonQueryAsync();
+
+    string deleteQuery = "DELETE FROM driver WHERE driver_id = @Id;";
+    using var deleteCmd = new MySqlCommand(deleteQuery, connection);
+    deleteCmd.Parameters.AddWithValue("@Id", id);
+
+    int rowsAffected = await deleteCmd.ExecuteNonQueryAsync();
+    return rowsAffected > 0 ? Results.Ok(new { success = true }) : Results.NotFound();
+});
+// "Routes" aren't a table -- they're derived from the distinct departure/destination pairs
+// Route dropdown now sourced from shuttle_stop, not distinct trip text pairs
+app.MapGet("/api/coordinator/stops", async (IConfiguration config) => {
+    string connectionString = config.GetConnectionString("DefaultConnection");
+    var stops = new List<object>();
 
     using var connection = new MySqlConnection(connectionString);
     await connection.OpenAsync();
 
-    string query = "SELECT RouteID, RouteName, DepartureFrom, ArrivalAt FROM Routes;";
+    string query = "SELECT stop_id, stop_name FROM shuttle_stop ORDER BY stop_name;";
     using var command = new MySqlCommand(query, connection);
     using var reader = await command.ExecuteReaderAsync();
 
     while (await reader.ReadAsync())
     {
-        routes.Add(new
+        stops.Add(new
         {
-            routeId = Convert.ToInt32(reader["RouteID"]),
-            // Creates the "Main Gate ➔ North Residence" string pattern the POST endpoint looks for
-            routeName = $"{reader["DepartureFrom"]} ➔ {reader["ArrivalAt"]}"
+            stopId = Convert.ToInt32(reader["stop_id"]),
+            stopName = reader["stop_name"].ToString()
         });
     }
-    return Results.Ok(routes);
+    return Results.Ok(stops);
 });
+
 // ---------------------------------------------------------
 // SHUTTLE COORDINATOR SCHEDULING ENDPOINTS
 // ---------------------------------------------------------
@@ -436,47 +517,32 @@ app.MapGet("/api/coordinator/schedules", async (IConfiguration config) => {
 
     try
     {
-        // CONCAT applied here to combine u.fName and u.lName as 'DriverName'
         string query = @"
-            SELECT sch.ScheduleID, r.DepartureFrom, r.ArrivalAt, sch.DepartureTime, sch.ScheduleDate,
-                   COALESCE(s.ShuttleName, 'Unassigned') AS ShuttleName, 
-                   COALESCE(CONCAT(u.fName, ' ', u.lName), 'Unassigned') AS DriverName
-            FROM ShuttleSchedules sch
-            INNER JOIN Routes r ON sch.RouteID = r.RouteID
-            LEFT JOIN Shuttles s ON sch.ShuttleID = s.ShuttleID
-            LEFT JOIN Users u ON sch.DriverID = u.UserID
-            ORDER BY sch.ScheduleDate DESC, sch.DepartureTime ASC;";
+            SELECT t.trip_id, t.departure_stop, t.destination_stop, t.departure_time, t.status,
+                   COALESCE(v.model, 'Unassigned') AS ShuttleName,
+                   COALESCE(CONCAT(d.first_name, ' ', d.last_name), 'Unassigned') AS DriverName
+            FROM trip t
+            LEFT JOIN vehicle v ON t.registration_number = v.registration_number
+            LEFT JOIN driver d ON t.driver_id = d.driver_id
+            WHERE t.trip_type = 'SHUTTLE'
+            ORDER BY t.departure_time DESC;";
 
         using var command = new MySqlCommand(query, connection);
         using var reader = await command.ExecuteReaderAsync();
 
-        int scheduleIdOrdinal = reader.GetOrdinal("ScheduleID");
-        int fromOrdinal = reader.GetOrdinal("DepartureFrom");
-        int atOrdinal = reader.GetOrdinal("ArrivalAt");
-        int timeOrdinal = reader.GetOrdinal("DepartureTime");
-        int dateOrdinal = reader.GetOrdinal("ScheduleDate");
-        int shuttleOrdinal = reader.GetOrdinal("ShuttleName");
-        int driverOrdinal = reader.GetOrdinal("DriverName");
-
         while (await reader.ReadAsync())
         {
-            string scheduleTimeFormatted = reader.GetValue(timeOrdinal).ToString();
-            if (scheduleTimeFormatted.Length >= 5) scheduleTimeFormatted = scheduleTimeFormatted.Substring(0, 5);
-
-            string scheduleDateFormatted = "2026-06-26";
-            if (!reader.IsDBNull(dateOrdinal))
-            {
-                scheduleDateFormatted = Convert.ToDateTime(reader.GetValue(dateOrdinal)).ToString("yyyy-MM-dd");
-            }
+            var departureDateTime = Convert.ToDateTime(reader["departure_time"]);
 
             schedules.Add(new
             {
-                scheduleId = Convert.ToInt32(reader[scheduleIdOrdinal]),
-                routeName = $"{reader[fromOrdinal]} ➔ {reader[atOrdinal]}",
-                departureTime = scheduleTimeFormatted,
-                scheduleDate = scheduleDateFormatted,
-                shuttleName = reader[shuttleOrdinal].ToString(),
-                driverName = reader[driverOrdinal].ToString()
+                scheduleId = Convert.ToInt32(reader["trip_id"]),
+                routeName = $"{reader["departure_stop"]} ➔ {reader["destination_stop"]}",
+                departureTime = departureDateTime.ToString("HH:mm"),
+                scheduleDate = departureDateTime.ToString("yyyy-MM-dd"),
+                shuttleName = reader["ShuttleName"].ToString(),
+                driverName = reader["DriverName"].ToString(),
+                status = reader["status"].ToString()
             });
         }
     }
@@ -488,7 +554,6 @@ app.MapGet("/api/coordinator/schedules", async (IConfiguration config) => {
     return Results.Ok(schedules);
 });
 
-// 5. Fetch all verified drivers for the coordinator roster (GET) - UPDATED TO DYNAMICALLY LOAD ASSIGNED SHUTTLES
 app.MapGet("/api/coordinator/drivers", async (IConfiguration config) => {
     string connectionString = config.GetConnectionString("DefaultConnection");
     var drivers = new List<object>();
@@ -498,21 +563,20 @@ app.MapGet("/api/coordinator/drivers", async (IConfiguration config) => {
 
     try
     {
-        // Using a clean isolated subquery to pull the exact live shuttle asset match safely
         string query = @"
-            SELECT u.UserID, u.StudentNumber, CONCAT(u.fName, ' ', u.lName) AS FullName, u.Email,
-                   COALESCE(da.ContactNumber, 'N/A') AS ContactNumber,
-                   COALESCE(
-                       (SELECT s.ShuttleName 
-                        FROM ShuttleSchedules sch 
-                        JOIN Shuttles s ON sch.ShuttleID = s.ShuttleID 
-                        WHERE sch.DriverID = u.UserID 
-                        LIMIT 1), 
-                       'Unassigned'
-                   ) AS MappedShuttle
-            FROM Users u
-            LEFT JOIN DriverApplications da ON u.UserID = da.UserID
-            WHERE LOWER(u.Role) = 'driver' AND u.IsVerified = 1;";
+            SELECT d.driver_id, 
+                   CONCAT(d.first_name, ' ', d.last_name) AS FullName, 
+                   d.email, 
+                   d.phone,
+                   d.role,
+                   s.student_number,
+                   COALESCE(GROUP_CONCAT(v.model SEPARATOR ', '), 'Unassigned') AS ShuttleName
+            FROM driver d
+            LEFT JOIN student s ON d.email = s.email
+            LEFT JOIN vehicle v ON d.driver_id = v.driver_id
+            WHERE d.is_verified = 1 
+              AND (d.role = 'SHUTTLE_DRIVER' OR d.role IS NULL OR d.role != 'STUDENT_DRIVER') -- 👈 FILTERS OUT STUDENT DRIVERS
+            GROUP BY d.driver_id, d.first_name, d.last_name, d.email, d.phone, d.role, s.student_number;";
 
         using var command = new MySqlCommand(query, connection);
         using var reader = await command.ExecuteReaderAsync();
@@ -521,15 +585,15 @@ app.MapGet("/api/coordinator/drivers", async (IConfiguration config) => {
         {
             drivers.Add(new
             {
-                id = Convert.ToInt32(reader["UserID"]),
-                driverId = Convert.ToInt32(reader["UserID"]),
-                name = reader["FullName"].ToString(),
+                id = Convert.ToInt32(reader["driver_id"]),
+                driverId = Convert.ToInt32(reader["driver_id"]),
                 fullName = reader["FullName"].ToString(),
-                email = reader["Email"].ToString(),
-                employeeId = reader["StudentNumber"] != DBNull.Value ? reader["StudentNumber"].ToString() : $"EMP-{reader["UserID"]}",
-                studentNumber = reader["StudentNumber"] != DBNull.Value ? reader["StudentNumber"].ToString() : $"EMP-{reader["UserID"]}",
-                contactNumber = reader["ContactNumber"].ToString(),
-                assignedShuttle = reader["MappedShuttle"].ToString(), //
+                email = reader["email"].ToString(),
+                role = reader["role"] != DBNull.Value ? reader["role"].ToString() : "SHUTTLE_DRIVER",
+                employeeId = $"DRV-{reader["driver_id"]}",
+                studentNumber = reader["student_number"] != DBNull.Value ? reader["student_number"].ToString() : "N/A",
+                assignedShuttle = reader["ShuttleName"] != DBNull.Value ? reader["ShuttleName"].ToString() : "Unassigned",
+                contactNumber = reader["phone"] != DBNull.Value ? reader["phone"].ToString() : "N/A",
                 status = "Active"
             });
         }
@@ -542,65 +606,76 @@ app.MapGet("/api/coordinator/drivers", async (IConfiguration config) => {
 
     return Results.Ok(drivers);
 });
-
 app.MapPost("/api/coordinator/schedules", async (ScheduleDirectDto req, IConfiguration config) => {
     string connectionString = config.GetConnectionString("DefaultConnection");
     using var connection = new MySqlConnection(connectionString);
     await connection.OpenAsync();
 
-    string standardizedTime = req.DepartureTime;
-    if (standardizedTime.Length == 5) standardizedTime += ":00";
+    string fromLocation = req.FromStop?.Trim() ?? "";
+    string toLocation = req.ToStop?.Trim() ?? "";
 
-    string incoming = req.RouteName;
+    string dateString = string.IsNullOrEmpty(req.ScheduleDate) ? DateTime.Today.ToString("yyyy-MM-dd") : req.ScheduleDate;
+    string timeString = req.DepartureTime.Length == 5 ? req.DepartureTime + ":00" : req.DepartureTime;
 
-    // Split safely across any common arrow indicator variations (thin, thick, or dash)
-    string[] separators = new string[] { "→", "➔", "->" };
-    string[] locations = incoming.Split(separators, StringSplitOptions.RemoveEmptyEntries);
+    if (!DateTime.TryParse($"{dateString} {timeString}", out var departureDateTime))
+    {
+        return Results.BadRequest(new { success = false, message = "Invalid schedule date or time format." });
+    }
 
-    string fromLocation = locations.Length > 0 ? locations[0].Trim() : incoming.Trim();
-    string toLocation = locations.Length > 1 ? locations[1].Trim() : "Campus Hub";
+    string regNumber = "";
+    int capacity = 0;
+
+    string vehicleQuery = "SELECT registration_number, capacity FROM vehicle WHERE vehicle_id = @VehId OR registration_number = @RegNum LIMIT 1;";
+    using (var vehCmd = new MySqlCommand(vehicleQuery, connection))
+    {
+        int.TryParse(req.ShuttleID.ToString(), out int parsedId);
+        vehCmd.Parameters.AddWithValue("@VehId", parsedId);
+        vehCmd.Parameters.AddWithValue("@RegNum", req.ShuttleID.ToString());
+
+        using var vehReader = await vehCmd.ExecuteReaderAsync();
+        if (await vehReader.ReadAsync())
+        {
+            regNumber = vehReader["registration_number"].ToString();
+            capacity = Convert.ToInt32(vehReader["capacity"]);
+        }
+    }
+
+    if (string.IsNullOrEmpty(regNumber))
+    {
+        return Results.BadRequest(new { success = false, message = $"Could not locate a matching vehicle asset for ID/Plate: '{req.ShuttleID}'." });
+    }
 
     try
     {
-        // Fallback protection: Dynamically resolve RouteID by looking up matching text segments
         string insertQuery = @"
-            INSERT INTO ShuttleSchedules (RouteID, ScheduleDate, DepartureTime, ShuttleID, DriverID) 
-            VALUES (
-                COALESCE(
-                    (SELECT RouteID FROM Routes 
-                     WHERE (LOWER(DepartureFrom) LIKE CONCAT('%', LOWER(@From), '%') 
-                        OR LOWER(RouteName) LIKE CONCAT('%', LOWER(@From), '%'))
-                     LIMIT 1),
-                    1
-                ), 
-                @ScheduleDate, 
-                @DepartureTime, 
-                @ShuttleID, 
-                @DriverID
-            );";
+            INSERT INTO trip (driver_id, registration_number, trip_type, departure_stop, destination_stop,
+                               departure_time, available_seats, price, status)
+            VALUES (@DriverID, @RegNumber, 'SHUTTLE', @From, @To, @DepartureDateTime, @Seats, 0.00, 'SCHEDULED');";
 
         using var command = new MySqlCommand(insertQuery, connection);
         command.Parameters.AddWithValue("@From", fromLocation);
-        command.Parameters.AddWithValue("@ScheduleDate", string.IsNullOrEmpty(req.ScheduleDate) ? "2026-07-01" : req.ScheduleDate);
-        command.Parameters.AddWithValue("@DepartureTime", standardizedTime);
-        command.Parameters.AddWithValue("@ShuttleID", req.ShuttleID);
+        command.Parameters.AddWithValue("@To", toLocation);
+        command.Parameters.AddWithValue("@DepartureDateTime", departureDateTime);
+        command.Parameters.AddWithValue("@RegNumber", regNumber);
+        command.Parameters.AddWithValue("@Seats", capacity);
         command.Parameters.AddWithValue("@DriverID", req.DriverID);
 
         await command.ExecuteNonQueryAsync();
-        return Results.Ok(new { success = true, message = "Assignment recorded successfully inside ShuttleSchedules." });
+        return Results.Ok(new { success = true, message = "Assignment recorded successfully." });
     }
     catch (Exception ex)
     {
-        Console.WriteLine($"Database Save Error: {ex.Message}");
+        Console.WriteLine($"\n[Database Execution Failure]: {ex.Message}");
         return Results.Json(new { success = false, message = ex.Message }, statusCode: 500);
     }
 });
+
 app.MapGet("/api/coordinator/profile", async (string email, IConfiguration config) => {
     string connectionString = config.GetConnectionString("DefaultConnection");
     using var connection = new MySqlConnection(connectionString);
     await connection.OpenAsync();
 
-    string query = "SELECT UserID, StudentNumber, CONCAT(fName, ' ', lName) AS FullName, Email, Role FROM Users WHERE Email = @Email LIMIT 1;";
+    string query = "SELECT UserID, CONCAT(first_name, ' ', last_name) AS FullName, email, role FROM users WHERE email = @Email LIMIT 1;";
     using var command = new MySqlCommand(query, connection);
     command.Parameters.AddWithValue("@Email", email);
 
@@ -610,25 +685,22 @@ app.MapGet("/api/coordinator/profile", async (string email, IConfiguration confi
         return Results.Ok(new
         {
             userId = Convert.ToInt32(reader["UserID"]),
-            employeeId = reader["StudentNumber"] != DBNull.Value ? reader["StudentNumber"].ToString() : $"COORD-{reader["UserID"]}",
+            employeeId = $"COORD-{reader["UserID"]}",
             fullName = reader["FullName"].ToString(),
-            email = reader["Email"].ToString(),
-            role = reader["Role"].ToString()
+            email = reader["email"].ToString(),
+            role = reader["role"].ToString()
         });
     }
     return Results.NotFound(new { message = "Coordinator user record not located." });
 });
-// ---------------------------------------------------------
-// REVISED DRIVER UPSERT / POST ENDPOINT (Splitting Name)
-// ---------------------------------------------------------
+
 app.MapPost("/api/admin/drivers/upsert", async (DriverUpsertDto req, IConfiguration config) => {
     string connectionString = config.GetConnectionString("DefaultConnection");
     using var connection = new MySqlConnection(connectionString);
     await connection.OpenAsync();
 
-    // Here we split the requested incoming frontend 'FullName' string by space safely
     string firstName = req.FullName;
-    string lastName = "Driver"; // Safe fallback string case if no spaces exist
+    string lastName = "Driver";
 
     string[] nameParts = req.FullName.Trim().Split(' ', 2);
     if (nameParts.Length > 1)
@@ -638,19 +710,19 @@ app.MapPost("/api/admin/drivers/upsert", async (DriverUpsertDto req, IConfigurat
     }
 
     string insertQuery = @"
-        INSERT INTO Users (StudentNumber, fName, lName, Email, Password, Role, IsVerified) 
-        VALUES (@StudentNumber, @fName, @lName, @Email, '1234', 'Driver', 1);";
+        INSERT INTO driver (first_name, last_name, email, phone, role, is_verified, join_date, password, total_trips)
+        VALUES (@First, @Last, @Email, @Phone, 'STUDENT_DRIVER', 1, CURDATE(), '1234', 0);";
 
     using var command = new MySqlCommand(insertQuery, connection);
-    command.Parameters.AddWithValue("@StudentNumber", req.StudentNumber);
-    command.Parameters.AddWithValue("@fName", firstName);
-    command.Parameters.AddWithValue("@lName", lastName);
+    command.Parameters.AddWithValue("@First", firstName);
+    command.Parameters.AddWithValue("@Last", lastName);
     command.Parameters.AddWithValue("@Email", req.Email);
+    command.Parameters.AddWithValue("@Phone", string.IsNullOrEmpty(req.Phone) ? (object)DBNull.Value : req.Phone);
 
     try
     {
         await command.ExecuteNonQueryAsync();
-        return Results.Ok(new { success = true, message = "Driver data split and saved into database successfully." });
+        return Results.Ok(new { success = true, message = "Driver saved successfully." });
     }
     catch (Exception ex)
     {
@@ -658,52 +730,123 @@ app.MapPost("/api/admin/drivers/upsert", async (DriverUpsertDto req, IConfigurat
     }
 });
 
-app.Run();
-
-// ---------------------------------------------------------
-// DATA TRANSFER RECORDS (DTOs - Unchanged for frontend compatibility)
-// ---------------------------------------------------------
-public record ScheduleDirectDto(string RouteName, string ScheduleDate, string DepartureTime, int ShuttleID, int DriverID);
-public record LoginRequest(string Email, string Password);
-public record VerifyActionRequest(int UserId);
-public record DynamicStatusUpdate(string Status);
-public record ShuttleDto(string ShuttleName, string LicensePlate, int Capacity, string Status);
-public record DriverUpsertDto(string StudentNumber, string FullName, string Email);
-// Kept precisely as FullName
-// Add this Record to the bottom of your Program.cs
-public record ForgotPasswordRequest(string Email);
-public record ResetPasswordRequest(string Token, string NewPassword);
-
 // ---------------------------------------------------------
 // FORGOT/RESET PASSWORD ENDPOINTS
 // ---------------------------------------------------------
 app.MapGet("/Forgot.html", () => Results.File(Path.Combine(Directory.GetCurrentDirectory(), "Forgot.html"), "text/html"));
 
-// Endpoint 1: Generate and "Send" Token
 app.MapPost("/api/auth/forgot-password", async (ForgotPasswordRequest req, IConfiguration config) => {
     string connectionString = config.GetConnectionString("DefaultConnection");
     using var connection = new MySqlConnection(connectionString);
     await connection.OpenAsync();
 
-    // Check if user exists in your core 'users' table
-    string checkQuery = "SELECT user_id FROM users WHERE email = @Email LIMIT 1;";
-    using var checkCmd = new MySqlCommand(checkQuery, connection);
-    checkCmd.Parameters.AddWithValue("@Email", req.Email);
-    var userId = await checkCmd.ExecuteScalarAsync();
+    string[] tables = { "users", "driver", "student" };
+    string token = Guid.NewGuid().ToString().Substring(0, 6).ToUpper();
+    bool found = false;
 
-    if (userId != null)
+    foreach (var table in tables)
     {
-        // Generate a random 6-character token for simplicity
-        string token = Guid.NewGuid().ToString().Substring(0, 6).ToUpper();
+        string checkQuery = $"SELECT 1 FROM `{table}` WHERE email = @Email LIMIT 1;";
+        using var checkCmd = new MySqlCommand(checkQuery, connection);
+        checkCmd.Parameters.AddWithValue("@Email", req.Email);
+        var exists = await checkCmd.ExecuteScalarAsync();
 
-        // ⚠️ NOTE: For production, you would add a 'reset_token' column to your 'users' table.
-        // For testing, we print the functional link to your IDE console:
+        if (exists != null)
+        {
+            found = true;
+            string updateTokenQuery = $"UPDATE `{table}` SET reset_token = @Token WHERE email = @Email;";
+            using var updateCmd = new MySqlCommand(updateTokenQuery, connection);
+            updateCmd.Parameters.AddWithValue("@Token", token);
+            updateCmd.Parameters.AddWithValue("@Email", req.Email);
+            await updateCmd.ExecuteNonQueryAsync();
+            break;
+        }
+    }
+
+    if (found)
+    {
         Console.WriteLine("\n==========================================");
         Console.WriteLine($"[EMAIL SIMULATOR] To reset password, open:");
         Console.WriteLine($"http://localhost:5000/reset-password.html?token={token}&email={req.Email}");
         Console.WriteLine("==========================================\n");
     }
 
-    // Always return OK to protect user privacy
     return Results.Ok(new { success = true });
 });
+
+app.MapPost("/api/auth/reset-password", async (ResetPasswordRequest req, IConfiguration config) => {
+    string connectionString = config.GetConnectionString("DefaultConnection");
+    using var connection = new MySqlConnection(connectionString);
+    await connection.OpenAsync();
+
+    string[] tables = { "users", "driver", "student" };
+    int totalRowsAffected = 0;
+
+    foreach (var table in tables)
+    {
+        string resetQuery = $"UPDATE `{table}` SET password = @NewPassword, reset_token = NULL WHERE reset_token = @Token;";
+        using var command = new MySqlCommand(resetQuery, connection);
+        command.Parameters.AddWithValue("@NewPassword", req.NewPassword);
+        command.Parameters.AddWithValue("@Token", req.Token);
+        totalRowsAffected += await command.ExecuteNonQueryAsync();
+    }
+
+    if (totalRowsAffected > 0)
+    {
+        return Results.Ok(new { success = true, message = "Password updated successfully." });
+    }
+    return Results.BadRequest(new { success = false, message = "Invalid or expired reset token." });
+});
+app.MapGet("/api/admin/drivers/{driverId:long}/trips", async (long driverId, IConfiguration config) => {
+    string connectionString = config.GetConnectionString("DefaultConnection");
+    var trips = new List<object>();
+
+    using var connection = new MySqlConnection(connectionString);
+    await connection.OpenAsync();
+
+    string query = @"
+        SELECT t.trip_id, t.departure_stop, t.destination_stop, t.departure_time, t.status,
+               r.rating, r.review
+        FROM trip t
+        LEFT JOIN trip_booking tb ON tb.trip_id = t.trip_id
+        LEFT JOIN trip_review r ON r.booking_id = tb.booking_id
+        WHERE t.driver_id = @DriverId
+        ORDER BY t.departure_time DESC
+        LIMIT 20;";
+
+    using var command = new MySqlCommand(query, connection);
+    command.Parameters.AddWithValue("@DriverId", driverId);
+    using var reader = await command.ExecuteReaderAsync();
+
+    while (await reader.ReadAsync())
+    {
+        trips.Add(new
+        {
+            tripId = Convert.ToInt64(reader["trip_id"]),
+            departureStop = reader["departure_stop"].ToString(),
+            destinationStop = reader["destination_stop"].ToString(),
+            departureTime = reader["departure_time"] != DBNull.Value
+                ? Convert.ToDateTime(reader["departure_time"]).ToString("yyyy-MM-dd HH:mm")
+                : "",
+            status = reader["status"].ToString(),
+            rating = reader["rating"] != DBNull.Value ? Convert.ToInt32(reader["rating"]) : (int?)null,
+            review = reader["review"] != DBNull.Value ? reader["review"].ToString() : null
+        });
+    }
+    return Results.Ok(trips);
+});
+
+app.Run();
+
+// ---------------------------------------------------------
+// DATA TRANSFER RECORDS (DTOs) & REQUESTS
+// ---------------------------------------------------------
+public record LoginRequest(string Email, string Password);
+public record VerifyActionRequest(int DriverId);
+public record DynamicStatusUpdate(string Status);
+public record ShuttleDto(int? DriverId, string ShuttleName, string LicensePlate, int Capacity, string? Status);
+//public record ScheduleDirectDto(string RouteName, string DepartureTime, string ScheduleDate, object ShuttleID, int DriverID);
+public record ScheduleDirectDto(string FromStop, string ToStop, string ScheduleDate, string DepartureTime, object ShuttleID, int DriverID);
+public record DriverUpsertDto(string FullName, string Email, string? Phone);
+public record ForgotPasswordRequest(string Email);
+public record ResetPasswordRequest(string Token, string NewPassword);
