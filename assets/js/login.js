@@ -3,7 +3,6 @@ document.getElementById('loginForm').addEventListener('submit', async (e) => {
 
     const email = document.getElementById('email').value;
     const password = document.getElementById('password').value;
-    const errorMsg = document.getElementById('errorMessage');
 
     try {
         const response = await fetch('/api/login', {
@@ -15,23 +14,23 @@ document.getElementById('loginForm').addEventListener('submit', async (e) => {
         const data = await response.json();
 
         if (data.success) {
-            
+
             localStorage.setItem('userEmail', email.trim());
             const role = data.role.toLowerCase();
             if (role === 'admin') {
                 window.location.href = '/admin/dashboard.html';
             } else if (role === 'coordinator') {
                 window.location.href = '/coordinator/dashboard.html';
-            } else if (role==='shuttle_driver') {
+            } else if (role === 'shuttle_driver') {
                 window.location.href = `/driver/dashboard.html?email=${encodeURIComponent(email.trim())}`;
             } else {
-                errorMsg.textContent = "Role path not found.";
+                showToast("Role path not found.", "error");
             }
         } else {
-            errorMsg.textContent = data.message;
+            showToast(data.message || "Invalid email or password.", "error");
         }
     } catch (error) {
-        errorMsg.textContent = "Connection error. Ensure your backend is running.";
+        showToast("Connection error. Ensure your backend is running.", "error");
         console.error("Error:", error);
     }
 });

@@ -4,9 +4,355 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Coordinator Portal - Dashboard</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@500;600;700;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="../assets/css/styles.css">
     <link rel="stylesheet" href="../assets/css/coordinator.css">
     <link rel="stylesheet" href="../assets/css/driver-dashboard.css">
+
+    <!-- ============================================================
+         Enhancement layer — additive only. Everything below is
+         namespaced with "gyr-" so it can't collide with classes or
+         IDs your existing stylesheets/JS already rely on.
+         ============================================================ -->
+    <style>
+        :root {
+            --gyr-orange: #ff7a00;
+            --gyr-orange-light: #ffb27a;
+            --gyr-orange-soft: #fff1e6;
+            --gyr-teal: #0ea5e9;
+            --gyr-green: #10b981;
+            --gyr-amber: #f59e0b;
+            --gyr-red: #ef4444;
+            --gyr-ink: #1e293b;
+            --gyr-muted: #64748b;
+        }
+
+        h1, h2, h3, .brand h1 {
+            font-family: 'Poppins', sans-serif;
+        }
+
+        body, p, span, a, label, button, input, select {
+            font-family: 'Inter', sans-serif;
+        }
+
+        /* ---------- Welcome banner ---------- */
+        .gyr-welcome-banner {
+            position: relative;
+            overflow: hidden;
+            background: linear-gradient(135deg, #fff1e6 0%, #ffffff 55%, #eaf6ff 100%);
+            border: 1px solid #ffe3c7;
+            border-radius: 18px;
+            padding: 26px 28px;
+            margin-bottom: 22px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 20px;
+            animation: gyrFadeUp 0.5s ease-out both;
+        }
+
+        .gyr-welcome-text h2 {
+            margin: 0 0 6px 0;
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--gyr-ink);
+        }
+
+        .gyr-welcome-text .gyr-wave {
+            display: inline-block;
+            animation: gyrWave 1.8s ease-in-out infinite;
+            transform-origin: 70% 70%;
+        }
+
+        .gyr-welcome-text p {
+            margin: 0;
+            color: var(--gyr-muted);
+            font-size: 0.92rem;
+        }
+
+        .gyr-welcome-chip {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            margin-top: 12px;
+            background: #ffffffcc;
+            border: 1px solid #ffe3c7;
+            padding: 5px 12px;
+            border-radius: 999px;
+            font-size: 0.78rem;
+            font-weight: 600;
+            color: var(--gyr-orange);
+        }
+
+            .gyr-welcome-chip i {
+                font-size: 0.75rem;
+            }
+
+        /* Animated shuttle route — the signature touch */
+        .gyr-route {
+            position: relative;
+            width: 190px;
+            height: 90px;
+            flex-shrink: 0;
+        }
+
+            .gyr-route svg {
+                width: 100%;
+                height: 100%;
+            }
+
+        .gyr-route-path {
+            stroke: #ffcfa0;
+            stroke-width: 3;
+            stroke-dasharray: 6 8;
+            fill: none;
+        }
+
+        .gyr-bus {
+            position: absolute;
+            top: 0;
+            left: 0;
+            font-size: 1.4rem;
+            color: var(--gyr-orange);
+            offset-path: path('M10,70 Q60,10 100,45 T180,20');
+            offset-rotate: 0deg;
+            animation: gyrDrive 5s ease-in-out infinite;
+            filter: drop-shadow(0 3px 4px rgba(255,122,0,0.35));
+        }
+
+        @keyframes gyrDrive {
+            0% {
+                offset-distance: 0%;
+            }
+
+            50% {
+                offset-distance: 100%;
+            }
+
+            100% {
+                offset-distance: 0%;
+            }
+        }
+
+        @keyframes gyrWave {
+            0%, 100% {
+                transform: rotate(0deg);
+            }
+
+            15% {
+                transform: rotate(14deg);
+            }
+
+            30% {
+                transform: rotate(-8deg);
+            }
+
+            45% {
+                transform: rotate(14deg);
+            }
+
+            60% {
+                transform: rotate(0deg);
+            }
+        }
+
+        @keyframes gyrFadeUp {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* ---------- Use-case cards: hover lift + entrance stagger ---------- */
+        .uc-card {
+            transition: transform 0.22s ease, box-shadow 0.22s ease;
+            opacity: 0;
+            transform: translateY(14px);
+            animation: gyrFadeUp 0.5s ease-out forwards;
+        }
+
+        .use-case-grid .uc-card:nth-child(1) {
+            animation-delay: 0.05s;
+        }
+
+        .use-case-grid .uc-card:nth-child(2) {
+            animation-delay: 0.15s;
+        }
+
+        .use-case-grid .uc-card:nth-child(3) {
+            animation-delay: 0.25s;
+        }
+
+        .uc-card:hover {
+            transform: translateY(-6px);
+            box-shadow: 0 16px 30px -12px rgba(15, 23, 42, 0.18);
+        }
+
+            .uc-card:hover .uc-icon {
+                transform: scale(1.12) rotate(-4deg);
+            }
+
+        .uc-icon {
+            transition: transform 0.25s ease;
+        }
+
+        .uc-card a.uc-link-text {
+            transition: gap 0.2s ease, color 0.2s ease;
+        }
+
+        .uc-card:hover a.uc-link-text {
+            color: var(--gyr-orange);
+        }
+
+        /* Difficulty badges — actual visible pills instead of empty divs */
+        .uc-badge {
+            position: relative;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 3px 10px 3px 8px;
+            border-radius: 999px;
+            font-size: 0.7rem;
+            font-weight: 700;
+            letter-spacing: 0.02em;
+            text-transform: uppercase;
+        }
+
+            .uc-badge::before {
+                content: "";
+                width: 6px;
+                height: 6px;
+                border-radius: 50%;
+                display: inline-block;
+            }
+
+            .uc-badge.easy {
+                background: #ecfdf5;
+                color: #047857;
+            }
+
+                .uc-badge.easy::before {
+                    background: var(--gyr-green);
+                    box-shadow: 0 0 0 3px #d1fae5;
+                }
+
+            .uc-badge.medium {
+                background: #fffbeb;
+                color: #b45309;
+            }
+
+                .uc-badge.medium::before {
+                    background: var(--gyr-amber);
+                    box-shadow: 0 0 0 3px #fef3c7;
+                }
+
+            .uc-badge.complex {
+                background: #fef2f2;
+                color: #b91c1c;
+            }
+
+                .uc-badge.complex::before {
+                    background: var(--gyr-red);
+                    box-shadow: 0 0 0 3px #fee2e2;
+                }
+
+            .uc-badge.easy::after {
+                content: "Quick task";
+            }
+
+            .uc-badge.medium::after {
+                content: "Takes a bit";
+            }
+
+            .uc-badge.complex::after {
+                content: "Involved";
+            }
+
+        /* ---------- Table card polish ---------- */
+        .table-card {
+            animation: gyrFadeUp 0.5s ease-out 0.3s both;
+        }
+
+        .dashboard-status-placeholder {
+            text-align: center;
+            padding: 30px 20px;
+            color: var(--gyr-muted);
+        }
+
+            .dashboard-status-placeholder::before {
+                content: "\f5fd";
+                font-family: "Font Awesome 6 Free";
+                font-weight: 900;
+                display: block;
+                font-size: 1.6rem;
+                color: #cbd5e1;
+                margin-bottom: 8px;
+            }
+
+        /* ---------- Sidebar + profile polish ---------- */
+        .menu-item {
+            transition: background 0.18s ease, padding-left 0.18s ease, color 0.18s ease;
+            border-radius: 8px;
+        }
+
+            .menu-item:hover {
+                padding-left: 4px;
+                color: var(--gyr-orange);
+            }
+
+            .menu-item.active {
+                position: relative;
+            }
+
+        .avatar-placeholder, .avatar-circle {
+            transition: box-shadow 0.2s ease;
+        }
+
+        .profile-trigger-area:hover .avatar-placeholder {
+            box-shadow: 0 0 0 3px var(--gyr-orange-soft);
+        }
+
+        .profile-dropdown-menu {
+            animation: gyrFadeUp 0.18s ease-out both;
+        }
+
+        .top-logout-btn, .close-modal-btn {
+            transition: filter 0.15s ease, transform 0.1s ease;
+        }
+
+            .top-logout-btn:hover, .close-modal-btn:hover {
+                filter: brightness(0.95);
+            }
+
+            .top-logout-btn:active, .close-modal-btn:active {
+                transform: scale(0.97);
+            }
+
+        @media (max-width: 720px) {
+            .gyr-welcome-banner {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+
+            .gyr-route {
+                align-self: center;
+            }
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            .gyr-bus, .gyr-welcome-text .gyr-wave, .uc-card, .table-card, .profile-dropdown-menu {
+                animation: none !important;
+            }
+        }
+    </style>
 </head>
 <body>
     <div class="sidebar">
@@ -15,17 +361,17 @@
             <span>Shuttle Coordinator</span>
         </div>
         <ul class="menu-list">
-            <li><a href="dashboard.html" class="menu-item active">📋 Dashboard</a></li>
-            <li><a href="manage-shuttles.html" class="menu-item">🚌 Shuttle Management</a></li>
-            <li><a href="schedule-shuttles.html" class="menu-item">📅 Schedule shuttles</a></li>
-            <li><a href="manage-drivers.html" class="menu-item">👨‍✈️ Shuttle driver management</a></li>
+            <li><a href="dashboard.html" class="menu-item active"><i class="fa-solid fa-clipboard-list"></i> Dashboard</a></li>
+            <li><a href="manage-shuttles.html" class="menu-item"><i class="fa-solid fa-bus"></i> Shuttle Management</a></li>
+            <li><a href="schedule-shuttles.html" class="menu-item"><i class="fa-solid fa-calendar-days"></i> Schedule shuttles</a></li>
+            <li><a href="manage-drivers.html" class="menu-item"><i class="fa-solid fa-user-tie"></i> Shuttle driver management</a></li>
         </ul>
 
         <div class="sidebar-spacer"></div>
 
         <ul class="menu-list bottom-menu">
-            <li><a href="#" class="menu-item" onclick="openSettingsModal()">⚙️ Settings</a></li>
-            <li><a href="#" class="menu-item" onclick="openSupportModal()">❓ Support Help</a></li>
+            <li><a href="#" class="menu-item" onclick="openSettingsModal()"><i class="fa-solid fa-gear"></i> Settings</a></li>
+            <li><a href="#" class="menu-item" onclick="openSupportModal()"><i class="fa-solid fa-circle-question"></i> Support Help</a></li>
         </ul>
 
         <div class="sidebar-profile-footer">
@@ -43,9 +389,9 @@
             </div>
 
             <div class="profile-dropdown-menu" id="profileDropdown">
-                <a href="#" class="dropdown-link" id="btnDropdownProfile" onclick="openProfileModal(event)">👤 View Profile</a>
+                <a href="#" class="dropdown-link" id="btnDropdownProfile" onclick="openProfileModal(event)"><i class="fa-solid fa-user"></i> View Profile</a>
                 <hr class="dropdown-divider">
-                <a href="#" class="dropdown-link logout-action" onclick="handleLogout()">🚪 Logout Portal</a>
+                <a href="#" class="dropdown-link logout-action" onclick="handleLogout()"><i class="fa-solid fa-right-from-bracket"></i> Logout Portal</a>
             </div>
         </div>
     </div>
@@ -59,22 +405,40 @@
                     <span id="liveClock" style="font-family: monospace; font-weight: 700; color: #ff7a00; margin-right: 15px;">00:00:00</span>
                     Coordinator Portal
                 </div>
-                <button class="top-logout-btn" onclick="handleLogout()"> Logout</button>
+                <button class="top-logout-btn" onclick="handleLogout()"><i class="fa-solid fa-right-from-bracket"></i> Logout</button>
             </div>
         </div>
 
         <div class="content-body">
+
+            <!-- ===================== Welcome banner ===================== -->
+            <div class="gyr-welcome-banner">
+                <div class="gyr-welcome-text">
+                    <h2 id="gyrGreeting">Welcome back, Coordinator <span class="gyr-wave">👋</span></h2>
+                    <p>Monitor fleet status, assign active drivers, and oversee transit operations.</p>
+                    <span class="gyr-welcome-chip"><i class="fa-solid fa-circle-check"></i> All systems nominal</span>
+                </div>
+                <div class="gyr-route">
+                    <svg viewBox="0 0 190 90">
+                        <path class="gyr-route-path" d="M10,70 Q60,10 100,45 T180,20"></path>
+                        <circle cx="10" cy="70" r="4" fill="#ff7a00"></circle>
+                        <circle cx="180" cy="20" r="4" fill="#0ea5e9"></circle>
+                    </svg>
+                    <i class="fa-solid fa-shuttle-van gyr-bus"></i>
+                </div>
+            </div>
+            <!-- ============================================================ -->
+
             <div class="view-header">
                 <div>
-                    <h2>Welcome Back, Coordinator</h2>
-                    <p class="subtitle">Monitor fleet status, assign active drivers, and oversee transit operations.</p>
+                    <h2 style="display:none;">Welcome Back, Coordinator</h2>
                 </div>
             </div>
 
             <div class="use-case-grid">
                 <div class="uc-card" id="cardManageShuttles">
                     <div class="uc-badge easy"></div>
-                    <div class="uc-icon">🚌</div>
+                    <div class="uc-icon"><i class="fa-solid fa-bus"></i></div>
                     <h3>Manage Shuttles</h3>
                     <p>Configure, update configurations, monitor operational capacities, or track maintenance states across your vehicle assets fleet.</p>
                     <a href="manage-shuttles.html" class="uc-link-text" style="text-decoration: none; display: inline-block;">Open Fleet Manager →</a>
@@ -82,7 +446,7 @@
 
                 <div class="uc-card" id="cardManageDrivers">
                     <div class="uc-badge medium"></div>
-                    <div class="uc-icon">👨‍✈️</div>
+                    <div class="uc-icon"><i class="fa-solid fa-user-tie"></i></div>
                     <h3>Manage Shuttle Drivers</h3>
                     <p>Oversee authorized transport personnel, link operators to profiles, track shift states, and verify active assignments.</p>
                     <a href="manage-drivers.html" class="uc-link-text" style="text-decoration: none; display: inline-block;">Open Driver Profiles →</a>
@@ -90,7 +454,7 @@
 
                 <div class="uc-card" id="cardScheduleShuttles">
                     <div class="uc-badge complex"></div>
-                    <div class="uc-icon">📅</div>
+                    <div class="uc-icon"><i class="fa-solid fa-calendar-days"></i></div>
                     <h3>Schedule Shuttles</h3>
                     <p>Map vehicle entities to routes, establish departure timelines, and prevent dispatch conflicts.</p>
                     <a href="schedule-shuttles.html" class="uc-link-text" style="text-decoration: none; display: inline-block;">Open Assignment Scheduler →</a>
@@ -99,10 +463,10 @@
 
             <div class="table-card">
                 <div class="table-header">
-                    <h3>Operational Status Summary</h3>
+                    <h3>Nothing to show yet</h3>
                 </div>
                 <div class="dashboard-status-placeholder">
-                    <p>Select a specific workflow panel card block above to manipulate real-time system database registers.</p>
+                    <p>Pick a card above — shuttles, drivers, or the schedule — and it'll show up here.</p>
                 </div>
             </div>
         </div>
@@ -132,7 +496,7 @@
 
     <div class="profile-modal-overlay" id="settingsModal">
         <div class="profile-modal-card">
-            <h3>⚙️ Portal Settings</h3>
+            <h3><i class="fa-solid fa-gear"></i> Portal Settings</h3>
             <div class="modal-body-content">
                 <label style="display:block; margin: 10px 0 5px; font-weight:600; font-size:13px;">Dashboard Theme</label>
                 <select id="themeSelect" style="width:100%; padding:8px; border-radius:6px; border:1px solid #cbd5e1; outline:none;">
@@ -151,23 +515,59 @@
     </div>
     <div class="profile-modal-overlay" id="supportModal">
         <div class="profile-modal-card">
-            <h3>❓ Dispatch Support Help</h3>
+            <h3><i class="fa-solid fa-circle-question"></i> Dispatch Support Help</h3>
             <div class="modal-body-content">
                 <p style="font-size:13px; color:#64748b;">Need immediate assistance with a transit route layout or emergency check-in failure?</p>
                 <div style="background:#f8fafc; padding:12px; border-radius:6px; border-left:4px solid #ff7a00; margin:10px 0;">
-                    <strong>📞 Transit Control Line:</strong><br>+27 (0) 41 504 1111
+                    <strong><i class="fa-solid fa-phone"></i> Transit Control Line:</strong><br>+27 (0) 41 504 1111
                 </div>
                 <div style="background:#f8fafc; padding:12px; border-radius:6px; border-left:4px solid #10b981; margin:10px 0;">
-                    <strong>✉️ Emergency Support:</strong><br>support@getyourride.com
+                    <strong><i class="fa-solid fa-envelope"></i> Emergency Support:</strong><br>support@getyourride.com
                 </div>
             </div>
             <button class="close-modal-btn" onclick="closeSupportModal()">Close Help Desk</button>
         </div>
     </div>
 
+    <!-- Custom Logout Confirmation Modal -->
+    <div id="logoutModal" class="modal-backdrop" style="display: none; position: fixed; inset: 0; background: rgba(0, 0, 0, 0.5); backdrop-filter: blur(4px); z-index: 1000; align-items: center; justify-content: center;">
+        <div class="modal-card cute-logout-card" style="background: #ffffff; padding: 32px; border-radius: 20px; width: 100%; max-width: 400px; text-align: center; box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04); animation: scaleUp 0.25s ease-out;">
+            <div style="width: 64px; height: 64px; border-radius: 50%; background: #fee2e2; color: #ef4444; display: flex; align-items: center; justify-content: center; font-size: 26px; margin: 0 auto 16px auto;">
+                <i class="fa-solid fa-right-from-bracket"></i>
+            </div>
+            <h3 style="margin: 0 0 8px 0; color: #1e293b; font-size: 20px; font-weight: 700;">Leaving so soon?</h3>
+            <p style="color: #64748b; font-size: 14px; margin: 0 0 24px 0;">We'll save your spot! Are you sure you want to sign out of your workspace?</p>
+
+            <div style="display: flex; gap: 12px; justify-content: center;">
+                <button onclick="closeLogoutModal()" style="flex: 1; padding: 12px 16px; border-radius: 10px; border: 1px solid #cbd5e1; background: #f8fafc; color: #334155; font-weight: 600; cursor: pointer; transition: background 0.2s;">
+                    <i class="fa-solid fa-arrow-left" style="margin-right: 6px;"></i>Stay
+                </button>
+                <button onclick="confirmLogout()" style="flex: 1; padding: 12px 16px; border-radius: 10px; border: none; background: #ef4444; color: #ffffff; font-weight: 600; cursor: pointer; transition: background 0.2s;">
+                    <i class="fa-solid fa-right-from-bracket" style="margin-right: 6px;"></i>Yes, Sign Out
+                </button>
+            </div>
+        </div>
+    </div>
 
     <script src="../assets/js/coordinator-schedules.js"></script>
     <script src="../assets/js/coordinator-dashboard.js"></script>
     <script src="../assets/js/admin-dropdown.js"></script>
+
+    <!-- ============================================================
+         Small enhancement script — only touches the new gyrGreeting
+         element, so it can't collide with anything in your existing
+         JS files.
+         ============================================================ -->
+    <script>
+        (function () {
+            const greetingEl = document.getElementById("gyrGreeting");
+            if (!greetingEl) return;
+            const hour = new Date().getHours();
+            let greeting = "Good evening";
+            if (hour < 12) greeting = "Good morning";
+            else if (hour < 18) greeting = "Good afternoon";
+            greetingEl.innerHTML = `${greeting}, Coordinator <span class="gyr-wave">👋</span>`;
+        })();
+    </script>
 </body>
 </html>

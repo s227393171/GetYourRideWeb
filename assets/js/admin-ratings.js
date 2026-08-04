@@ -221,3 +221,19 @@ function handleOverlayClick(e) {
         closeDriverDetailsModal();
     }
 }
+// Self-contained logout wiring for this page — works even if handleLogout()
+// isn't already defined as a popup call in admin-dropdown.js.
+function handleLogout() {
+    const modal = document.getElementById('logoutModal');
+    if (modal) modal.style.display = 'flex';
+    document.getElementById('profileDropdown')?.classList.remove('show');
+}
+function closeLogoutModal() {
+    const modal = document.getElementById('logoutModal');
+    if (modal) modal.style.display = 'none';
+}
+function confirmLogout() {
+    localStorage.clear();
+    sessionStorage.clear();
+    window.location.href = "/";
+}

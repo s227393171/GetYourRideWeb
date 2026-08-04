@@ -2,6 +2,10 @@
 const PROFILE_API_URL = '/api/admin/profile';
 let activeAdminProfile = null;
 
+// ==========================================================================
+// DROPDOWN TOGGLES
+// ==========================================================================
+
 // Controls the absolute menu overlay inside dashboard.html
 function toggleDropdown(e) {
     if (e) e.stopPropagation();
@@ -20,13 +24,7 @@ function toggleProfileMenu(e) {
     }
 }
 
-function executeLogout() {
-    if (confirm("Log out of Admin Session?")) {
-        window.location.href = "../Login.html";
-    }
-}
-
-// Global window event listener to close menus on external clicks
+// Close menus when clicking outside them
 window.addEventListener('click', function (e) {
     const topDropdown = document.getElementById('adminGlobalDropdown');
     if (topDropdown) topDropdown.classList.remove('show');
@@ -37,6 +35,87 @@ window.addEventListener('click', function (e) {
         if (profileDropdown) profileDropdown.classList.remove('show');
     }
 });
+
+// ==========================================================================
+// GENERIC CUSTOM CONFIRM POPUP (replaces native confirm())
+// Built dynamically so no extra HTML markup is required in the page.
+// Uses inline SVG icons — no emoji. Available for any future confirmation
+// prompt on this portal (logout itself uses the dedicated #logoutModal
+// markup already in the page instead, see below).
+// ==========================================================================
+const POPUP_ICONS = {
+    info: '<svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>',
+    success: '<svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>',
+    warning: '<svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>',
+    logout: '<svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg>'
+};
+
+let pendingConfirmAction = null;
+
+function ensureConfirmPopupMarkup() {
+    if (document.getElementById('confirmPopupModal')) return;
+
+    const wrapper = document.createElement('div');
+    wrapper.id = 'confirmPopupModal';
+    wrapper.className = 'modal-backdrop';
+    wrapper.style.cssText = 'display:none; position:fixed; inset:0; background:rgba(0,0,0,0.5); backdrop-filter:blur(4px); z-index:1000; align-items:center; justify-content:center;';
+
+    wrapper.innerHTML = `
+        <div class="modal-card cute-logout-card" style="background:#ffffff; padding:32px; border-radius:20px; width:100%; max-width:400px; text-align:center; box-shadow:0 20px 25px -5px rgba(0,0,0,0.1), 0 10px 10px -5px rgba(0,0,0,0.04); animation: scaleUp 0.25s ease-out;">
+            <div id="confirmPopupIcon" style="width:56px; height:56px; margin:0 auto 16px; border-radius:50%; background:#fef2f2; display:flex; align-items:center; justify-content:center; color:#ef4444;"></div>
+            <h3 id="confirmPopupTitle" style="margin:0 0 8px 0; color:#1e293b; font-size:20px; font-weight:700;"></h3>
+            <p id="confirmPopupMessage" style="color:#64748b; font-size:14px; margin:0 0 24px 0;"></p>
+            <div style="display:flex; gap:12px; justify-content:center;">
+                <button onclick="closeConfirmPopup()" style="flex:1; padding:12px 16px; border-radius:10px; border:1px solid #cbd5e1; background:#f8fafc; color:#334155; font-weight:600; cursor:pointer; transition:background 0.2s;">Cancel</button>
+                <button id="confirmPopupActionBtn" style="flex:1; padding:12px 16px; border-radius:10px; border:none; background:#ef4444; color:#ffffff; font-weight:600; cursor:pointer; transition:background 0.2s;">Confirm</button>
+            </div>
+        </div>
+    `;
+    document.body.appendChild(wrapper);
+}
+
+function showConfirmPopup(title, message, onConfirm, iconKey = 'warning') {
+    ensureConfirmPopupMarkup();
+    document.getElementById('confirmPopupTitle').innerText = title;
+    document.getElementById('confirmPopupMessage').innerText = message;
+    document.getElementById('confirmPopupIcon').innerHTML = POPUP_ICONS[iconKey] || POPUP_ICONS.warning;
+
+    pendingConfirmAction = onConfirm;
+    const actionBtn = document.getElementById('confirmPopupActionBtn');
+    actionBtn.onclick = () => {
+        closeConfirmPopup();
+        if (typeof pendingConfirmAction === 'function') pendingConfirmAction();
+    };
+
+    document.getElementById('confirmPopupModal').style.display = 'flex';
+}
+
+function closeConfirmPopup() {
+    const modal = document.getElementById('confirmPopupModal');
+    if (modal) modal.style.display = 'none';
+    pendingConfirmAction = null;
+}
+
+// ==========================================================================
+// LOGOUT — driven by the static #logoutModal markup already in the page
+// ("Leaving so soon?" / Stay / Yes, Sign Out).
+// ==========================================================================
+function handleLogout() {
+    const modal = document.getElementById('logoutModal');
+    if (modal) modal.style.display = 'flex';
+    document.getElementById('profileDropdown')?.classList.remove('show');
+}
+
+function closeLogoutModal() {
+    const modal = document.getElementById('logoutModal');
+    if (modal) modal.style.display = 'none';
+}
+
+function confirmLogout() {
+    localStorage.clear();
+    sessionStorage.clear();
+    window.location.href = "/";
+}
 
 // ==========================================================================
 // ADMIN SETTINGS & SUPPORT MODAL EVENT HANDLERS
@@ -86,15 +165,9 @@ window.closeSupportModal = function () {
     document.getElementById('supportModal')?.classList.remove('active');
 };
 
-function handleLogout() {
-    if (confirm("Are you sure you want to sign out of the GetYourRide portal workspace?")) {
-        localStorage.clear();
-        sessionStorage.clear();
-        window.location.href = "/";
-    }
-}
-
-// Runs a continuous digital interval clock calculation 
+// ==========================================================================
+// LIVE CLOCK — single definition, started once from the load handler below.
+// ==========================================================================
 function startLiveClock() {
     setInterval(() => {
         const clockElement = document.getElementById('liveClock');
@@ -108,11 +181,11 @@ function startLiveClock() {
     }, 1000);
 }
 
-// Initialize clock loop routine on document runtime activation
-document.addEventListener('DOMContentLoaded', startLiveClock);
-
+// ==========================================================================
+// ADMIN PROFILE
+// ==========================================================================
 async function loadAdminProfile() {
-    // 🛡️ SAFEGUARD: If this is the Coordinator Portal, exit instantly and let coordinator data load safely
+    // SAFEGUARD: If this is the Coordinator Portal, exit instantly and let coordinator data load safely
     if (document.getElementById('coordinatorNameLabel')) return;
 
     const nameLabel = document.getElementById('adminNameLabel');
@@ -126,8 +199,22 @@ async function loadAdminProfile() {
 
         const response = await fetch(targetUrl);
         if (response.ok) {
-            activeAdminProfile = await response.json();
-            if (nameLabel) nameLabel.innerText = `${activeAdminProfile.fName} ${activeAdminProfile.lName}`;
+            const raw = await response.json();
+
+            // FIX: /api/admin/profile (see Program.cs) returns a single
+            // combined `fullName` string — it builds it server-side with
+            // `CONCAT(first_name, ' ', last_name) AS FullName` — it never
+            // sends separate fName/lName fields. That mismatch was the
+            // actual cause of "undefined undefined".
+            activeAdminProfile = {
+                fullName: raw.fullName || "Admin User",
+                email: raw.email ?? loggedInEmail,
+                employeeId: raw.employeeId ?? null,
+                userID: raw.userId ?? 1,
+                role: raw.role ?? "Admin"
+            };
+
+            if (nameLabel) nameLabel.innerText = activeAdminProfile.fullName;
             if (emailLabel) emailLabel.innerText = activeAdminProfile.email;
             return;
         }
@@ -137,94 +224,27 @@ async function loadAdminProfile() {
 
         // This fallback matches your SQL schema seed data directly!
         activeAdminProfile = {
-            fName: "Admin",
-            lName: "User",
+            fullName: "Admin User",
             email: "admin@getyourride.com",
-            studentNumber: null,
+            employeeId: null,
             userID: 1,
             role: "Admin"
         };
 
-        if (nameLabel) nameLabel.innerText = `${activeAdminProfile.fName} ${activeAdminProfile.lName}`;
+        if (nameLabel) nameLabel.innerText = activeAdminProfile.fullName;
         if (emailLabel) emailLabel.innerText = activeAdminProfile.email;
     }
 }
 
-async function loadDriverDashboard() {
-    // 🛡️ SAFEGUARD: Do not search for bookings table if we are on the Coordinator homepage
-    if (document.getElementById('coordinatorNameLabel')) return;
-
-    const tableBody = document.getElementById('bookingsTableBody');
-    if (!tableBody) return;
-
-    try {
-        const targetUrl = `${window.location.origin}${BOOKINGS_API_URL}`;
-        const response = await fetch(targetUrl);
-        if (!response.ok) throw new Error('Network fault.');
-
-        const data = await response.json();
-        tableBody.innerHTML = '';
-
-        if (data.length === 0) {
-            tableBody.innerHTML = `<tr><td colspan="8" class="loading-state">No scheduled system bookings found for today.</td></tr>`;
-            return;
-        }
-
-        data.forEach(booking => {
-            const row = document.createElement('tr');
-            let statusClass = 'status-booked';
-            if (booking.status.toLowerCase() === 'boarded') statusClass = 'status-boarded';
-            if (booking.status.toLowerCase() === 'cancelled') statusClass = 'status-cancelled';
-
-            row.innerHTML = `
-                <td><div class="student-profile"><div class="avatar-placeholder"></div><span>${booking.studentName}</span></div></td>
-                <td><span class="student-num">${booking.studentNumber}</span></td>
-                <td>${booking.shuttle}</td>
-                <td>
-                    <div style="display: flex; align-items: center; gap: 8px;">
-                        <span style="font-weight: 600; color: #1e293b;">${booking.departureFrom}</span>
-                        <span style="color: #94a3b8; font-size: 12px;">➔</span>
-                        <span style="font-weight: 600; color: #64748b;">${booking.arrivalAt}</span>
-                    </div>
-                </td>
-                <td><strong>${booking.departureTime}</strong></td>
-                <td>${booking.bookingDate}</td>
-                <td><span class="badge ${statusClass}">${booking.status}</span></td>
-                <td class="actions-cell">&#8942;</td>
-            `;
-            tableBody.appendChild(row);
-        });
-    } catch (error) {
-        console.error('Error fetching dashboard records:', error);
-        tableBody.innerHTML = `<tr><td colspan="8" class="error-state">Failed to load system bookings data.</td></tr>`;
-    }
-}
-
-// Global page initialization trigger safely executing tasks
-window.addEventListener('load', async () => {
-    // Check if dark mode was previously saved and apply it immediately
-    if (localStorage.getItem('portalTheme') === 'dark') {
-        document.body.classList.add('dark-mode');
-    }
-
-    // Your existing page initializers below this line...
-    const dateInput = document.getElementById('manifestDateFilter');
-    if (dateInput) dateInput.valueAsDate = new Date();
-
-    await loadAdminProfile();
-    if (document.getElementById('bookingsTableBody')) {
-        await loadDriverDashboard();
-    }
-});
-
-document.addEventListener("DOMContentLoaded", () => {
-    // Call the profile loader function on boot load
-    loadCoordinatorSessionProfile();
-});
-
+// ==========================================================================
+// COORDINATOR SESSION PROFILE
+// ==========================================================================
 async function loadCoordinatorSessionProfile() {
+    // SAFEGUARD: If this is the Admin Portal, exit instantly and let admin data load safely
+    if (!document.getElementById('coordinatorNameLabel')) return;
+
     try {
-        // 🚌 Fetching the active coordinator user profile data context from session cache
+        // Fetching the active coordinator user profile data context from session cache
         const response = await fetch("/api/coordinator/profile");
 
         if (response.ok) {
@@ -255,6 +275,7 @@ async function loadCoordinatorSessionProfile() {
         console.error("Failed to stream active session context variables from database:", err);
     }
 }
+
 // ==========================================================================
 // UNIFIED PROFILE MODAL LIFECYCLE HANDLERS
 // ==========================================================================
@@ -326,3 +347,136 @@ window.closeProfileModal = function () {
         modal.style.setProperty("display", "none", "important");
     }
 };
+
+// ==========================================================================
+// DRIVER / BOOKINGS DASHBOARD TABLE
+// ==========================================================================
+async function loadDriverDashboard() {
+    // SAFEGUARD: Do not search for bookings table if we are on the Coordinator homepage
+    if (document.getElementById('coordinatorNameLabel')) return;
+
+    const tableBody = document.getElementById('bookingsTableBody');
+    if (!tableBody) return;
+
+    try {
+        const targetUrl = `${window.location.origin}${BOOKINGS_API_URL}`;
+        const response = await fetch(targetUrl);
+        if (!response.ok) throw new Error('Network fault.');
+
+        const data = await response.json();
+        tableBody.innerHTML = '';
+
+        if (data.length === 0) {
+            tableBody.innerHTML = `<tr><td colspan="8" class="loading-state">No scheduled system bookings found for today.</td></tr>`;
+            return;
+        }
+
+        data.forEach(booking => {
+            const row = document.createElement('tr');
+            let statusClass = 'status-booked';
+            if (booking.status.toLowerCase() === 'boarded') statusClass = 'status-boarded';
+            if (booking.status.toLowerCase() === 'cancelled') statusClass = 'status-cancelled';
+
+            row.innerHTML = `
+                <td><div class="student-profile"><div class="avatar-placeholder"></div><span>${booking.studentName}</span></div></td>
+                <td><span class="student-num">${booking.studentNumber}</span></td>
+                <td>${booking.shuttle}</td>
+                <td>
+                    <div style="display: flex; align-items: center; gap: 8px;">
+                        <span style="font-weight: 600; color: #1e293b;">${booking.departureFrom}</span>
+                        <span style="color: #94a3b8; font-size: 12px;">➔</span>
+                        <span style="font-weight: 600; color: #64748b;">${booking.arrivalAt}</span>
+                    </div>
+                </td>
+                <td><strong>${booking.departureTime}</strong></td>
+                <td>${booking.bookingDate}</td>
+                <td><span class="badge ${statusClass}">${booking.status}</span></td>
+                <td class="actions-cell">&#8942;</td>
+            `;
+            tableBody.appendChild(row);
+        });
+    } catch (error) {
+        console.error('Error fetching dashboard records:', error);
+        tableBody.innerHTML = `<tr><td colspan="8" class="error-state">Failed to load system bookings data.</td></tr>`;
+    }
+}
+
+// ==========================================================================
+// GREETING BANNER + STATS ROW (admin dashboard only)
+// ==========================================================================
+
+// Dynamic greeting based on time of day + live date in the banner
+function setGreetingAndDate() {
+    const heading = document.getElementById('greetingHeading');
+    const dateEl = document.getElementById('bannerDate');
+    const now = new Date();
+    const hour = now.getHours();
+
+    let greeting = 'Good evening';
+    if (hour < 12) greeting = 'Good morning';
+    else if (hour < 18) greeting = 'Good afternoon';
+
+    const nameEl = document.getElementById('adminNameLabel');
+    const firstName = (nameEl && nameEl.textContent && !nameEl.textContent.includes('Loading'))
+        ? nameEl.textContent.split(' ')[0]
+        : '';
+
+    if (heading) {
+        heading.textContent = firstName ? `${greeting}, ${firstName}` : `${greeting}`;
+    }
+    if (dateEl) {
+        dateEl.textContent = now.toLocaleDateString(undefined, { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+    }
+}
+
+// Quick stats summary — fetches from a dashboard summary endpoint.
+// Falls back to "—" placeholders if the endpoint isn't available yet.
+async function loadDashboardStats() {
+    const pendingEl = document.getElementById('statPendingApplications');
+    if (!pendingEl) return; // not on a page with the stats row
+
+    try {
+        const response = await fetch(`${window.location.origin}/api/admin/dashboard/summary`);
+        if (!response.ok) throw new Error('Summary endpoint not ok.');
+        const data = await response.json();
+
+        pendingEl.textContent = data.pendingApplications ?? '—';
+        document.getElementById('statActiveDrivers').textContent = data.activeDrivers ?? '—';
+        document.getElementById('statAverageRating').textContent = data.averageRating != null ? Number(data.averageRating).toFixed(2) : '—';
+        document.getElementById('statTripsToday').textContent = data.tripsToday ?? '—';
+    } catch (error) {
+        console.warn('Dashboard summary unavailable, showing placeholders:', error);
+    }
+}
+
+// ==========================================================================
+// SINGLE PAGE INITIALIZATION — everything starts here, once.
+// ==========================================================================
+window.addEventListener('load', async () => {
+    // Apply saved theme immediately
+    if (localStorage.getItem('portalTheme') === 'dark') {
+        document.body.classList.add('dark-mode');
+    }
+
+    const dateInput = document.getElementById('manifestDateFilter');
+    if (dateInput) dateInput.valueAsDate = new Date();
+
+    startLiveClock();
+
+    // Load whichever profile applies to this page (each function
+    // no-ops itself on the wrong portal via its internal safeguard)
+    await Promise.all([
+        loadAdminProfile(),
+        loadCoordinatorSessionProfile()
+    ]);
+
+    if (document.getElementById('bookingsTableBody')) {
+        await loadDriverDashboard();
+    }
+
+    setGreetingAndDate();
+    await loadDashboardStats();
+
+    // Re-run the greeting once the profile name has (hopefully) loaded
+    setTimeout(setGreetingAndDate, 800);
+});
