@@ -6,15 +6,7 @@
     <title>Admin Portal - Driver Ratings</title>
     <link rel="stylesheet" href="../assets/css/admin-dashboard.css">
     <link rel="stylesheet" href="../assets/css/driver-dashboard.css">
-    <style>
-        .icon-inline {
-            width: 16px;
-            height: 16px;
-            vertical-align: -3px;
-            margin-right: 6px;
-            stroke: currentColor;
-        }
-    </style>
+    
 </head>
 <body>
     <div class="sidebar">
@@ -197,7 +189,7 @@
             <button class="close-modal-btn" onclick="closeSupportModal()">Close Help Desk</button>
         </div>
     </div>
-    <!-- Centered Popup Modal Overlay -->
+    
     <div id="driverDetailsModal" class="modal-overlay" onclick="handleOverlayClick(event)">
         <div class="modal-card">
             <div class="modal-header">
@@ -220,14 +212,14 @@
                         </tr>
                     </thead>
                     <tbody id="ddModalTripsBody">
-                        <!-- Populated dynamically -->
+                     
                     </tbody>
                 </table>
             </div>
         </div>
     </div>
 
-    <!-- Custom Logout Confirmation Modal (self-contained, no emoji) -->
+    
     <div id="logoutModal" class="modal-backdrop" style="display: none; position: fixed; inset: 0; background: rgba(0, 0, 0, 0.5); backdrop-filter: blur(4px); z-index: 1000; align-items: center; justify-content: center;">
         <div class="modal-card cute-logout-card" style="background: #ffffff; padding: 32px; border-radius: 20px; width: 100%; max-width: 400px; text-align: center; box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04); animation: scaleUp 0.25s ease-out;">
             <div style="width:56px; height:56px; margin:0 auto 16px; border-radius:50%; background:#fef2f2; display:flex; align-items:center; justify-content:center; color:#ef4444;">

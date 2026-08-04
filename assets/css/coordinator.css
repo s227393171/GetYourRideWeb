@@ -1,6 +1,4 @@
-﻿/* ========================================================= */
-/* GLOBAL RESET & FONTS                                      */
-/* ========================================================= */
+﻿
 * {
     margin: 0;
     padding: 0;
@@ -16,12 +14,10 @@ body {
     overflow-x: hidden;
 }
 
-/* ========================================================= */
-/* DEEP NAVY SIDEBAR SYSTEM                                  */
-/* ========================================================= */
+
 .sidebar {
     width: 260px;
-    background: #0f172a; /* Deep Navy Background */
+    background: #0f172a;
     color: #ffffff;
     display: flex;
     flex-direction: column;
@@ -53,9 +49,9 @@ body {
         font-weight: 600;
     }
 
-/* Fix for the bullet points in your screenshot */
+
 .menu-list {
-    list-style: none; /* Removes the ugly bullets */
+    list-style: none; 
     display: flex;
     flex-direction: column;
     gap: 8px;
@@ -80,7 +76,7 @@ body {
     }
 
     .menu-item.active {
-        background: #f97316; /* Orange highlight matching your Add button */
+        background: #f97316; 
         color: #ffffff;
         font-weight: 600;
     }
@@ -94,20 +90,16 @@ body {
     padding-top: 16px;
 }
 
-/* ========================================================= */
-/* MAIN WORKSPACE CONTENT CONTAINER                          */
-/* ========================================================= */
+
 .main-content {
-    margin-left: 260px; /* Pushes content past the fixed sidebar */
+    margin-left: 260px; 
     flex-grow: 1;
     min-height: 100vh;
     display: flex;
     flex-direction: column;
 }
 
-/* ========================================================= */
-/* TOP NAVIGATION HEADER BAR                                 */
-/* ========================================================= */
+
 .top-navbar {
     background: #ffffff;
     height: 70px;
@@ -159,7 +151,7 @@ body {
     font-size: 0.85rem;
 }
 
-/* Dropdown Menu styling */
+
 .dropdown-menu {
     position: absolute;
     top: 48px;
@@ -194,9 +186,9 @@ body {
 
 .content-body {
     padding: 32px 40px;
-    max-width: 1680px; /* was 1400px — was leaving big empty gutters on wide screens */
+    max-width: 1680px; 
     width: 100%;
-    margin: 0; /* was 0 auto — auto-centering created the "aside" look */
+    margin: 0; 
 }
 
 .view-header {
@@ -218,9 +210,7 @@ body {
     margin-top: 4px;
 }
 
-/* ========================================================= */
-/* METRIC SUMMARY CARDS GRID                                 */
-/* ========================================================= */
+
 .metrics-grid {
     display: grid;
     grid-template-columns: repeat(4, 1fr);
@@ -264,9 +254,7 @@ body {
     justify-content: center;
 }
 
-/* ========================================================= */
-/* USE CASE SELECTION GRID PANEL (LANDING PAGE)              */
-/* ========================================================= */
+
 .use-case-grid {
     display: grid;
     grid-template-columns: repeat(3, 1fr);
@@ -344,9 +332,7 @@ body {
     color: #f97316;
 }
 
-/* ========================================================= */
-/* DETAILED TABLES                                           */
-/* ========================================================= */
+
 .table-card {
     background: #ffffff;
     border-radius: 12px;
@@ -378,9 +364,7 @@ body {
     font-size: 0.9rem;
 }
 
-/* ========================================================= */
-/* ALERTS & TRAY COMPONENT                                   */
-/* ========================================================= */
+
 .maintenance-tray {
     background: #ffffff;
     border-left: 4px solid #ef4444;
@@ -396,9 +380,6 @@ body {
     margin-top: 24px;
 }
 
-/* ========================================================= */
-/* MODAL LAYOUT OVERLAYS                                     */
-/* ========================================================= */
 .modal-overlay {
     position: fixed;
     top: 0;
@@ -450,7 +431,7 @@ body {
             text-align: center;
         }
 
-/* Custom Row Styles for JavaScript Injector */
+
 .driver-name-cell {
     font-weight: 600;
     color: #0f172a;
@@ -468,9 +449,7 @@ body {
     margin: 0 4px;
 }
 
-/* ========================================================= */
-/* UTILITY STATUS BADGES                                     */
-/* ========================================================= */
+
 .badge {
     font-size: 0.75rem;
     font-weight: 700;
@@ -488,9 +467,7 @@ body {
     color: #991b1b;
 }
 
-/* ========================================================= */
-/* FORM GROUP & MODAL CONTROLS                               */
-/* ========================================================= */
+
 #modalDriverFormTitle {
     margin-bottom: 20px;
     color: #0f172a;
@@ -537,7 +514,7 @@ body {
     cursor: pointer;
     font-weight: 600;
 }
-/* Add these clean structural layout overrides to the bottom of coordinator.css */
+
 
 .btn-primary-orange {
     background-color: #e05e00;
@@ -554,7 +531,7 @@ body {
         background-color: #c44f00;
     }
 
-/* Lecturer Mockup Specific Metric Boxes */
+
 .metric-icon-box {
     display: flex;
     align-items: center;
@@ -582,7 +559,7 @@ body {
     background-color: #f1f5f9;
 }
 
-/* Status Badges */
+
 .badge-break {
     background-color: #ffedd5;
     color: #b45309;
@@ -615,11 +592,7 @@ body {
     background-color: #f8fafc;
     border-top: 1px solid #e2e8f0;
 }
-/* ==========================================================================
-   SCHEDULE SHUTTLES EXTENSION STYLES
-   ========================================================================== */
 
-/* Top Navbar Profile Section Elements */
 .nav-profile-section {
     display: flex;
     align-items: center;
@@ -652,9 +625,9 @@ body {
         text-decoration: underline;
     }
 
-/* Sidebar Footer & Utilities Alignment */
+
 .sidebar {
-    position: relative; /* Ensures absolute positioning works internally */
+    position: relative; 
 }
 
 .sidebar-footer {
@@ -684,7 +657,7 @@ body {
     font-size: 1.1rem;
 }
 
-/* Scheduling Content Layout Header */
+
 .scheduler-header {
     display: flex;
     justify-content: space-between;
@@ -697,7 +670,7 @@ body {
         margin: 4px 0 0 0;
     }
 
-/* Primary Action Dashboard Buttons */
+
 .btn-primary {
     background: #ea580c;
     color: white;
@@ -713,7 +686,7 @@ body {
         background: #c2410c;
     }
 
-/* Scheduler Grid Layout Data Tables */
+
 .scheduler-table {
     width: 100%;
     border-collapse: collapse;
@@ -733,7 +706,7 @@ body {
         border-bottom: 1px solid #f1f5f9;
     }
 
-/* Overlay Window Components */
+
 .modal-overlay {
     display: none;
     position: fixed;
@@ -765,7 +738,7 @@ body {
     margin: 12px 0 20px 0;
 }
 
-/* Modal Form Groups Controls */
+
 .form-group {
     margin-bottom: 14px;
 }

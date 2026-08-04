@@ -123,7 +123,7 @@
         const statusMessage = document.getElementById('statusMessage');
         const submitBtn = document.getElementById('submitBtn');
 
-        // Step 1: load the list of drivers into the dropdown as soon as the page opens
+       
         async function loadDrivers() {
             try {
                 const response = await fetch(DRIVERS_API_URL);
@@ -152,7 +152,6 @@
             }
         }
 
-        // Step 2: when the form is submitted, send the data to the API
         document.getElementById('addShuttleForm').addEventListener('submit', async function (e) {
             e.preventDefault();
 

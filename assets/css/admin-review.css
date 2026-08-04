@@ -1,4 +1,4 @@
-﻿/* Specific layouts tailored to match your Review Application design */
+﻿
 .review-container {
     display: grid;
     grid-template-columns: 1fr 1fr;

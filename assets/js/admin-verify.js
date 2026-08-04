@@ -39,7 +39,7 @@ function renderVerificationTable(list) {
     });
 }
 
-// Retaining your original approve function in case you use it anywhere else in your codebase
+
 async function approveDriver(userId) {
     if (!confirm("Authorize credentials and grant driver application access privileges?")) return;
     try {
@@ -63,7 +63,7 @@ function searchUnverified() {
     renderVerificationTable(cachedUnverified.filter(u => u.fullName.toUpperCase().includes(term) || u.studentNumber.toUpperCase().includes(term)));
 }
 
-// Global UI Navigation Controllers
+
 function toggleDropdown(e) {
     e.stopPropagation();
     document.getElementById('adminGlobalDropdown').classList.toggle('show');
@@ -81,8 +81,7 @@ window.addEventListener('click', function () {
 window.onload = () => {
     loadVerificationQueue();
 };
-// Self-contained logout wiring for this page — works even if handleLogout()
-// isn't already defined as a popup call in admin-dropdown.js.
+
 function handleLogout() {
     const modal = document.getElementById('logoutModal');
     if (modal) modal.style.display = 'flex';

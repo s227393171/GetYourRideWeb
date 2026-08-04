@@ -2,18 +2,13 @@
 const PROFILE_API_URL = '/api/admin/profile';
 let activeAdminProfile = null;
 
-// ==========================================================================
-// DROPDOWN TOGGLES
-// ==========================================================================
-
-// Controls the absolute menu overlay inside dashboard.html
 function toggleDropdown(e) {
     if (e) e.stopPropagation();
     const globalDropdown = document.getElementById('adminGlobalDropdown');
     if (globalDropdown) globalDropdown.classList.toggle('show');
 }
 
-// Controls the sidebar profile dropup menu toggle
+
 function toggleProfileMenu(e) {
     if (e) e.stopPropagation();
     else if (window.event) window.event.stopPropagation();
@@ -24,7 +19,7 @@ function toggleProfileMenu(e) {
     }
 }
 
-// Close menus when clicking outside them
+
 window.addEventListener('click', function (e) {
     const topDropdown = document.getElementById('adminGlobalDropdown');
     if (topDropdown) topDropdown.classList.remove('show');
@@ -36,13 +31,7 @@ window.addEventListener('click', function (e) {
     }
 });
 
-// ==========================================================================
-// GENERIC CUSTOM CONFIRM POPUP (replaces native confirm())
-// Built dynamically so no extra HTML markup is required in the page.
-// Uses inline SVG icons — no emoji. Available for any future confirmation
-// prompt on this portal (logout itself uses the dedicated #logoutModal
-// markup already in the page instead, see below).
-// ==========================================================================
+
 const POPUP_ICONS = {
     info: '<svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>',
     success: '<svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>',
@@ -96,10 +85,7 @@ function closeConfirmPopup() {
     pendingConfirmAction = null;
 }
 
-// ==========================================================================
-// LOGOUT — driven by the static #logoutModal markup already in the page
-// ("Leaving so soon?" / Stay / Yes, Sign Out).
-// ==========================================================================
+
 function handleLogout() {
     const modal = document.getElementById('logoutModal');
     if (modal) modal.style.display = 'flex';
@@ -117,15 +103,13 @@ function confirmLogout() {
     window.location.href = "/";
 }
 
-// ==========================================================================
-// ADMIN SETTINGS & SUPPORT MODAL EVENT HANDLERS
-// ==========================================================================
+
 window.openSettingsModal = function () {
     const modal = document.getElementById('settingsModal');
     if (modal) {
         modal.classList.add('active');
 
-        // Load any previously saved settings using synchronized keys
+       
         if (localStorage.getItem('portalTheme') && document.getElementById('themeSelect')) {
             document.getElementById('themeSelect').value = localStorage.getItem('portalTheme');
         }
@@ -141,18 +125,17 @@ window.closeSettingsModal = function () {
         const themeVal = document.getElementById('themeSelect')?.value || 'light';
         const refreshVal = document.getElementById('refreshSelect')?.value || 'manual';
 
-        // Save preferences
         localStorage.setItem('portalTheme', themeVal);
         localStorage.setItem('portalRefresh', refreshVal);
 
-        // Apply theme color flip instantly
+        
         if (themeVal === 'dark') {
             document.body.classList.add('dark-mode');
         } else {
             document.body.classList.remove('dark-mode');
         }
 
-        // Remove active display class
+        
         modal.classList.remove('active');
     }
 };
@@ -165,9 +148,7 @@ window.closeSupportModal = function () {
     document.getElementById('supportModal')?.classList.remove('active');
 };
 
-// ==========================================================================
-// LIVE CLOCK — single definition, started once from the load handler below.
-// ==========================================================================
+
 function startLiveClock() {
     setInterval(() => {
         const clockElement = document.getElementById('liveClock');
@@ -181,11 +162,9 @@ function startLiveClock() {
     }, 1000);
 }
 
-// ==========================================================================
-// ADMIN PROFILE
-// ==========================================================================
+
 async function loadAdminProfile() {
-    // SAFEGUARD: If this is the Coordinator Portal, exit instantly and let coordinator data load safely
+    
     if (document.getElementById('coordinatorNameLabel')) return;
 
     const nameLabel = document.getElementById('adminNameLabel');
@@ -201,11 +180,7 @@ async function loadAdminProfile() {
         if (response.ok) {
             const raw = await response.json();
 
-            // FIX: /api/admin/profile (see Program.cs) returns a single
-            // combined `fullName` string — it builds it server-side with
-            // `CONCAT(first_name, ' ', last_name) AS FullName` — it never
-            // sends separate fName/lName fields. That mismatch was the
-            // actual cause of "undefined undefined".
+            
             activeAdminProfile = {
                 fullName: raw.fullName || "Admin User",
                 email: raw.email ?? loggedInEmail,
@@ -222,7 +197,7 @@ async function loadAdminProfile() {
     } catch (error) {
         console.warn('Using fallback data:', error);
 
-        // This fallback matches your SQL schema seed data directly!
+        
         activeAdminProfile = {
             fullName: "Admin User",
             email: "admin@getyourride.com",
@@ -236,30 +211,27 @@ async function loadAdminProfile() {
     }
 }
 
-// ==========================================================================
-// COORDINATOR SESSION PROFILE
-// ==========================================================================
 async function loadCoordinatorSessionProfile() {
-    // SAFEGUARD: If this is the Admin Portal, exit instantly and let admin data load safely
+    
     if (!document.getElementById('coordinatorNameLabel')) return;
 
     try {
-        // Fetching the active coordinator user profile data context from session cache
+       
         const response = await fetch("/api/coordinator/profile");
 
         if (response.ok) {
-            // Assign explicitly to window frame context so data persists globally
+            
             window.activeCoordinatorProfile = await response.json();
             const data = window.activeCoordinatorProfile;
 
-            // 1. Update the sidebar profile footer details
+            
             const nameLabel = document.getElementById("coordinatorNameLabel");
             const emailLabel = document.getElementById("coordinatorEmailLabel");
 
             if (nameLabel) nameLabel.textContent = data.fullName || `${data.fName} ${data.lName}`;
             if (emailLabel) emailLabel.textContent = data.email;
 
-            // 2. Update the profile view modal input fields if they exist on the page
+            
             const modalStaffNum = document.querySelector("#profileModal input[value='COORD-2026-88']");
             const modalEmail = document.querySelector("#profileModal input[value='coordinator@ride.com']");
             const modalHeadingName = document.querySelector("#profileModal h4");
@@ -276,23 +248,20 @@ async function loadCoordinatorSessionProfile() {
     }
 }
 
-// ==========================================================================
-// UNIFIED PROFILE MODAL LIFECYCLE HANDLERS
-// ==========================================================================
 window.openProfileModal = function (event) {
     if (event) {
         event.preventDefault();
         event.stopPropagation();
     }
 
-    // 1. Close and hide dropdown visual tray layout cleanly
+    
     const dropdownMenu = document.getElementById("profileDropdown");
     if (dropdownMenu) {
         dropdownMenu.classList.remove('show');
         dropdownMenu.style.display = "none";
     }
 
-    // 2. Open modal display card layer (using class lists and inline blocks)
+    
     const modal = document.getElementById('profileModal');
     if (modal) {
         modal.classList.add('active');
@@ -302,11 +271,11 @@ window.openProfileModal = function (event) {
         return;
     }
 
-    // 3. Extract loaded dataset profile context (Admin or explicit Coordinator window)
+    
     const profileData = activeAdminProfile || window.activeCoordinatorProfile;
 
     if (profileData) {
-        // Map elements to text containers dynamically
+     
         const modalFullName = document.getElementById('modalFullName');
         if (modalFullName) {
             modalFullName.innerText = profileData.fullName || `${profileData.fName} ${profileData.lName}`;
@@ -329,7 +298,7 @@ window.openProfileModal = function (event) {
         if (modalRole) modalRole.innerText = displayRole;
         if (modalAssignedRole) modalAssignedRole.innerText = displayRole;
     } else {
-        // Safe UI Fallback strings if profile queries are pending network response windows
+        
         const sidebarName = document.getElementById("coordinatorNameLabel")?.innerText || "Shuttle Coordinator";
         const sidebarEmail = document.getElementById("coordinatorEmailLabel")?.innerText || "coordinator@ride.com";
 
@@ -348,11 +317,9 @@ window.closeProfileModal = function () {
     }
 };
 
-// ==========================================================================
-// DRIVER / BOOKINGS DASHBOARD TABLE
-// ==========================================================================
+
 async function loadDriverDashboard() {
-    // SAFEGUARD: Do not search for bookings table if we are on the Coordinator homepage
+
     if (document.getElementById('coordinatorNameLabel')) return;
 
     const tableBody = document.getElementById('bookingsTableBody');
@@ -401,11 +368,7 @@ async function loadDriverDashboard() {
     }
 }
 
-// ==========================================================================
-// GREETING BANNER + STATS ROW (admin dashboard only)
-// ==========================================================================
 
-// Dynamic greeting based on time of day + live date in the banner
 function setGreetingAndDate() {
     const heading = document.getElementById('greetingHeading');
     const dateEl = document.getElementById('bannerDate');
@@ -429,11 +392,10 @@ function setGreetingAndDate() {
     }
 }
 
-// Quick stats summary — fetches from a dashboard summary endpoint.
-// Falls back to "—" placeholders if the endpoint isn't available yet.
+
 async function loadDashboardStats() {
     const pendingEl = document.getElementById('statPendingApplications');
-    if (!pendingEl) return; // not on a page with the stats row
+    if (!pendingEl) return; 
 
     try {
         const response = await fetch(`${window.location.origin}/api/admin/dashboard/summary`);
@@ -449,11 +411,9 @@ async function loadDashboardStats() {
     }
 }
 
-// ==========================================================================
-// SINGLE PAGE INITIALIZATION — everything starts here, once.
-// ==========================================================================
+
 window.addEventListener('load', async () => {
-    // Apply saved theme immediately
+    
     if (localStorage.getItem('portalTheme') === 'dark') {
         document.body.classList.add('dark-mode');
     }
@@ -463,8 +423,7 @@ window.addEventListener('load', async () => {
 
     startLiveClock();
 
-    // Load whichever profile applies to this page (each function
-    // no-ops itself on the wrong portal via its internal safeguard)
+    
     await Promise.all([
         loadAdminProfile(),
         loadCoordinatorSessionProfile()
@@ -477,6 +436,6 @@ window.addEventListener('load', async () => {
     setGreetingAndDate();
     await loadDashboardStats();
 
-    // Re-run the greeting once the profile name has (hopefully) loaded
+  
     setTimeout(setGreetingAndDate, 800);
 });

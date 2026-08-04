@@ -1,6 +1,4 @@
-﻿/* ==========================================================================
-   Design Tokens & Color Palette
-   ========================================================================== */
+﻿
 :root {
     --bg-sidebar: #1a2238;
     --bg-sidebar-hover: #242f4d;
@@ -21,9 +19,7 @@ body {
     color: var(--text-main);
 }
 
-/* ==========================================================================
-   Sidebar Framework Layout
-   ========================================================================== */
+
 .sidebar {
     width: 260px;
     background-color: var(--bg-sidebar);
@@ -84,19 +80,19 @@ body {
         margin-right: 15px;
     }
 
-/* Pushes the bottom menu down perfectly */
+
 .sidebar-spacer {
     flex: 1;
 }
 
-/* Anchors navigation links to the bottom edge */
+
 .sidebar .bottom-menu {
     border-top: 1px solid var(--bg-sidebar-hover);
     padding-top: 10px;
     margin-bottom: 20px;
 }
 
-/* Custom visibility accent for the explicit logout action item */
+
 .menu-item.logout-action-link {
     color: #f87171 !important;
     font-weight: 600;
@@ -107,9 +103,7 @@ body {
         color: #ef4444 !important;
     }
 
-/* ==========================================================================
-   Sidebar Profile Footer Area
-   ========================================================================== */
+
 .sidebar-profile-footer {
     padding: 16px 24px;
     border-top: 1px solid var(--bg-sidebar-hover);
@@ -141,7 +135,7 @@ body {
     margin-top: 2px;
 }
 
-/* Sidebar Floating Dropup Profile List Menu Context */
+
 .sidebar-profile-footer .profile-dropdown-menu {
     display: none;
     position: absolute;
@@ -183,9 +177,7 @@ body {
         font-weight: 600;
     }
 
-/* ==========================================================================
-   Main Content & Top Navigation Panel Frameworks
-   ========================================================================== */
+
 .main-content {
     flex: 1;
     display: flex;
@@ -271,9 +263,7 @@ body {
     width: 100%;
 }
 
-/* ==========================================================================
-   Data Presentation Modules (Tables, Highlights, Cards)
-   ========================================================================== */
+
 .view-header {
     display: flex;
     justify-content: space-between;
@@ -416,34 +406,32 @@ td {
     border-top: 1px solid var(--border-color);
 }
 
-/* ==========================================================================
-   GLOBAL OVERLAY MODAL CARDS SYSTEM (FORCED FIXED CENTERING VIEW)
-   ========================================================================== */
+
 .profile-modal-overlay {
     position: fixed !important;
     top: 0 !important;
     left: 0 !important;
     right: 0 !important;
     bottom: 0 !important;
-    background-color: rgba(15, 23, 42, 0.6) !important; /* Dark screen tint back drop */
-    display: none; /* Managed via script setup calls */
+    background-color: rgba(15, 23, 42, 0.6) !important;
+    display: none; 
     align-items: center !important;
     justify-content: center !important;
-    z-index: 99999 !important; /* Locks popups dynamically over layouts */
+    z-index: 99999 !important;
 }
 
-    /* Displays flex view layout explicitly during active visibility updates */
+   
     .profile-modal-overlay.active {
         display: flex !important;
     }
 
-/* Centralized Card Layout Structure Box */
+
 .profile-modal-card {
     background: #ffffff !important;
     padding: 24px !important;
     border-radius: 12px !important;
     width: 100% !important;
-    max-width: 420px !important; /* Direct card design layout restriction width matching driver profile card */
+    max-width: 420px !important; 
     box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.15), 0 10px 10px -5px rgba(0, 0, 0, 0.04) !important;
     box-sizing: border-box !important;
     display: block !important;
@@ -459,7 +447,7 @@ td {
         padding-bottom: 12px !important;
     }
 
-/* Interior Description Layout Rules */
+
 .modal-body-content p {
     margin: 12px 0 !important;
     font-size: 14px !important;
@@ -471,18 +459,17 @@ td {
     color: #1e293b !important;
     font-weight: 600 !important;
     display: inline-block !important;
-    width: 120px !important; /* Organizes label targets cleanly into explicit visual alignment column fields */
-}
+    width: 120px !important; 
 
 .modal-body-content span {
     color: #64748b !important;
 }
 
-/* Dark, sleek call-to-action button matching driver card image specifications */
+
 .close-modal-btn {
     width: 100% !important;
     padding: 12px !important;
-    background-color: #111625 !important; /* Rich deep black/slate action tone button */
+    background-color: #111625 !important; 
     color: #ffffff !important;
     border: none !important;
     border-radius: 8px !important;
@@ -496,14 +483,12 @@ td {
     .close-modal-btn:hover {
         background-color: #1e2538 !important;
     }
-/* ==========================================================================
-   DYNAMIC DARK MODE PROPAGATION TEXT CONFIGURATIONS
-   ========================================================================== */
+
 body.dark-mode {
     color: #f8fafc;
 }
 
-    /* Ensure navbar components invert perfectly */
+    
     body.dark-mode .top-navbar {
         color: #ffffff;
     }
@@ -512,7 +497,7 @@ body.dark-mode {
         color: #cbd5e1;
     }
 
-    /* View Headings and text layout adjustments */
+    
     body.dark-mode .view-header h2,
     body.dark-mode .content-body h2,
     body.dark-mode .content-body h3,
@@ -530,14 +515,14 @@ body.dark-mode {
         color: #e2e8f0 !important;
     }
 
-    /* Operational Metric Card Containers styling */
+  
     body.dark-mode .metric-card {
         background-color: #111625 !important;
         border: 1px solid #1e2538 !important;
         color: #ffffff !important;
     }
 
-    /* Table layout adjustments */
+    
     body.dark-mode tr:hover {
         background-color: #1e2538;
     }
@@ -546,13 +531,13 @@ body.dark-mode {
         color: #ffffff;
     }
 
-    /* Form selectors background controls inside options container */
+    
     body.dark-mode select {
         background-color: #1e2538 !important;
         border-color: #334155 !important;
         color: #ffffff !important;
     }
-/* Toast Banner Styles */
+
 .toast-banner {
     position: fixed;
     bottom: 24px;
@@ -618,7 +603,7 @@ body.dark-mode {
         transform: translateY(10px);
     }
 }
-/* Fixed Centered Popup Overlay */
+
 .modal-overlay {
     position: fixed;
     top: 0;
@@ -663,5 +648,169 @@ body.dark-mode {
 }
 
     .modal-close-btn:hover {
+        color: #0f172a;
+    }
+.icon-inline {
+    width: 16px;
+    height: 16px;
+    vertical-align: -3px;
+    margin-right: 6px;
+    stroke: currentColor;
+}
+
+    .icon-inline.icon-sm {
+        width: 14px;
+        height: 14px;
+        vertical-align: -2px;
+        margin-right: 4px;
+    }
+
+    .icon-inline.icon-lg {
+        width: 26px;
+        height: 26px;
+        margin-right: 0;
+    }
+
+
+.welcome-banner {
+    background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+    border-radius: 16px;
+    padding: 28px 32px;
+    color: #fff;
+    margin-bottom: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 16px;
+}
+
+    .welcome-banner h2 {
+        margin: 0 0 6px 0;
+        font-size: 22px;
+    }
+
+    .welcome-banner p {
+        margin: 0;
+        color: #cbd5e1;
+        font-size: 13px;
+    }
+
+    .welcome-banner .banner-date {
+        font-family: monospace;
+        font-size: 13px;
+        color: #94a3b8;
+        background: rgba(255,255,255,0.06);
+        padding: 8px 14px;
+        border-radius: 8px;
+    }
+
+
+.stats-row {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 16px;
+    margin-bottom: 24px;
+}
+
+.stat-card {
+    background: #fff;
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    padding: 18px;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    transition: box-shadow 0.2s ease, transform 0.2s ease;
+}
+
+    .stat-card:hover {
+        box-shadow: 0 8px 20px -6px rgba(0,0,0,0.12);
+        transform: translateY(-2px);
+    }
+
+.stat-icon-badge {
+    width: 44px;
+    height: 44px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.stat-card .stat-label {
+    font-size: 12px;
+    color: #64748b;
+    font-weight: 600;
+    margin-bottom: 2px;
+}
+
+.stat-card .stat-value {
+    font-size: 22px;
+    font-weight: 700;
+    color: #0f172a;
+}
+
+
+.action-cards-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 24px;
+    margin-top: 4px;
+}
+
+.action-card {
+    background: #fff;
+    border: 1px solid #e2e8f0;
+    border-radius: 14px;
+    padding: 22px;
+    cursor: pointer;
+    transition: box-shadow 0.2s ease, transform 0.2s ease, border-color 0.2s ease;
+    position: relative;
+}
+
+    .action-card:hover {
+        box-shadow: 0 12px 24px -8px rgba(0,0,0,0.14);
+        transform: translateY(-3px);
+        border-color: #cbd5e1;
+    }
+
+    .action-card .action-icon-badge {
+        width: 48px;
+        height: 48px;
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-bottom: 14px;
+    }
+
+    .action-card h3 {
+        margin: 0 0 8px 0;
+        font-size: 16px;
+        color: #0f172a;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .action-card p {
+        color: var(--text-muted, #64748b);
+        font-size: 13px;
+        line-height: 1.5;
+        margin: 0;
+    }
+
+    .action-card .action-arrow {
+        position: absolute;
+        top: 22px;
+        right: 22px;
+        color: #94a3b8;
+        transition: transform 0.2s ease, color 0.2s ease;
+    }
+
+    .action-card:hover .action-arrow {
+        transform: translate(3px, -3px);
         color: #0f172a;
     }

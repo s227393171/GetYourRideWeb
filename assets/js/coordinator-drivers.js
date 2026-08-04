@@ -10,14 +10,7 @@ function closeProfileModal() {
     if (profileModal) profileModal.style.setProperty("display", "none", "important");
 }
 
-/* =========================================================================
-   Popup dialog system
-   Replaces native alert()/confirm() with in-page modals so every trigger
-   message (errors, confirmations, connection failures) shows as a styled
-   popup instead of a browser dialog.
-   Requires Font Awesome to be loaded on the page (for the icon set used
-   both here and in the drivers table below).
-   ========================================================================= */
+
 
 function injectDialogStyles() {
     if (document.getElementById("dialogSystemStyles")) return;
@@ -114,7 +107,7 @@ function buildDialogIcon(tone) {
     return `<i class="dlg-icon dlg-icon-${tone} ${icons[tone] || icons.info}"></i>`;
 }
 
-// Shows a popup with a single "OK" dismiss action. Resolves when closed.
+
 function showAlertModal(message, { title = "Notice", tone = "info" } = {}) {
     injectDialogStyles();
     return new Promise((resolve) => {
@@ -146,7 +139,7 @@ function showAlertModal(message, { title = "Notice", tone = "info" } = {}) {
     });
 }
 
-// Shows a popup with Confirm/Cancel actions. Resolves true/false.
+
 function showConfirmModal(message, { title = "Please confirm", tone = "warn" } = {}) {
     injectDialogStyles();
     return new Promise((resolve) => {
@@ -180,14 +173,14 @@ function showConfirmModal(message, { title = "Please confirm", tone = "warn" } =
     });
 }
 
-// Unified initialization wrapper block
+
 document.addEventListener("DOMContentLoaded", () => {
-    // 1. Load the drivers table first
+    
     loadDriversTable();
 
     const modal = document.getElementById("driverFormModal");
 
-    // 2. Open Add Driver Modal
+   
     const addBtn = document.getElementById("btnOpenAddDriverModal");
     if (addBtn && modal) {
         addBtn.addEventListener("click", () => {
@@ -200,7 +193,7 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     }
 
-    // 3. Cancel/Close Modal
+  
     const cancelBtn = document.getElementById("btnCancelDriverModal");
     if (cancelBtn && modal) {
         cancelBtn.addEventListener("click", () => {
@@ -208,13 +201,13 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     }
 
-    // 4. Form Action Processing Event Listener
+ 
     const driverForm = document.getElementById("frmDriverAsset");
     if (driverForm) {
         driverForm.addEventListener("submit", handleDriverFormSubmit);
     }
 
-    // 5. Profile Link Dropdown
+    
     const viewProfileLink = document.getElementById("btnDropdownProfile");
     if (viewProfileLink) {
         viewProfileLink.addEventListener("click", (e) => {
@@ -224,7 +217,7 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 });
 
-// Renders the Interactive Operator Control Sheets safely
+
 async function loadDriversTable() {
     try {
         const tbody = document.getElementById("driverTableBody");
@@ -244,19 +237,19 @@ async function loadDriversTable() {
 
         tbody.innerHTML = "";
 
-        // Filter out student drivers (keep ONLY shuttle drivers)
+        
         const shuttleDrivers = (allDrivers || []).filter(d => {
             const role = (d.role || "").toUpperCase();
             const email = (d.email || "").toLowerCase();
             const studentNum = d.studentNumber;
 
-            // 1. Exclude if explicit STUDENT_DRIVER role
+            
             if (role === "STUDENT_DRIVER" || role === "STUDENT") return false;
 
-            // 2. Exclude if email matches student format (e.g. s223456789@...)
+           
             if (/^s\d+@/i.test(email)) return false;
 
-            // 3. Exclude if email ends with mandela student domain
+           
             if (email.endsWith("@mandela.ac.za")) return false;
 
             return true;
@@ -315,7 +308,7 @@ async function loadDriversTable() {
             tbody.appendChild(tr);
         });
 
-        // Safe metric counter updates
+        
         const totalCard = document.getElementById("txtTotalDrivers");
         const activeCard = document.getElementById("txtActiveDrivers");
         const breakCard = document.getElementById("txtBreakDrivers");
@@ -335,7 +328,7 @@ async function loadDriversTable() {
     }
 }
 
-// Form Action Handler
+
 async function handleDriverFormSubmit(e) {
     e.preventDefault();
     const id = document.getElementById("txtDriverId").value;

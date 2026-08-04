@@ -1,4 +1,4 @@
-﻿/* Reset default margins and set font */
+﻿
 body {
     margin: 0;
     padding: 0;
@@ -10,7 +10,7 @@ body {
     height: 100vh;
 }
 
-/* Center the login box container */
+
 .login-container {
     background-color: #ffffff;
     padding: 40px;
@@ -38,7 +38,7 @@ h1 {
     margin-bottom: 20px;
 }
 
-/* Style the input fields */
+
 .login-container input {
     width: 100%;
     padding: 12px;
@@ -55,7 +55,7 @@ h1 {
         outline: none;
     }
 
-/* Style the Submit button */
+
 .login-container button {
     width: 100%;
     padding: 12px;
@@ -74,7 +74,6 @@ h1 {
         background-color: #0056b3;
     }
 
-/* Error message styling */
 #errorMessage {
     margin-top: 15px;
     font-size: 14px;
@@ -82,7 +81,7 @@ h1 {
     color: red;
 }
 
-/* Links under the form */
+
 .link {
     display: block;
     margin-top: 10px;

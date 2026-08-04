@@ -4,9 +4,7 @@ const DRIVERS_API_URL = '/api/coordinator/drivers';
 let shuttleCache = [];
 let driverCache = [];
 
-// ---------------------------------------------------------
-// Popup system (replaces browser alert() / confirm())
-// ---------------------------------------------------------
+
 function ensurePopupRoot() {
     let root = document.getElementById("popupRoot");
     if (!root) {

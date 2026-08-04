@@ -1,11 +1,11 @@
 using MySqlConnector;
 using System.Data;
 using Microsoft.Extensions.FileProviders;
-//using MySql.Data.MySqlClient; // Ensure your MySQL import is present
+
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Enable CORS so your frontend can communicate with the API
+
 builder.Services.AddCors(options => {
     options.AddDefaultPolicy(policy =>
         policy.AllowAnyOrigin()
@@ -16,10 +16,10 @@ builder.Services.AddCors(options => {
 var app = builder.Build();
 app.UseCors();
 
-// 1. Serve static files from wwwroot if it exists
+
 app.UseStaticFiles();
 
-// 2. Serve static files from project root (Login.html, etc.)
+
 app.UseFileServer(new FileServerOptions
 {
     FileProvider = new PhysicalFileProvider(
@@ -28,7 +28,7 @@ app.UseFileServer(new FileServerOptions
     EnableDefaultFiles = true
 });
 
-// 3. Explicitly map and serve the 'admin' directory assets securely
+
 app.UseStaticFiles(new StaticFileOptions
 {
     FileProvider = new PhysicalFileProvider(
@@ -36,7 +36,7 @@ app.UseStaticFiles(new StaticFileOptions
     RequestPath = "/admin"
 });
 
-// 4. Serve static files from assets folder (css, js)
+
 app.UseStaticFiles(new StaticFileOptions
 {
     FileProvider = new PhysicalFileProvider(
@@ -44,12 +44,9 @@ app.UseStaticFiles(new StaticFileOptions
     RequestPath = "/assets"
 });
 
-// Root Route: Serve Login.html
+
 app.MapGet("/", () => Results.File(Path.Combine(Directory.GetCurrentDirectory(), "Login.html"), "text/html"));
 
-// ---------------------------------------------------------
-// AUTHENTICATION ENDPOINT
-// ---------------------------------------------------------
 app.MapPost("/api/login", async (LoginRequest request, IConfiguration config) => {
     string connectionString = config.GetConnectionString("DefaultConnection");
 
@@ -87,9 +84,7 @@ app.MapPost("/api/login", async (LoginRequest request, IConfiguration config) =>
     }
 });
 
-// ---------------------------------------------------------
-// DRIVER PORTAL ENDPOINTS
-// ---------------------------------------------------------
+
 app.MapGet("/api/driver/profile", async (string email, IConfiguration config) =>
 {
     if (string.IsNullOrEmpty(email)) email = "thabo.nkosi@shuttle.nmu.ac.za";
@@ -127,7 +122,7 @@ app.MapGet("/api/driver/profile", async (string email, IConfiguration config) =>
     }
 });
 
-// Bookings for the trips this driver runs. Pass ?email=driver@example.com
+
 app.MapGet("/api/driver/bookings", async (string? email, IConfiguration config) => {
     string connectionString = config.GetConnectionString("DefaultConnection");
     var bookings = new List<object>();
@@ -186,9 +181,7 @@ app.MapGet("/api/driver/bookings", async (string? email, IConfiguration config) 
     return Results.Ok(bookings);
 });
 
-// ---------------------------------------------------------
-// ADMIN DASHBOARD ENDPOINTS
-// ---------------------------------------------------------
+
 app.MapGet("/api/admin/driver-ratings", async (IConfiguration config) => {
     string connectionString = config.GetConnectionString("DefaultConnection");
     var list = new List<object>();
@@ -312,12 +305,7 @@ app.MapPost("/api/admin/verify-driver", async (VerifyActionRequest req, IConfigu
     }
 });
 
-// Helper model definition (Ensure this exists in your project scope)
 
-
-// ---------------------------------------------------------
-// 1. GET DRIVER DETAILS
-// ---------------------------------------------------------
 app.MapGet("/api/admin/drivers/{driverId:int}", async (int driverId, IConfiguration config) =>
 {
     string connectionString = config.GetConnectionString("DefaultConnection");
@@ -341,7 +329,8 @@ app.MapGet("/api/admin/drivers/{driverId:int}", async (int driverId, IConfigurat
                    da.ApplicationStatus
             FROM driver d
             LEFT JOIN student s ON d.email = s.email
-            LEFT JOIN driverapplications da ON d.driver_id = da.driver_id
+            LEFT JOIN users u ON d.email = u.email
+            LEFT JOIN driverapplications da ON u.UserID =da.UserID 
             WHERE d.driver_id = @DriverId 
             LIMIT 1;";
 
@@ -381,9 +370,7 @@ app.MapGet("/api/admin/drivers/{driverId:int}", async (int driverId, IConfigurat
     }
 });
 
-// ---------------------------------------------------------
-// 2. POST UPDATE STATUS
-// ---------------------------------------------------------
+
 app.MapPost("/api/admin/drivers/{driverId:int}/status", async (int driverId, DynamicStatusUpdate req, IConfiguration config) =>
 {
     if (req == null || string.IsNullOrWhiteSpace(req.Status))
@@ -398,18 +385,19 @@ app.MapPost("/api/admin/drivers/{driverId:int}/status", async (int driverId, Dyn
         using var connection = new MySqlConnection(connectionString);
         await connection.OpenAsync();
 
-        // 1 = Approved, 0 = Rejected/Pending
+        
         int isVerifiedValue = req.Status.Equals("Approved", StringComparison.OrdinalIgnoreCase) ||
                               req.Status.Equals("Approve", StringComparison.OrdinalIgnoreCase) ? 1 : 0;
 
-        // Fixed: join driverapplications on driver_id (DriverID), matching the GET query's key,
-        // instead of email — email can be null/mismatched and silently drops the applications-table update.
+        
         string updateQuery = @"
-            UPDATE driver dr
-            LEFT JOIN driverapplications da ON dr.driver_id = da.driver_id
-            SET da.ApplicationStatus = @Status, 
-                dr.is_verified = @IsVerified
-            WHERE dr.driver_id = @DriverId;";
+          UPDATE driver dr
+           LEFT JOIN users u ON dr.email = u.email
+                 LEFT JOIN driverapplications da ON u.UserID = da.UserID
+                 SET da.ApplicationStatus = @Status, 
+                 dr.is_verified = @IsVerified
+                 WHERE dr.driver_id = @DriverId;";
+
 
         using var command = new MySqlCommand(updateQuery, connection);
         command.Parameters.AddWithValue("@Status", req.Status);
@@ -428,9 +416,7 @@ app.MapPost("/api/admin/drivers/{driverId:int}/status", async (int driverId, Dyn
     }
 });
 
-// ---------------------------------------------------------
-// DRIVER TRIP HISTORY (Admin Ratings "View Details")
-// ---------------------------------------------------------
+
 app.MapGet("/api/admin/drivers/{driverId:long}/trips", async (long driverId, IConfiguration config) => {
     string connectionString = config.GetConnectionString("DefaultConnection");
     var trips = new List<object>();
@@ -479,9 +465,7 @@ app.MapGet("/api/admin/drivers/{driverId:long}/trips", async (long driverId, ICo
     return Results.Ok(trips);
 });
 
-// ---------------------------------------------------------
-// ADMIN PROFILE
-// ---------------------------------------------------------
+
 app.MapGet("/api/admin/profile", async (string? email, IConfiguration config) => {
     if (string.IsNullOrEmpty(email))
     {
@@ -520,9 +504,7 @@ app.MapGet("/api/admin/profile", async (string? email, IConfiguration config) =>
     }
 });
 
-// ---------------------------------------------------------
-// SHUTTLE COORDINATOR FLEET ENDPOINTS
-// ---------------------------------------------------------
+
 app.MapGet("/api/coordinator/shuttles", async (IConfiguration config) => {
     string connectionString = config.GetConnectionString("DefaultConnection");
     var shuttles = new List<object>();
@@ -598,7 +580,7 @@ app.MapPost("/api/coordinator/shuttles", async (ShuttleDto newShuttle, IConfigur
     }
 });
 
-// PUT: Update an existing vehicle's details (including driver assignment)
+
 app.MapPut("/api/coordinator/shuttles/{id:int}", async (int id, ShuttleDto req, IConfiguration config) => {
     string connectionString = config.GetConnectionString("DefaultConnection");
 
@@ -638,7 +620,7 @@ app.MapPut("/api/coordinator/shuttles/{id:int}", async (int id, ShuttleDto req, 
     }
 });
 
-// DELETE: Remove a vehicle from the fleet
+
 app.MapDelete("/api/coordinator/shuttles/{id:int}", async (int id, IConfiguration config) => {
     string connectionString = config.GetConnectionString("DefaultConnection");
 
@@ -647,7 +629,7 @@ app.MapDelete("/api/coordinator/shuttles/{id:int}", async (int id, IConfiguratio
         using var connection = new MySqlConnection(connectionString);
         await connection.OpenAsync();
 
-        // Get this vehicle's registration number so we can clear trip references too
+        
         string regNumber = "";
         string lookupQuery = "SELECT registration_number FROM vehicle WHERE vehicle_id = @Id;";
         using (var lookupCmd = new MySqlCommand(lookupQuery, connection))
@@ -659,7 +641,7 @@ app.MapDelete("/api/coordinator/shuttles/{id:int}", async (int id, IConfiguratio
 
         if (!string.IsNullOrEmpty(regNumber))
         {
-            // Delete trips that reference this vehicle (FK: fk_trip_vehicle)
+         
             string clearTripsQuery = "DELETE FROM trip WHERE registration_number = @Reg;";
             using var clearTripsCmd = new MySqlCommand(clearTripsQuery, connection);
             clearTripsCmd.Parameters.AddWithValue("@Reg", regNumber);
@@ -682,9 +664,7 @@ app.MapDelete("/api/coordinator/shuttles/{id:int}", async (int id, IConfiguratio
     }
 });
 
-// ---------------------------------------------------------
-// SHUTTLE COORDINATOR DRIVER ENDPOINTS
-// ---------------------------------------------------------
+
 app.MapGet("/api/coordinator/drivers", async (IConfiguration config) => {
     string connectionString = config.GetConnectionString("DefaultConnection");
     var drivers = new List<object>();
@@ -738,7 +718,7 @@ app.MapGet("/api/coordinator/drivers", async (IConfiguration config) => {
     return Results.Ok(drivers);
 });
 
-// GET single driver by ID
+
 app.MapGet("/api/coordinator/drivers/{id:int}", async (int id, IConfiguration config) => {
     string connectionString = config.GetConnectionString("DefaultConnection");
 
@@ -792,7 +772,7 @@ app.MapGet("/api/coordinator/drivers/{id:int}", async (int id, IConfiguration co
     }
 });
 
-// PUT: Update an existing driver's profile details
+
 app.MapPut("/api/coordinator/drivers/{id:int}", async (int id, DriverUpsertDto req, IConfiguration config) => {
     string connectionString = config.GetConnectionString("DefaultConnection");
 
@@ -827,7 +807,7 @@ app.MapPut("/api/coordinator/drivers/{id:int}", async (int id, DriverUpsertDto r
     }
 });
 
-// POST: Create a new shuttle driver profile from the coordinator portal
+
 app.MapPost("/api/coordinator/drivers", async (DriverUpsertDto req, IConfiguration config) => {
     string connectionString = config.GetConnectionString("DefaultConnection");
 
@@ -865,7 +845,7 @@ app.MapPost("/api/coordinator/drivers", async (DriverUpsertDto req, IConfigurati
     }
 });
 
-// DELETE: Remove a driver profile from the roster
+
 app.MapDelete("/api/coordinator/drivers/{id:int}", async (int id, IConfiguration config) => {
     string connectionString = config.GetConnectionString("DefaultConnection");
 
@@ -874,7 +854,7 @@ app.MapDelete("/api/coordinator/drivers/{id:int}", async (int id, IConfiguration
         using var connection = new MySqlConnection(connectionString);
         await connection.OpenAsync();
 
-        // 1. Find every vehicle this driver owns
+       
         var registrationNumbers = new List<string>();
         string vehicleLookupQuery = "SELECT registration_number FROM vehicle WHERE driver_id = @Id;";
         using (var lookupCmd = new MySqlCommand(vehicleLookupQuery, connection))
@@ -887,7 +867,7 @@ app.MapDelete("/api/coordinator/drivers/{id:int}", async (int id, IConfiguration
             }
         }
 
-        // 2. Delete every trip that references this driver OR uses one of their vehicles
+        
         string clearTripQuery = "DELETE FROM trip WHERE driver_id = @Id";
         if (registrationNumbers.Count > 0)
         {
@@ -906,7 +886,7 @@ app.MapDelete("/api/coordinator/drivers/{id:int}", async (int id, IConfiguration
             await clearTripCmd.ExecuteNonQueryAsync();
         }
 
-        // 3. Now safe to delete the vehicles
+       
         string clearVehicleQuery = "DELETE FROM vehicle WHERE driver_id = @Id;";
         using (var clearVehicleCmd = new MySqlCommand(clearVehicleQuery, connection))
         {
@@ -914,7 +894,7 @@ app.MapDelete("/api/coordinator/drivers/{id:int}", async (int id, IConfiguration
             await clearVehicleCmd.ExecuteNonQueryAsync();
         }
 
-        // 4. Finally delete the driver
+       
         string deleteQuery = "DELETE FROM driver WHERE driver_id = @Id;";
         using var deleteCmd = new MySqlCommand(deleteQuery, connection);
         deleteCmd.Parameters.AddWithValue("@Id", id);
@@ -931,11 +911,7 @@ app.MapDelete("/api/coordinator/drivers/{id:int}", async (int id, IConfiguration
     }
 });
 
-// ---------------------------------------------------------
-// SHUTTLE STOPS / ROUTES
-// ---------------------------------------------------------
 
-// Raw stop list (used to populate departure/destination pickers directly)
 app.MapGet("/api/coordinator/stops", async (IConfiguration config) => {
     string connectionString = config.GetConnectionString("DefaultConnection");
     var stops = new List<object>();
@@ -967,7 +943,7 @@ app.MapGet("/api/coordinator/stops", async (IConfiguration config) => {
     return Results.Ok(stops);
 });
 
-// Route corridors (origin -> destination pairs), used by the "Select Route Path Corridor" dropdown
+
 app.MapGet("/api/coordinator/routes", async (IConfiguration config) => {
     string connectionString = config.GetConnectionString("DefaultConnection");
     var routes = new List<object>();
@@ -1013,9 +989,7 @@ app.MapGet("/api/coordinator/routes", async (IConfiguration config) => {
     return Results.Ok(routes);
 });
 
-// ---------------------------------------------------------
-// SHUTTLE COORDINATOR SCHEDULING ENDPOINTS
-// ---------------------------------------------------------
+
 app.MapGet("/api/coordinator/schedules", async (IConfiguration config) => {
     string connectionString = config.GetConnectionString("DefaultConnection");
     var schedules = new List<object>();
@@ -1064,7 +1038,7 @@ app.MapGet("/api/coordinator/schedules", async (IConfiguration config) => {
     return Results.Ok(schedules);
 });
 
-// GET single schedule (for Edit modal)
+
 app.MapGet("/api/coordinator/schedules/{id:int}", async (int id, IConfiguration config) =>
 {
     string connectionString = config.GetConnectionString("DefaultConnection");
@@ -1111,7 +1085,7 @@ app.MapGet("/api/coordinator/schedules/{id:int}", async (int id, IConfiguration 
     }
 });
 
-// POST: Create a new schedule. Accepts a RouteID and resolves From/To stop names server-side.
+
 app.MapPost("/api/coordinator/schedules", async (ScheduleDirectDto req, IConfiguration config) => {
     string connectionString = config.GetConnectionString("DefaultConnection");
 
@@ -1128,7 +1102,7 @@ app.MapPost("/api/coordinator/schedules", async (ScheduleDirectDto req, IConfigu
             return Results.BadRequest(new { success = false, message = "Invalid schedule date or time format." });
         }
 
-        // Resolve From/To stop names from the selected route
+       
         string fromLocation = "";
         string toLocation = "";
         string routeLookupQuery = @"
@@ -1154,7 +1128,7 @@ app.MapPost("/api/coordinator/schedules", async (ScheduleDirectDto req, IConfigu
             return Results.BadRequest(new { success = false, message = $"Could not locate a matching route for RouteID: '{req.RouteID}'." });
         }
 
-        // Resolve vehicle registration number + capacity
+       
         string regNumber = "";
         int capacity = 0;
 
@@ -1201,7 +1175,7 @@ app.MapPost("/api/coordinator/schedules", async (ScheduleDirectDto req, IConfigu
     }
 });
 
-// PUT: Update an existing schedule. Same RouteID resolution as POST.
+
 app.MapPut("/api/coordinator/schedules/{id:int}", async (int id, ScheduleDirectDto req, IConfiguration config) =>
 {
     string connectionString = config.GetConnectionString("DefaultConnection");
@@ -1233,7 +1207,7 @@ app.MapPut("/api/coordinator/schedules/{id:int}", async (int id, ScheduleDirectD
             return Results.BadRequest(new { success = false, message = "Invalid schedule date or time format." });
         }
 
-        // Resolve From/To stop names from the selected route
+       
         string fromLocation = "";
         string toLocation = "";
         string routeLookupQuery = @"
@@ -1289,7 +1263,7 @@ app.MapPut("/api/coordinator/schedules/{id:int}", async (int id, ScheduleDirectD
     }
 });
 
-// DELETE: Remove a scheduled route
+
 app.MapDelete("/api/coordinator/schedules/{id:int}", async (int id, IConfiguration config) => {
     string connectionString = config.GetConnectionString("DefaultConnection");
 
@@ -1314,9 +1288,7 @@ app.MapDelete("/api/coordinator/schedules/{id:int}", async (int id, IConfigurati
     }
 });
 
-// ---------------------------------------------------------
-// COORDINATOR PROFILE
-// ---------------------------------------------------------
+
 app.MapGet("/api/coordinator/profile", async (string? email, IConfiguration config) => {
     if (string.IsNullOrEmpty(email))
     {
@@ -1355,9 +1327,7 @@ app.MapGet("/api/coordinator/profile", async (string? email, IConfiguration conf
     }
 });
 
-// ---------------------------------------------------------
-// ADMIN: DIRECT DRIVER UPSERT (student-driver style, used elsewhere in the app)
-// ---------------------------------------------------------
+
 app.MapPost("/api/admin/drivers/upsert", async (DriverUpsertDto req, IConfiguration config) => {
     string connectionString = config.GetConnectionString("DefaultConnection");
 
@@ -1396,9 +1366,7 @@ app.MapPost("/api/admin/drivers/upsert", async (DriverUpsertDto req, IConfigurat
     }
 });
 
-// ---------------------------------------------------------
-// FORGOT/RESET PASSWORD ENDPOINTS
-// ---------------------------------------------------------
+
 app.MapGet("/Forgot.html", () => Results.File(Path.Combine(Directory.GetCurrentDirectory(), "Forgot.html"), "text/html"));
 
 app.MapPost("/api/auth/forgot-password", async (ForgotPasswordRequest req, IConfiguration config) => {
@@ -1448,11 +1416,7 @@ app.MapPost("/api/auth/forgot-password", async (ForgotPasswordRequest req, IConf
         return Results.Json(new { success = false, message = ex.Message }, statusCode: 500);
     }
 });
-// ---------------------------------------------------------
-// ADMIN DASHBOARD SUMMARY (for dashboard-home.html's stats row)
-// Drop this into the "ADMIN DASHBOARD ENDPOINTS" section of
-// Program.cs, alongside /api/admin/driver-ratings etc.
-// ---------------------------------------------------------
+
 app.MapGet("/api/admin/dashboard/summary", async (IConfiguration config) => {
     string connectionString = config.GetConnectionString("DefaultConnection");
 
@@ -1461,11 +1425,7 @@ app.MapGet("/api/admin/dashboard/summary", async (IConfiguration config) => {
         using var connection = new MySqlConnection(connectionString);
         await connection.OpenAsync();
 
-        // Single round trip: one row with four subquery columns.
-        //  - PendingApplications: drivers not yet verified (mirrors /api/admin/unverified-drivers)
-        //  - ActiveDrivers: verified, non-student-driver drivers (mirrors /api/admin/driver-ratings)
-        //  - AverageRating: overall average across all trip_review rows
-        //  - TripsToday: trips whose departure_time falls on today's date
+        
         string query = @"
             SELECT
                 (SELECT COUNT(*) FROM driver WHERE is_verified = 0) AS PendingApplications,
@@ -1489,8 +1449,7 @@ app.MapGet("/api/admin/dashboard/summary", async (IConfiguration config) => {
             });
         }
 
-        // Should never happen (the query always returns exactly one row), but keep the
-        // frontend's placeholder fallback working if it somehow does.
+        
         return Results.Ok(new { pendingApplications = 0, activeDrivers = 0, averageRating = (double?)null, tripsToday = 0 });
     }
     catch (Exception ex)
@@ -1535,9 +1494,7 @@ app.MapPost("/api/auth/reset-password", async (ResetPasswordRequest req, IConfig
 
 app.Run();
 
-// ---------------------------------------------------------
-// DATA TRANSFER RECORDS (DTOs) & REQUESTS
-// ---------------------------------------------------------
+
 public record LoginRequest(string Email, string Password);
 public record VerifyActionRequest(int DriverId);
 public record DynamicStatusUpdate(string Status);
@@ -1546,8 +1503,7 @@ public record DriverUpsertDto(string FullName, string Email, string? Phone);
 public record ForgotPasswordRequest(string Email);
 public record ResetPasswordRequest(string Token, string NewPassword);
 
-// Accepts RouteID instead of raw FromStop/ToStop text — the server resolves
-// the stop names from the routes table so the frontend only needs to send an ID.
+
 public class ScheduleDirectDto
 {
     public int RouteID { get; set; }

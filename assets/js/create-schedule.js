@@ -6,7 +6,7 @@
     const driverSelect = document.getElementById("ddlDriverAsset");
     const scheduleForm = document.getElementById("frmCreateSchedule");
 
-    // Detect edit mode from the URL: create-schedule.html?id=123
+    
     const urlParams = new URLSearchParams(window.location.search);
     const editScheduleId = urlParams.get("id");
 
@@ -18,7 +18,7 @@
 
     async function populateDropdowns() {
         try {
-            // Fetch stops, shuttles, and drivers independently so one failure doesn't block the rest
+           
             const results = await Promise.allSettled([
                 fetch(`${apiBaseUrl}/stops`),
                 fetch(`${apiBaseUrl}/shuttles`),
@@ -27,7 +27,7 @@
 
             const [stopsResult, shuttlesResult, driversResult] = results;
 
-            // 1. Populate Stops / Routes
+            
             if (stopsResult.status === "fulfilled" && stopsResult.value.ok) {
                 const stops = await stopsResult.value.json();
                 if (routeSelect && Array.isArray(stops)) {
@@ -45,7 +45,6 @@
                 console.error("Failed to load stops asset:", stopsResult.reason || stopsResult.value?.statusText);
             }
 
-            // 2. Populate Shuttles
             if (shuttlesResult.status === "fulfilled" && shuttlesResult.value.ok) {
                 const shuttles = await shuttlesResult.value.json();
                 if (shuttleSelect && Array.isArray(shuttles)) {
@@ -57,7 +56,7 @@
                 console.error("Failed to load shuttles asset:", shuttlesResult.reason || shuttlesResult.value?.statusText);
             }
 
-            // 3. Populate Drivers
+            
             if (driversResult.status === "fulfilled" && driversResult.value.ok) {
                 const drivers = await driversResult.value.json();
                 if (driverSelect && Array.isArray(drivers)) {
@@ -75,9 +74,7 @@
         }
     }
 
-    // --------------------------------------------------------------------
-    // EDIT MODE: fetch the existing schedule and pre-fill the form
-    // --------------------------------------------------------------------
+  
     async function loadScheduleIntoForm(scheduleId) {
         try {
             const response = await fetch(`${apiBaseUrl}/schedules`);
@@ -94,7 +91,7 @@
                 return;
             }
 
-            // Match the route dropdown value (built as "From -> To")
+           
             const fromStop = schedule.fromStop || "";
             const toStop = schedule.toStop || "";
             const routeValue = `${fromStop} -> ${toStop}`;
@@ -116,7 +113,7 @@
             if (dateInput) dateInput.value = schedule.scheduleDate || "";
             if (timeInput) timeInput.value = schedule.departureTime || "";
 
-            // Update page chrome to reflect edit mode
+            
             const heading = document.querySelector(".form-header h2");
             if (heading) heading.textContent = "Edit Fleet Route Dispatch";
 
@@ -133,42 +130,34 @@
         scheduleForm.addEventListener("submit", async (event) => {
             event.preventDefault();
 
-            // Determine inputs (handles single dropdown vs split route inputs)
-            const routeFromInput = document.getElementById("routeFrom");
-            const routeToInput = document.getElementById("routeTo");
-
-            let fromStop = "";
-            let toStop = "";
-
-            if (routeFromInput && routeToInput) {
-                fromStop = routeFromInput.value.trim();
-                toStop = routeToInput.value.trim();
-            } else if (routeSelect && routeSelect.value) {
-                const parts = routeSelect.value.split(" -> ");
-                fromStop = parts[0] || "";
-                toStop = parts[1] || "";
-            }
+       
+            const selectedRouteId = parseInt(routeSelect?.value || "0", 10);
+            const selectedShuttle = parseInt(shuttleSelect?.value || "0", 10);
+            const selectedDriver = parseInt(driverSelect?.value || "0", 10);
 
             const dateInput = document.getElementById("txtScheduleDate") || document.getElementById("runDate");
             const timeInput = document.getElementById("txtDepartureTime") || document.getElementById("clockTime");
-            const selectedShuttle = shuttleSelect?.value || document.getElementById("shuttleSelect")?.value;
-            const selectedDriver = driverSelect?.value || document.getElementById("driverSelect")?.value;
 
-            if (!fromStop || !toStop || !selectedShuttle || !selectedDriver || !dateInput?.value || !timeInput?.value) {
+            
+            if (!selectedRouteId || selectedRouteId === 0) {
+                alert("Please select a valid route before saving.");
+                return;
+            }
+
+            if (!selectedShuttle || !selectedDriver || !dateInput?.value || !timeInput?.value) {
                 alert("Please ensure all required fields are populated before saving.");
                 return;
             }
 
+           
             const payload = {
-                FromStop: fromStop,
-                ToStop: toStop,
+                RouteID: selectedRouteId,
                 ScheduleDate: dateInput.value,
                 DepartureTime: timeInput.value,
-                ShuttleID: parseInt(selectedShuttle, 10),
-                DriverID: parseInt(selectedDriver, 10)
+                ShuttleID: selectedShuttle,
+                DriverID: selectedDriver
             };
 
-            // Use PUT + schedule id when editing, POST when creating
             const url = editScheduleId
                 ? `${apiBaseUrl}/schedules/${editScheduleId}`
                 : `${apiBaseUrl}/schedules`;
@@ -194,5 +183,7 @@
                 alert("Could not process submit packet. Confirm backend server connectivity.");
             }
         });
+
+          
     }
 });

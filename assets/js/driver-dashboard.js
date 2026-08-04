@@ -1,11 +1,9 @@
 ﻿const BOOKINGS_API_URL = '/api/driver/bookings';
 const PROFILE_API_URL = '/api/driver/profile';
 let activeDriverProfile = null;
-let loggedInDriverEmail = null; // FIX: shared across functions so bookings can be filtered per-driver
+let loggedInDriverEmail = null; 
 
-// ==========================================================================
-// 1. Fetch Dynamic User Session Metrics from Database
-// ==========================================================================
+
 async function loadDriverProfile() {
     try {
         const urlParams = new URLSearchParams(window.location.search);
@@ -33,9 +31,7 @@ async function loadDriverProfile() {
     }
 }
 
-// ==========================================================================
-// 2. Fetch Assigned Manifest bookings from Database
-// ==========================================================================
+
 async function loadDriverDashboard() {
     const tableBody = document.getElementById('bookingsTableBody');
 
@@ -94,9 +90,7 @@ async function loadDriverDashboard() {
     }
 }
 
-// ==========================================================================
-// REAL-TIME SEARCHING & DATE FILTER ENGINE
-// ==========================================================================
+
 function filterTable() {
     const input = document.getElementById("tableSearch").value.toUpperCase();
     const rows = document.getElementById("bookingsTableBody").getElementsByTagName("tr");
@@ -112,7 +106,7 @@ function filterTable() {
 
 function filterByDate() {
     const filterValue = document.getElementById("manifestDateFilter").value;
-    // FIX: replaced native alert() with the custom popup
+  
     showInfoPopup("Manifest Filtered", `Showing matches for date: ${filterValue}`);
 }
 
@@ -123,10 +117,7 @@ function startLiveClock() {
     }, 1000);
 }
 
-// ==========================================================================
-// GENERIC CUSTOM POPUP (replaces native alert())
-// Built dynamically so no extra HTML markup is required in the page.
-// ==========================================================================
+
 function ensureInfoPopupMarkup() {
     if (document.getElementById('infoPopupModal')) return;
 
@@ -148,7 +139,7 @@ function ensureInfoPopupMarkup() {
     document.body.appendChild(wrapper);
 }
 
-// Small inline SVG icon set — avoids emoji, renders consistently across platforms
+
 const POPUP_ICONS = {
     info: '<svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>',
     success: '<svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>',
@@ -168,9 +159,6 @@ function closeInfoPopup() {
     if (modal) modal.style.display = 'none';
 }
 
-// ==========================================================================
-// INTERFACE MODAL WINDOW CONTROLLERS
-// ==========================================================================
 function toggleProfileMenu() {
     document.getElementById('profileDropdown').classList.toggle('show');
 }
@@ -195,11 +183,8 @@ function defineModalToggle(name) {
     window[`close${name}Modal`] = () => document.getElementById(`${name.toLowerCase()}Modal`).classList.remove('active');
 }
 
-// ==========================================================================
-// LOGOUT — now driven by the custom "logoutModal" popup instead of confirm()
-// ==========================================================================
 function handleLogout() {
-    // FIX: was window.confirm(); now opens the custom logout popup
+    
     openLogoutModal();
 }
 
@@ -228,14 +213,12 @@ window.addEventListener('click', function (e) {
     }
 });
 
-// ==========================================================================
-// Structural initialization triggers
-// ==========================================================================
+
 window.onload = async function () {
     startLiveClock();
     const dateInput = document.getElementById('manifestDateFilter');
     if (dateInput) dateInput.valueAsDate = new Date();
-    await loadDriverProfile();   // FIX: must run first so loggedInDriverEmail is set
+    await loadDriverProfile();   
     await loadDriverDashboard();
 };
 
@@ -278,3 +261,141 @@ window.openSupportModal = function () {
 window.closeSupportModal = function () {
     document.getElementById('supportModal')?.classList.remove('active');
 };
+(function () {
+    "use strict";
+
+
+    function setGreeting() {
+        const hour = new Date().getHours();
+        let text = "Good evening";
+        let icon = "fa-moon";
+        if (hour < 12) { text = "Good morning"; icon = "fa-sun"; }
+        else if (hour < 18) { text = "Good afternoon"; icon = "fa-cloud-sun"; }
+
+        const el = document.getElementById("gyrGreetingText");
+        if (el) {
+            el.innerHTML = `<span class="gyr-greeting-icon"><i class="fa-solid ${icon}" style="color:#ff7a00;"></i></span> ${text}`;
+        }
+    }
+
+
+    function updateAvatarInitials() {
+        const nameEl = document.getElementById("driverNameLabel");
+        const initialsEl = document.getElementById("avatarInitials");
+        if (!nameEl || !initialsEl) return;
+
+        const name = nameEl.textContent.trim();
+        if (!name || /loading/i.test(name)) {
+            initialsEl.classList.remove("gyr-visible");
+            return;
+        }
+
+        const initials = name
+            .split(/\s+/)
+            .filter(Boolean)
+            .slice(0, 2)
+            .map(part => part[0].toUpperCase())
+            .join("");
+
+        initialsEl.textContent = initials || "?";
+        initialsEl.classList.add("gyr-visible");
+    }
+
+
+    const STATUS_MAP = {
+        completed: { cls: "status-completed" },
+        confirmed: { cls: "status-confirmed" },
+        pending: { cls: "status-pending" },
+        cancelled: { cls: "status-cancelled" },
+        rejected: { cls: "status-rejected" },
+        "in progress": { cls: "status-inprogress" },
+        ongoing: { cls: "status-ongoing" }
+    };
+
+    function findStatusColumnIndex() {
+        const headers = document.querySelectorAll(".table-card thead th");
+        for (let i = 0; i < headers.length; i++) {
+            if (headers[i].textContent.trim().toLowerCase() === "status") return i;
+        }
+        return 6;
+    }
+
+    function classifyStatus(rawText) {
+        const key = rawText.trim().toLowerCase();
+        return STATUS_MAP[key] || { cls: "status-default" };
+    }
+
+    function decorateRowsAndCountStats() {
+        const tbody = document.getElementById("bookingsTableBody");
+        if (!tbody) return;
+
+        const rows = Array.from(tbody.querySelectorAll("tr")).filter(
+            row => !row.querySelector(".loading-state")
+        );
+
+        const statusColIndex = findStatusColumnIndex();
+        let completed = 0, pending = 0, cancelled = 0;
+
+        rows.forEach(row => {
+            const cell = row.children[statusColIndex];
+            if (!cell) return;
+
+
+            if (cell.querySelector(".status-badge")) {
+                const existingCls = cell.querySelector(".status-badge").className;
+                if (existingCls.includes("completed") || existingCls.includes("confirmed")) completed++;
+                else if (existingCls.includes("pending")) pending++;
+                else if (existingCls.includes("cancelled") || existingCls.includes("rejected")) cancelled++;
+                return;
+            }
+
+            const rawText = cell.textContent;
+            if (!rawText || !rawText.trim()) return;
+
+            const { cls } = classifyStatus(rawText);
+            if (cls.includes("completed") || cls.includes("confirmed")) completed++;
+            else if (cls.includes("pending")) pending++;
+            else if (cls.includes("cancelled") || cls.includes("rejected")) cancelled++;
+
+            const badge = document.createElement("span");
+            badge.className = `status-badge ${cls}`;
+            badge.textContent = rawText.trim();
+            cell.textContent = "";
+            cell.appendChild(badge);
+        });
+
+        const totalEl = document.getElementById("gyrStatTotal");
+        const doneEl = document.getElementById("gyrStatCompleted");
+        const pendingEl = document.getElementById("gyrStatPending");
+        const cancelledEl = document.getElementById("gyrStatCancelled");
+
+        if (totalEl) totalEl.textContent = rows.length;
+        if (doneEl) doneEl.textContent = completed;
+        if (pendingEl) pendingEl.textContent = pending;
+        if (cancelledEl) cancelledEl.textContent = cancelled;
+
+        const sub = document.getElementById("gyrGreetingSub");
+        if (sub) {
+            sub.textContent = rows.length
+                ? `${rows.length} booking${rows.length === 1 ? "" : "s"} on today's manifest.`
+                : "No bookings on your manifest yet — check back shortly.";
+        }
+    }
+
+    document.addEventListener("DOMContentLoaded", () => {
+        setGreeting();
+        decorateRowsAndCountStats();
+
+        const nameObserver = new MutationObserver(updateAvatarInitials);
+        const nameTarget = document.getElementById("driverNameLabel");
+        if (nameTarget) {
+            nameObserver.observe(nameTarget, { childList: true, characterData: true, subtree: true });
+        }
+
+        const tbody = document.getElementById("bookingsTableBody");
+        if (tbody) {
+            const tableObserver = new MutationObserver(decorateRowsAndCountStats);
+            tableObserver.observe(tbody, { childList: true, subtree: true, characterData: true });
+        }
+    });
+})();

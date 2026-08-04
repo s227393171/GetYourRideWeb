@@ -7,11 +7,14 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="MySqlConnector" Version="2.6.0" />
+    <Compile Remove="wwroot\**" />
+    <Content Remove="wwroot\**" />
+    <EmbeddedResource Remove="wwroot\**" />
+    <None Remove="wwroot\**" />
   </ItemGroup>
 
   <ItemGroup>
-    <Folder Include="wwroot\" />
+    <PackageReference Include="MySqlConnector" Version="2.6.0" />
   </ItemGroup>
 
 </Project>

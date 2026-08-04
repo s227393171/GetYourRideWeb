@@ -5,172 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Admin Portal - Dashboard Home</title>
     <link rel="stylesheet" href="../assets/css/admin-dashboard.css">
-    <style>
-        .icon-inline {
-            width: 16px;
-            height: 16px;
-            vertical-align: -3px;
-            margin-right: 6px;
-            stroke: currentColor;
-        }
-
-            .icon-inline.icon-sm {
-                width: 14px;
-                height: 14px;
-                vertical-align: -2px;
-                margin-right: 4px;
-            }
-
-            .icon-inline.icon-lg {
-                width: 26px;
-                height: 26px;
-                margin-right: 0;
-            }
-
-        /* ---- Welcome banner ---- */
-        .welcome-banner {
-            background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
-            border-radius: 16px;
-            padding: 28px 32px;
-            color: #fff;
-            margin-bottom: 24px;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            flex-wrap: wrap;
-            gap: 16px;
-        }
-
-            .welcome-banner h2 {
-                margin: 0 0 6px 0;
-                font-size: 22px;
-            }
-
-            .welcome-banner p {
-                margin: 0;
-                color: #cbd5e1;
-                font-size: 13px;
-            }
-
-            .welcome-banner .banner-date {
-                font-family: monospace;
-                font-size: 13px;
-                color: #94a3b8;
-                background: rgba(255,255,255,0.06);
-                padding: 8px 14px;
-                border-radius: 8px;
-            }
-
-        /* ---- Stats row ---- */
-        .stats-row {
-            display: grid;
-            grid-template-columns: repeat(4, 1fr);
-            gap: 16px;
-            margin-bottom: 24px;
-        }
-
-        .stat-card {
-            background: #fff;
-            border: 1px solid #e2e8f0;
-            border-radius: 12px;
-            padding: 18px;
-            display: flex;
-            align-items: center;
-            gap: 14px;
-            transition: box-shadow 0.2s ease, transform 0.2s ease;
-        }
-
-            .stat-card:hover {
-                box-shadow: 0 8px 20px -6px rgba(0,0,0,0.12);
-                transform: translateY(-2px);
-            }
-
-        .stat-icon-badge {
-            width: 44px;
-            height: 44px;
-            border-radius: 10px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            flex-shrink: 0;
-        }
-
-        .stat-card .stat-label {
-            font-size: 12px;
-            color: #64748b;
-            font-weight: 600;
-            margin-bottom: 2px;
-        }
-
-        .stat-card .stat-value {
-            font-size: 22px;
-            font-weight: 700;
-            color: #0f172a;
-        }
-
-        /* ---- Action cards (nav tiles) ---- */
-        .action-cards-grid {
-            display: grid;
-            grid-template-columns: repeat(2, 1fr);
-            gap: 24px;
-            margin-top: 4px;
-        }
-
-        .action-card {
-            background: #fff;
-            border: 1px solid #e2e8f0;
-            border-radius: 14px;
-            padding: 22px;
-            cursor: pointer;
-            transition: box-shadow 0.2s ease, transform 0.2s ease, border-color 0.2s ease;
-            position: relative;
-        }
-
-            .action-card:hover {
-                box-shadow: 0 12px 24px -8px rgba(0,0,0,0.14);
-                transform: translateY(-3px);
-                border-color: #cbd5e1;
-            }
-
-            .action-card .action-icon-badge {
-                width: 48px;
-                height: 48px;
-                border-radius: 12px;
-                display: flex;
-                align-items: center;
-                justify-content: center;
-                margin-bottom: 14px;
-            }
-
-            .action-card h3 {
-                margin: 0 0 8px 0;
-                font-size: 16px;
-                color: #0f172a;
-                display: flex;
-                align-items: center;
-                gap: 8px;
-            }
-
-            .action-card p {
-                color: var(--text-muted, #64748b);
-                font-size: 13px;
-                line-height: 1.5;
-                margin: 0;
-            }
-
-            .action-card .action-arrow {
-                position: absolute;
-                top: 22px;
-                right: 22px;
-                color: #94a3b8;
-                transition: transform 0.2s ease, color 0.2s ease;
-            }
-
-            .action-card:hover .action-arrow {
-                transform: translate(3px, -3px);
-                color: #0f172a;
-            }
-    </style>
+    
 </head>
 <body>
     <div class="sidebar">
@@ -259,7 +94,7 @@
 
         <div class="content-body">
 
-            <!-- Dynamic welcome banner: greeting + live date -->
+            
             <div class="welcome-banner">
                 <div>
                     <h2 id="greetingHeading">Welcome to the Admin Center</h2>
@@ -268,7 +103,7 @@
                 <div class="banner-date" id="bannerDate">Loading date...</div>
             </div>
 
-            <!-- Quick stats summary row -->
+           
             <div class="stats-row">
                 <div class="stat-card">
                     <div class="stat-icon-badge" style="background:#fff7ed; color:#ff7a00;">
@@ -396,7 +231,7 @@
         </div>
     </div>
 
-    <!-- Custom Logout Confirmation Modal -->
+    
     <div id="logoutModal" class="modal-backdrop" style="display: none; position: fixed; inset: 0; background: rgba(0, 0, 0, 0.5); backdrop-filter: blur(4px); z-index: 1000; align-items: center; justify-content: center;">
         <div class="modal-card cute-logout-card" style="background: #ffffff; padding: 32px; border-radius: 20px; width: 100%; max-width: 400px; text-align: center; box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);">
             <div style="width: 56px; height: 56px; border-radius: 50%; background: #fee2e2; color: #ef4444; display: flex; align-items: center; justify-content: center; margin: 0 auto 16px auto;">

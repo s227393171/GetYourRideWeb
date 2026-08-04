@@ -12,11 +12,7 @@
     <link rel="stylesheet" href="../assets/css/coordinator.css">
     <link rel="stylesheet" href="../assets/css/driver-dashboard.css">
 
-    <!-- ============================================================
-         Enhancement layer — additive only. Everything below is
-         namespaced with "gyr-" so it can't collide with classes or
-         IDs your existing stylesheets/JS already rely on.
-         ============================================================ -->
+    
     <style>
         :root {
             --gyr-orange: #ff7a00;
@@ -38,7 +34,7 @@
             font-family: 'Inter', sans-serif;
         }
 
-        /* ---------- Welcome banner ---------- */
+       
         .gyr-welcome-banner {
             position: relative;
             overflow: hidden;
@@ -91,7 +87,7 @@
                 font-size: 0.75rem;
             }
 
-        /* Animated shuttle route — the signature touch */
+       
         .gyr-route {
             position: relative;
             width: 190px;
@@ -171,7 +167,7 @@
             }
         }
 
-        /* ---------- Use-case cards: hover lift + entrance stagger ---------- */
+     
         .uc-card {
             transition: transform 0.22s ease, box-shadow 0.22s ease;
             opacity: 0;
@@ -212,7 +208,7 @@
             color: var(--gyr-orange);
         }
 
-        /* Difficulty badges — actual visible pills instead of empty divs */
+        
         .uc-badge {
             position: relative;
             display: inline-flex;
@@ -276,7 +272,7 @@
                 content: "Involved";
             }
 
-        /* ---------- Table card polish ---------- */
+       
         .table-card {
             animation: gyrFadeUp 0.5s ease-out 0.3s both;
         }
@@ -297,7 +293,7 @@
                 margin-bottom: 8px;
             }
 
-        /* ---------- Sidebar + profile polish ---------- */
+      
         .menu-item {
             transition: background 0.18s ease, padding-left 0.18s ease, color 0.18s ease;
             border-radius: 8px;
@@ -376,12 +372,12 @@
 
         <div class="sidebar-profile-footer">
             <div class="sidebar-profile-footer">
-                <!-- ✅ Added an ID to the trigger area if your dropdown toggle needs it -->
+               
                 <div class="profile-trigger-area" id="profileTrigger" onclick="toggleProfileMenu()">
-                    <!-- Added placeholder initials 'SC' for Shuttle Coordinator -->
+           
                     <div class="avatar-placeholder" style="display: flex; align-items: center; justify-content: center; background: #cbd5e1; color: #0f172a; font-weight: 700; font-size: 12px;">SC</div>
                     <div class="profile-info-text">
-                        <!-- ✅ FIX: Changed IDs from 'driver...' to 'coordinator...' to match JS -->
+                        
                         <span class="user-display-name" id="coordinatorNameLabel">Loading profile...</span>
                         <span class="user-display-email" id="coordinatorEmailLabel">connecting to database...</span>
                     </div>
@@ -411,7 +407,7 @@
 
         <div class="content-body">
 
-            <!-- ===================== Welcome banner ===================== -->
+           
             <div class="gyr-welcome-banner">
                 <div class="gyr-welcome-text">
                     <h2 id="gyrGreeting">Welcome back, Coordinator <span class="gyr-wave">👋</span></h2>
@@ -427,7 +423,7 @@
                     <i class="fa-solid fa-shuttle-van gyr-bus"></i>
                 </div>
             </div>
-            <!-- ============================================================ -->
+            
 
             <div class="view-header">
                 <div>
@@ -529,7 +525,7 @@
         </div>
     </div>
 
-    <!-- Custom Logout Confirmation Modal -->
+   
     <div id="logoutModal" class="modal-backdrop" style="display: none; position: fixed; inset: 0; background: rgba(0, 0, 0, 0.5); backdrop-filter: blur(4px); z-index: 1000; align-items: center; justify-content: center;">
         <div class="modal-card cute-logout-card" style="background: #ffffff; padding: 32px; border-radius: 20px; width: 100%; max-width: 400px; text-align: center; box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04); animation: scaleUp 0.25s ease-out;">
             <div style="width: 64px; height: 64px; border-radius: 50%; background: #fee2e2; color: #ef4444; display: flex; align-items: center; justify-content: center; font-size: 26px; margin: 0 auto 16px auto;">
@@ -553,11 +549,6 @@
     <script src="../assets/js/coordinator-dashboard.js"></script>
     <script src="../assets/js/admin-dropdown.js"></script>
 
-    <!-- ============================================================
-         Small enhancement script — only touches the new gyrGreeting
-         element, so it can't collide with anything in your existing
-         JS files.
-         ============================================================ -->
     <script>
         (function () {
             const greetingEl = document.getElementById("gyrGreeting");

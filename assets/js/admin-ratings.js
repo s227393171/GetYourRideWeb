@@ -7,7 +7,7 @@ async function loadDriverRatingsData() {
         if (!response.ok) throw new Error("Database sync dropped.");
         const rawData = await response.json();
 
-        // 🎯 FIX: Exclude student drivers dynamically
+       
         globalDriversCached = (rawData || []).filter(driver => {
             const role = (driver.role || "").toUpperCase();
             const email = (driver.email || "").toLowerCase();
@@ -221,8 +221,7 @@ function handleOverlayClick(e) {
         closeDriverDetailsModal();
     }
 }
-// Self-contained logout wiring for this page — works even if handleLogout()
-// isn't already defined as a popup call in admin-dropdown.js.
+
 function handleLogout() {
     const modal = document.getElementById('logoutModal');
     if (modal) modal.style.display = 'flex';

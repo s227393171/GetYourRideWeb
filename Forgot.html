@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <title>Forgot Password - GetYourRide</title>
     <style>
-        /* General Page Styling */
+       
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
@@ -16,7 +16,7 @@
             height: 100vh;
         }
 
-        /* Card Container */
+       
         .login-container {
             background-color: #ffffff;
             padding: 2.5rem;
@@ -28,7 +28,7 @@
             text-align: center;
         }
 
-            /* Typography */
+           
             .login-container h2 {
                 margin-top: 0;
                 color: #333333;
@@ -84,15 +84,15 @@
                 background-color: #357abd;
             }
 
-        /* Feedback Messages */
+      
         #message {
             margin-top: 1rem;
             font-size: 0.85rem;
             font-weight: 500;
-            min-height: 1.25rem; /* Prevents layout shifting when text appears */
+            min-height: 1.25rem; 
         }
 
-        /* Navigation Links */
+        
         .login-container a {
             display: inline-block;
             margin-top: 1.5rem;
@@ -134,8 +134,7 @@
 
             const data = await response.json();
 
-            // SECURITY TIP: Always show a success message even if the email doesn't exist.
-            // This prevents hackers from guessing registered database emails.
+            
             messageEl.textContent = "If that email matches an account, a secure reset link has been sent.";
             messageEl.style.color = "green";
         });
