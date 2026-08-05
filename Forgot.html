@@ -4,7 +4,12 @@
     <meta charset="UTF-8">
     <title>Forgot Password - GetYourRide</title>
     <style>
-       
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
@@ -16,127 +21,426 @@
             height: 100vh;
         }
 
-       
         .login-container {
             background-color: #ffffff;
             padding: 2.5rem;
-            border-radius: 10px;
-            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.05);
+            border-radius: 16px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.08);
             width: 100%;
-            max-width: 400px;
+            max-width: 420px;
             box-sizing: border-box;
             text-align: center;
         }
 
-           
+            .login-container .icon-circle {
+                width: 64px;
+                height: 64px;
+                border-radius: 50%;
+                background: linear-gradient(135deg, #e0e7ff, #c7d2fe);
+                color: #4f46e5;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                margin: 0 auto 16px auto;
+            }
+
             .login-container h2 {
                 margin-top: 0;
-                color: #333333;
-                font-size: 1.75rem;
+                color: #1e293b;
+                font-size: 1.6rem;
                 margin-bottom: 0.5rem;
             }
 
-            .login-container p {
-                color: #666666;
+            .login-container p.subtitle {
+                color: #64748b;
                 font-size: 0.9rem;
-                line-height: 1.5;
+                line-height: 1.6;
                 margin-bottom: 1.5rem;
             }
 
-        /* Form Layout */
         #forgotForm {
             display: flex;
             flex-direction: column;
             gap: 1rem;
         }
 
-        /* Input Fields */
+        .input-group {
+            position: relative;
+            text-align: left;
+        }
+
+            .input-group label {
+                display: block;
+                font-size: 0.8rem;
+                font-weight: 600;
+                color: #475569;
+                margin-bottom: 6px;
+                text-transform: uppercase;
+                letter-spacing: 0.5px;
+            }
+
         input[type="email"] {
             width: 100%;
-            padding: 0.75rem 1rem;
-            border: 1px solid #dcdcdc;
-            border-radius: 5px;
+            padding: 0.8rem 1rem 0.8rem 2.5rem;
+            border: 1.5px solid #e2e8f0;
+            border-radius: 10px;
             font-size: 0.95rem;
             box-sizing: border-box;
             transition: border-color 0.2s ease, box-shadow 0.2s ease;
+            background: #f8fafc;
         }
 
             input[type="email"]:focus {
                 outline: none;
-                border-color: #4a90e2;
-                box-shadow: 0 0 0 3px rgba(74, 144, 226, 0.15);
+                border-color: #6366f1;
+                box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.12);
+                background: #fff;
             }
 
-        /* Primary Button */
+        .input-icon {
+            position: absolute;
+            left: 12px;
+            top: 38px;
+            color: #94a3b8;
+        }
+
         button[type="submit"] {
-            background-color: #4a90e2;
+            background: linear-gradient(135deg, #6366f1, #4f46e5);
             color: #ffffff;
             border: none;
-            padding: 0.75rem;
-            border-radius: 5px;
+            padding: 0.85rem;
+            border-radius: 10px;
             font-size: 1rem;
             font-weight: 600;
             cursor: pointer;
-            transition: background-color 0.2s ease;
+            transition: all 0.2s ease;
+            margin-top: 0.5rem;
         }
 
             button[type="submit"]:hover {
-                background-color: #357abd;
+                transform: translateY(-1px);
+                box-shadow: 0 6px 16px rgba(99, 102, 241, 0.3);
             }
 
-      
-        #message {
-            margin-top: 1rem;
-            font-size: 0.85rem;
-            font-weight: 500;
-            min-height: 1.25rem; 
+            button[type="submit"]:active {
+                transform: translateY(0);
+            }
+
+            button[type="submit"]:disabled {
+                opacity: 0.6;
+                cursor: not-allowed;
+                transform: none;
+                box-shadow: none;
+            }
+
+        #resetLinkBox {
+            display: none;
+            margin-top: 1.5rem;
+            padding: 20px;
+            background: linear-gradient(135deg, #ecfdf5, #d1fae5);
+            border: 1.5px solid #6ee7b7;
+            border-radius: 12px;
+            text-align: center;
         }
 
-        
-        .login-container a {
+            #resetLinkBox p {
+                color: #065f46;
+                font-size: 0.85rem;
+                font-weight: 500;
+                margin-bottom: 12px;
+            }
+
+            #resetLinkBox a {
+                display: inline-block;
+                background: linear-gradient(135deg, #10b981, #059669);
+                color: white;
+                padding: 10px 24px;
+                border-radius: 8px;
+                text-decoration: none;
+                font-weight: 600;
+                font-size: 0.9rem;
+                transition: all 0.2s ease;
+            }
+
+                #resetLinkBox a:hover {
+                    transform: translateY(-1px);
+                    box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+                }
+
+        .back-link {
             display: inline-block;
             margin-top: 1.5rem;
-            color: #4a90e2;
+            color: #6366f1;
             text-decoration: none;
             font-size: 0.9rem;
+            font-weight: 500;
             transition: color 0.2s ease;
         }
 
-            .login-container a:hover {
-                color: #357abd;
+            .back-link:hover {
+                color: #4338ca;
                 text-decoration: underline;
             }
+
+        /* Popup Styles */
+        @keyframes popupSlideIn {
+            from {
+                opacity: 0;
+                transform: translateY(-16px) scale(0.96);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0) scale(1);
+            }
+        }
+
+        @keyframes popupSlideOut {
+            from {
+                opacity: 1;
+                transform: translateY(0) scale(1);
+            }
+
+            to {
+                opacity: 0;
+                transform: translateY(-16px) scale(0.96);
+            }
+        }
+
+        @keyframes popupBounceIn {
+            0% {
+                opacity: 0;
+                transform: scale(0.7);
+            }
+
+            50% {
+                transform: scale(1.03);
+            }
+
+            100% {
+                opacity: 1;
+                transform: scale(1);
+            }
+        }
+
+        @keyframes popupFadeIn {
+            from {
+                opacity: 0;
+            }
+
+            to {
+                opacity: 1;
+            }
+        }
+
+        .popup-toast {
+            animation: popupSlideIn 0.3s ease forwards;
+        }
+
+            .popup-toast.hiding {
+                animation: popupSlideOut 0.25s ease forwards;
+            }
+
+        .popup-backdrop {
+            animation: popupFadeIn 0.2s ease forwards;
+        }
+
+        .popup-dialog {
+            animation: popupBounceIn 0.35s ease forwards;
+        }
+
+        .spinner {
+            display: inline-block;
+            width: 16px;
+            height: 16px;
+            border: 2px solid rgba(255,255,255,0.3);
+            border-top-color: #fff;
+            border-radius: 50%;
+            animation: spin 0.6s linear infinite;
+            margin-right: 8px;
+            vertical-align: middle;
+        }
+
+        @keyframes spin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
     </style>
 </head>
 <body>
     <div class="login-container">
+        <!-- Icon -->
+        <div class="icon-circle">
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+                <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+            </svg>
+        </div>
+
         <h2>Reset Your Password</h2>
-        <p>Enter your email address and we'll send you a link to reset your password.</p>
+        <p class="subtitle">Enter the email address linked to your account and we'll generate a reset link for you.</p>
+
         <form id="forgotForm">
-            <input type="email" id="resetEmail" placeholder="Enter your email" required>
-            <button type="submit">Send Reset Link</button>
+            <div class="input-group">
+                <label for="resetEmail">Email Address</label>
+                <span class="input-icon">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path>
+                        <polyline points="22,6 12,13 2,6"></polyline>
+                    </svg>
+                </span>
+                <input type="email" id="resetEmail" placeholder="your.email@example.com" required>
+            </div>
+            <button type="submit" id="submitBtn">Send Reset Link</button>
         </form>
-        <p id="message"></p>
-        <a href="Login.html">Back to Login</a>
+
+        
+        <div id="resetLinkBox">
+            <p>Your password reset link is ready:</p>
+            <a id="resetLinkBtn" href="#">Reset My Password</a>
+        </div>
+
+        <a href="Login.html" class="back-link">&larr; Back to Login</a>
     </div>
 
     <script>
+        
+        const POPUP_SVG_ICONS = {
+            info: '<svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>',
+            success: '<svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>',
+            error: '<svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="15" y1="9" x2="9" y2="15"></line><line x1="9" y1="9" x2="15" y2="15"></line></svg>',
+            warning: '<svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>'
+        };
+
+        function ensurePopupRoot() {
+            let root = document.getElementById("popupRoot");
+            if (!root) {
+                root = document.createElement("div");
+                root.id = "popupRoot";
+                document.body.appendChild(root);
+            }
+            return root;
+        }
+
+        function showToast(message, type = "success") {
+            const root = ensurePopupRoot();
+            const colors = {
+                info: { bg: "#eef4ff", border: "#a5b4fc", text: "#3730a3", icon: "info", glow: "rgba(99,102,241,0.15)" },
+                success: { bg: "#ecfdf5", border: "#6ee7b7", text: "#065f46", icon: "success", glow: "rgba(16,185,129,0.15)" },
+                error: { bg: "#fef2f2", border: "#fca5a5", text: "#991b1b", icon: "error", glow: "rgba(239,68,68,0.15)" },
+                warning: { bg: "#fffbeb", border: "#fcd34d", text: "#92400e", icon: "warning", glow: "rgba(245,158,11,0.15)" }
+            };
+            const c = colors[type] || colors.success;
+
+            const toast = document.createElement("div");
+            toast.className = "popup-toast";
+            toast.style.cssText = `
+                position: fixed; top: 24px; right: 24px; z-index: 9999;
+                background: ${c.bg}; border: 1.5px solid ${c.border}; color: ${c.text};
+                padding: 16px 20px; border-radius: 14px; display: flex; align-items: center; gap: 12px;
+                font-weight: 600; font-size: 14px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+                box-shadow: 0 8px 24px -4px ${c.glow}, 0 4px 8px -2px rgba(0,0,0,0.08);
+                max-width: 380px; line-height: 1.4;
+            `;
+            toast.innerHTML = `
+                <span style="display:flex; flex-shrink:0; opacity:0.9;">${POPUP_SVG_ICONS[c.icon]}</span>
+                <span>${message}</span>
+            `;
+            root.appendChild(toast);
+
+            setTimeout(() => {
+                toast.classList.add("hiding");
+                setTimeout(() => toast.remove(), 250);
+            }, 3500);
+        }
+
+        function showPopup(message, type = "info", onDismiss = null) {
+            const root = ensurePopupRoot();
+            const colors = {
+                info: { icon: "#6366f1", iconBg: "#e0e7ff" },
+                success: { icon: "#10b981", iconBg: "#d1fae5" },
+                error: { icon: "#ef4444", iconBg: "#fee2e2" },
+                warning: { icon: "#f59e0b", iconBg: "#fef3c7" }
+            };
+            const c = colors[type] || colors.info;
+
+            const backdrop = document.createElement("div");
+            backdrop.className = "popup-backdrop";
+            backdrop.style.cssText = `
+                position: fixed; inset: 0; background: rgba(15,23,42,0.4); backdrop-filter: blur(4px);
+                z-index: 9999; display: flex; align-items: center; justify-content: center; padding: 20px;
+            `;
+            backdrop.innerHTML = `
+                <div class="popup-dialog" style="background:#fff; padding:32px; border-radius:20px; width:100%; max-width:360px; text-align:center; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.2);">
+                    <div style="width:60px; height:60px; border-radius:50%; background:${c.iconBg}; color:${c.icon}; display:flex; align-items:center; justify-content:center; margin:0 auto 16px auto;">
+                        ${POPUP_SVG_ICONS[type] || POPUP_SVG_ICONS.info}
+                    </div>
+                    <p style="margin:0 0 24px 0; color:#334155; font-size:15px; font-weight:500; line-height:1.5;">${message}</p>
+                    <button onclick="this.closest('.popup-backdrop').remove(); ${onDismiss ? 'window.__popupDismiss()' : ''}" style="
+                        padding: 11px 32px; border-radius: 10px; border: none;
+                        background: linear-gradient(135deg, ${c.icon}, ${c.icon}dd);
+                        color: #fff; font-weight: 600; font-size: 14px; cursor: pointer;
+                        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+                        transition: all 0.15s ease;
+                    ">Got it</button>
+                </div>
+            `;
+            root.appendChild(backdrop);
+            if (onDismiss) window.__popupDismiss = onDismiss;
+        }
+
+        
         document.getElementById('forgotForm').addEventListener('submit', async (e) => {
             e.preventDefault();
-            const email = document.getElementById('resetEmail').value;
-            const messageEl = document.getElementById('message');
 
-            const response = await fetch('/api/auth/forgot-password', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ email })
-            });
+            const email = document.getElementById('resetEmail').value.trim();
+            const submitBtn = document.getElementById('submitBtn');
+            const resetLinkBox = document.getElementById('resetLinkBox');
+            const resetLinkBtn = document.getElementById('resetLinkBtn');
 
-            const data = await response.json();
+            if (!email) {
+                showPopup("Please enter your email address.", "warning");
+                return;
+            }
 
-            
-            messageEl.textContent = "If that email matches an account, a secure reset link has been sent.";
-            messageEl.style.color = "green";
+           
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = '<span class="spinner"></span>Sending...';
+
+            try {
+                const response = await fetch('/api/auth/forgot-password', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email })
+                });
+
+                const data = await response.json();
+
+                if (data.success && data.resetLink) {
+                    
+                    showToast("Reset link generated successfully!", "success");
+
+                   
+                    resetLinkBox.style.display = "block";
+                    resetLinkBtn.href = data.resetLink;
+
+                    
+                    document.getElementById('forgotForm').style.display = 'none';
+
+                } else if (data.success && !data.found) {
+                    showPopup("No account was found with that email address. Please check and try again.", "error");
+                } else {
+                    showPopup(data.message || "Something went wrong. Please try again.", "error");
+                }
+
+            } catch (err) {
+                console.error("Forgot password error:", err);
+                showPopup("A network error occurred. Please check your connection and try again.", "error");
+            } finally {
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = 'Send Reset Link';
+            }
         });
     </script>
 </body>

@@ -655,17 +655,6 @@ app.MapDelete("/api/coordinator/shuttles/{id:int}", async (int id, IConfiguratio
         int rowsAffected = await deleteCmd.ExecuteNonQueryAsync();
         return rowsAffected > 0
             ? Results.Ok(new { success = true, message = "Shuttle removed successfully." })
-            : Results.NotFound();
-    }
-    catch (Exception ex)
-    {
-        Console.WriteLine($"[API Error] Delete shuttle failed: {ex.Message}");
-        return Results.Json(new { success = false, message = ex.Message }, statusCode: 500);
-    }
-});
-
-
-app.MapGet("/api/coordinator/drivers", async (IConfiguration config) => {
     string connectionString = config.GetConnectionString("DefaultConnection");
     var drivers = new List<object>();
 
@@ -1459,7 +1448,7 @@ app.MapGet("/api/admin/dashboard/summary", async (IConfiguration config) => {
     }
 });
 
-app.MapPost("/api/auth/reset-password", async (ResetPasswordRequest req, IConfiguration config) => {
+app.MapPost("/api/auth/forgot-password", async (ForgotPasswordRequest req, IConfiguration config) => {
     string connectionString = config.GetConnectionString("DefaultConnection");
 
     try
@@ -1468,29 +1457,44 @@ app.MapPost("/api/auth/reset-password", async (ResetPasswordRequest req, IConfig
         await connection.OpenAsync();
 
         string[] tables = { "users", "driver", "student" };
-        int totalRowsAffected = 0;
+        string token = Guid.NewGuid().ToString().Substring(0, 6).ToUpper();
+        bool found = false;
 
         foreach (var table in tables)
         {
-            string resetQuery = $"UPDATE `{table}` SET password = @NewPassword, reset_token = NULL WHERE reset_token = @Token;";
-            using var command = new MySqlCommand(resetQuery, connection);
-            command.Parameters.AddWithValue("@NewPassword", req.NewPassword);
-            command.Parameters.AddWithValue("@Token", req.Token);
-            totalRowsAffected += await command.ExecuteNonQueryAsync();
+            string checkQuery = $"SELECT 1 FROM `{table}` WHERE email = @Email LIMIT 1;";
+            using var checkCmd = new MySqlCommand(checkQuery, connection);
+            checkCmd.Parameters.AddWithValue("@Email", req.Email);
+            var exists = await checkCmd.ExecuteScalarAsync();
+
+            if (exists != null)
+            {
+                found = true;
+                string updateTokenQuery = $"UPDATE `{table}` SET reset_token = @Token WHERE email = @Email;";
+                using var updateCmd = new MySqlCommand(updateTokenQuery, connection);
+                updateCmd.Parameters.AddWithValue("@Token", token);
+                updateCmd.Parameters.AddWithValue("@Email", req.Email);
+                await updateCmd.ExecuteNonQueryAsync();
+                break;
+            }
         }
 
-        if (totalRowsAffected > 0)
+        if (found)
         {
-            return Results.Ok(new { success = true, message = "Password updated successfully." });
+            string resetLink = $"/reset-password.html?token={token}&email={req.Email}";
+            Console.WriteLine($"[RESET] Link generated: {resetLink}");
+            return Results.Ok(new { success = true, found = true, resetLink = resetLink });
         }
-        return Results.BadRequest(new { success = false, message = "Invalid or expired reset token." });
+
+        return Results.Ok(new { success = true, found = false, resetLink = "" });
     }
     catch (Exception ex)
     {
-        Console.WriteLine($"[API Error] Reset password failed: {ex.Message}");
+        Console.WriteLine($"[API Error] Forgot password failed: {ex.Message}");
         return Results.Json(new { success = false, message = ex.Message }, statusCode: 500);
     }
 });
+
 
 app.Run();
 
