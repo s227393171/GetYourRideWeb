@@ -105,10 +105,31 @@ function filterTable() {
 }
 
 function filterByDate() {
-    const filterValue = document.getElementById("manifestDateFilter").value;
-  
-    showInfoPopup("Manifest Filtered", `Showing matches for date: ${filterValue}`);
+    const filterValue = (document.getElementById("manifestDateFilter")?.value || "").trim();
+    const rows = document.getElementById("bookingsTableBody").getElementsByTagName("tr");
+
+    let matchCount = 0;
+
+    for (let i = 0; i < rows.length; i++) {
+        const cells = rows[i].getElementsByTagName("td");
+        if (cells.length < 6) continue;                 
+
+        const rowDate = (cells[5].textContent || "").trim().substring(0, 10);
+        const show = !filterValue || rowDate === filterValue;
+
+        rows[i].style.display = show ? "" : "none";
+        if (show) matchCount++;
+    }
+
+    showInfoPopup(
+        "Manifest Filtered",
+        filterValue
+            ? `Showing ${matchCount} booking(s) for date: ${filterValue}`
+            : `Showing all ${matchCount} booking(s)`
+    );
 }
+
+
 
 function startLiveClock() {
     setInterval(() => {
@@ -216,11 +237,17 @@ window.addEventListener('click', function (e) {
 
 window.onload = async function () {
     startLiveClock();
+
     const dateInput = document.getElementById('manifestDateFilter');
-    if (dateInput) dateInput.valueAsDate = new Date();
-    await loadDriverProfile();   
+    if (dateInput) {
+        dateInput.value = '';                               
+        dateInput.addEventListener('change', filterByDate);
+    }
+
+    await loadDriverProfile();
     await loadDriverDashboard();
 };
+
 
 window.openSettingsModal = function () {
     const modal = document.getElementById('settingsModal');

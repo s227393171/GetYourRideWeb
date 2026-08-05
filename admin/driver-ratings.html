@@ -6,7 +6,7 @@
     <title>Admin Portal - Driver Ratings</title>
     <link rel="stylesheet" href="../assets/css/admin-dashboard.css">
     <link rel="stylesheet" href="../assets/css/driver-dashboard.css">
-    
+
 </head>
 <body>
     <div class="sidebar">
@@ -93,16 +93,16 @@
             <div class="view-header">
                 <div>
                     <h2>Driver Performance Matrix</h2>
-                    <p class="subtitle">Live quality indices fed directly from tracking databases.</p>
+                    <p class="subtitle">Track ratings, trip counts, and standout drivers across the fleet.</p>
                 </div>
             </div>
 
             <div class="metrics-grid">
-                <div class="metric-card"><div class="metric-header"><span class="metric-title">Active Drivers</span></div><span class="metric-value" id="metricActiveDrivers">0</span></div>
-                <div class="metric-card"><div class="metric-header"><span class="metric-title">Average Fleet Rating</span></div><span class="metric-value" id="metricAverageRating">0.00</span></div>
-                <div class="metric-card"><div class="metric-header"><span class="metric-title">Global Trips Logged</span></div><span class="metric-value" id="metricTotalTrips">0</span></div>
-                <div class="metric-card"><div class="metric-header"><span class="metric-title">Performance Flags</span></div><span class="metric-value text-danger" id="metricFlagsCount">0</span></div>
+                <div class="metric-card" style="transition: transform 0.15s ease, box-shadow 0.15s ease;" onmouseover="this.style.transform='translateY(-3px)'; this.style.boxShadow='0 8px 20px rgba(0,0,0,0.08)';" onmouseout="this.style.transform=''; this.style.boxShadow='';"><div class="metric-header"><span class="metric-title">Active Drivers</span></div><span class="metric-value" id="metricActiveDrivers">0</span></div>
+                <div class="metric-card" style="transition: transform 0.15s ease, box-shadow 0.15s ease;" onmouseover="this.style.transform='translateY(-3px)'; this.style.boxShadow='0 8px 20px rgba(0,0,0,0.08)';" onmouseout="this.style.transform=''; this.style.boxShadow='';"><div class="metric-header"><span class="metric-title">Average Fleet Rating</span></div><span class="metric-value" id="metricAverageRating">0.00</span></div>
+                <div class="metric-card" style="transition: transform 0.15s ease, box-shadow 0.15s ease;" onmouseover="this.style.transform='translateY(-3px)'; this.style.boxShadow='0 8px 20px rgba(0,0,0,0.08)';" onmouseout="this.style.transform=''; this.style.boxShadow='';"><div class="metric-header"><span class="metric-title">Global Trips Logged</span></div><span class="metric-value" id="metricTotalTrips">0</span></div>
             </div>
+
 
             <div class="table-card">
                 <table>
@@ -118,12 +118,12 @@
                     </thead>
                     <tbody id="driverRatingsTableBody">
                         <tr>
-                            <td colspan="6" style="text-align: center; color: var(--text-muted); padding: 20px;">Connecting backend parameters...</td>
+                            <td colspan="6" style="text-align: center; color: var(--text-muted); padding: 20px;">Loading driver ratings…</td>
                         </tr>
                     </tbody>
                 </table>
                 <div class="table-footer">
-                    <span id="showingEntriesCount">Processing columns...</span>
+                    <span id="showingEntriesCount">Loading entries…</span>
                 </div>
             </div>
         </div>
@@ -189,7 +189,7 @@
             <button class="close-modal-btn" onclick="closeSupportModal()">Close Help Desk</button>
         </div>
     </div>
-    
+
     <div id="driverDetailsModal" class="modal-overlay" onclick="handleOverlayClick(event)">
         <div class="modal-card">
             <div class="modal-header">
@@ -201,7 +201,7 @@
                     <svg class="icon-inline" style="margin-right:0;" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
                 </button>
             </div>
-            <div class="modal-body" style="margin-top:16px;">
+            <div class="modal-body" style="margin-top:16px; max-height:400px; overflow-y:auto;">
                 <table style="width:100%; border-collapse:collapse; font-size:13px; text-align:left;">
                     <thead>
                         <tr style="border-bottom:2px solid #e2e8f0; color:#64748b; font-size:11px; text-transform:uppercase;">
@@ -212,14 +212,14 @@
                         </tr>
                     </thead>
                     <tbody id="ddModalTripsBody">
-                     
                     </tbody>
                 </table>
             </div>
+
         </div>
     </div>
 
-    
+
     <div id="logoutModal" class="modal-backdrop" style="display: none; position: fixed; inset: 0; background: rgba(0, 0, 0, 0.5); backdrop-filter: blur(4px); z-index: 1000; align-items: center; justify-content: center;">
         <div class="modal-card cute-logout-card" style="background: #ffffff; padding: 32px; border-radius: 20px; width: 100%; max-width: 400px; text-align: center; box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04); animation: scaleUp 0.25s ease-out;">
             <div style="width:56px; height:56px; margin:0 auto 16px; border-radius:50%; background:#fef2f2; display:flex; align-items:center; justify-content:center; color:#ef4444;">

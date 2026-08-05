@@ -301,11 +301,12 @@ async function loadDriversTable() {
                 <td><span style="color:#475569;"><i class="fa-solid fa-bus"></i> ${displayShuttle}</span></td>
                 <td><span class="badge ${badgeClass}">${statusText}</span></td>
                 <td class="actions-cell">
-                    <button class="action-icon-btn" onclick="openDriverEditModal(${currentId}, '${d.fullName}', '${displayStudentNum}', '${d.email}', '${displayPhone}')" title="Edit Profile"><i class="fa-solid fa-pen"></i></button>
+                <button class="action-icon-btn" onclick="openDriverEditModal(${currentId}, '${d.fullName}', '${displayStudentNum}', '${d.email}', '${displayPhone}', '${statusText}')" title="Edit Profile"><i class="fa-solid fa-pen"></i></button>
                     <button class="action-icon-btn" onclick="deleteDriverProfile(${currentId})" title="Delete Profile"><i class="fa-solid fa-trash"></i></button>
                 </td>
             `;
             tbody.appendChild(tr);
+            applyDriverFilters();
         });
 
         
@@ -336,7 +337,8 @@ async function handleDriverFormSubmit(e) {
         studentNumber: document.getElementById("txtStudentNumber")?.value || "",
         fullName: document.getElementById("txtDriverName")?.value || "",
         email: document.getElementById("txtDriverEmail")?.value || "",
-        phone: document.getElementById("txtDriverPhone")?.value || ""
+        phone: document.getElementById("txtDriverPhone")?.value || "",
+        status: document.getElementById("txtDriverStatus")?.value || "Active"
     };
 
     const isEditing = id !== "";
@@ -362,13 +364,16 @@ async function handleDriverFormSubmit(e) {
 }
 
 // Added 'phone' parameter to signature
-function openDriverEditModal(id, name, studentNum, email, phone) {
+function openDriverEditModal(id, name, studentNum, email, phone, status) {
     document.getElementById("txtDriverId").value = id;
     document.getElementById("txtDriverName").value = name;
     if (document.getElementById("txtStudentNumber")) document.getElementById("txtStudentNumber").value = studentNum;
     document.getElementById("txtDriverEmail").value = email;
     if (document.getElementById("txtDriverPhone")) {
         document.getElementById("txtDriverPhone").value = (phone === "N/A" || !phone) ? "" : phone;
+    }
+    if (document.getElementById("txtDriverStatus")) {
+        document.getElementById("txtDriverStatus").value = status || "Active";
     }
     document.getElementById("modalDriverFormTitle").innerText = "Edit Driver Profile Details";
     document.getElementById("driverFormModal").style.display = "flex";
@@ -392,4 +397,25 @@ async function deleteDriverProfile(id) {
         console.error(err);
         await showAlertModal("Server communication fault error.", { title: "Connection Error", tone: "error" });
     }
+}
+function applyDriverFilters() {
+    const searchValue = (document.getElementById("driverSearchBox")?.value || "").toLowerCase();
+    const statusValue = document.getElementById("statusFilterSelect")?.value || "";
+
+    const rows = document.querySelectorAll("#driverTableBody tr");
+
+    rows.forEach(row => {
+        const nameCell = row.querySelector(".driver-name-cell");
+        const statusBadge = row.querySelector(".badge");
+
+        if (!nameCell || !statusBadge) return; // skip loading/empty-state rows
+
+        const nameText = nameCell.textContent.toLowerCase();
+        const statusText = statusBadge.textContent.trim();
+
+        const matchesSearch = !searchValue || nameText.includes(searchValue);
+        const matchesStatus = !statusValue || statusText === statusValue;
+
+        row.style.display = (matchesSearch && matchesStatus) ? "" : "none";
+    });
 }

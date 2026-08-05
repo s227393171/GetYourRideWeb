@@ -92,11 +92,10 @@ function calculateSummaryMetrics(drivers) {
     const activeEl = document.getElementById('metricActiveDrivers');
     const avgRatingEl = document.getElementById('metricAverageRating');
     const tripsEl = document.getElementById('metricTotalTrips');
-    const flagsEl = document.getElementById('metricFlagsCount');
 
     if (activeEl) activeEl.innerText = drivers.length;
 
-    let totalTrips = 0, sumRatings = 0, ratedDriverCount = 0, criticalFlags = 0;
+    let totalTrips = 0, sumRatings = 0, ratedDriverCount = 0;
 
     drivers.forEach(d => {
         const avg = parseFloat(d.averageRating ?? d.avgRating ?? 0);
@@ -107,15 +106,14 @@ function calculateSummaryMetrics(drivers) {
             sumRatings += avg;
             ratedDriverCount++;
         }
-        if (avg > 0 && avg < 3.0) criticalFlags++;
     });
 
     const averageScore = ratedDriverCount > 0 ? (sumRatings / ratedDriverCount) : 0;
 
     if (avgRatingEl) avgRatingEl.innerText = averageScore.toFixed(2);
     if (tripsEl) tripsEl.innerText = totalTrips.toLocaleString();
-    if (flagsEl) flagsEl.innerText = String(criticalFlags).padStart(2, '0');
 }
+
 
 function searchDrivers() {
     const input = document.getElementById('globalSearchInput');

@@ -8,6 +8,13 @@
     <link rel="stylesheet" href="../assets/css/styles.css">
     <link rel="stylesheet" href="../assets/css/coordinator.css">
     <link rel="stylesheet" href="../assets/css/driver-dashboard.css">
+    <style>
+        .main-content {
+            height: 100vh;
+            overflow-y: auto;
+        }
+    </style>
+
 </head>
 <body>
     <div class="sidebar">
@@ -76,6 +83,18 @@
             </div>
 
             <div class="table-card">
+                <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px; padding:15px 15px 0 15px;">
+                    <input type="text" id="scheduleSearchBox" placeholder="Search route, shuttle, or driver..."
+                           style="padding:8px 12px; border-radius:6px; border:1px solid #cbd5e1; font-size:13px; flex:1; min-width:220px;"
+                           onkeyup="applyScheduleFilters()">
+                    <input type="date" id="scheduleDateFilter"
+                           style="padding:8px 12px; border-radius:6px; border:1px solid #cbd5e1; font-size:13px;"
+                           onchange="applyScheduleFilters()">
+                    <button type="button" onclick="clearScheduleFilters()"
+                            style="padding:8px 12px; border-radius:6px; border:1px solid #cbd5e1; background:#f8fafc; font-size:13px; cursor:pointer;">
+                        Clear
+                    </button>
+                </div>
                 <table class="scheduler-table">
                     <thead>
                         <tr>

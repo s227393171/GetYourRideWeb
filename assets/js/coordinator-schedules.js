@@ -522,3 +522,34 @@ async function loadCoordinatorProfile() {
         showToast("Network error loading your profile.", "error");
     }
 }
+function applyScheduleFilters() {
+    const searchValue = (document.getElementById("scheduleSearchBox")?.value || "").toLowerCase();
+    const dateValue = document.getElementById("scheduleDateFilter")?.value || "";
+
+    const rows = document.querySelectorAll("#scheduleTableBody tr");
+
+    rows.forEach(row => {
+        const cells = row.querySelectorAll("td");
+        if (cells.length < 5) return; // skip loading/empty-state row
+
+        const routeText = cells[0].textContent.toLowerCase();
+        const dateText = cells[1].textContent.trim();
+        const shuttleText = cells[3].textContent.toLowerCase();
+        const operatorText = cells[4].textContent.toLowerCase();
+
+        const matchesSearch = !searchValue ||
+            routeText.includes(searchValue) ||
+            shuttleText.includes(searchValue) ||
+            operatorText.includes(searchValue);
+
+        const matchesDate = !dateValue || dateText.includes(dateValue);
+
+        row.style.display = (matchesSearch && matchesDate) ? "" : "none";
+    });
+}
+
+function clearScheduleFilters() {
+    document.getElementById("scheduleSearchBox").value = "";
+    document.getElementById("scheduleDateFilter").value = "";
+    applyScheduleFilters();
+}

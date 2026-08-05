@@ -171,8 +171,7 @@ async function loadAdminProfile() {
     const emailLabel = document.getElementById('adminEmailLabel');
 
     try {
-        const urlParams = new URLSearchParams(window.location.search);
-        let loggedInEmail = urlParams.get('email') || 'admin@getyourride.com';
+        let loggedInEmail = localStorage.getItem('userEmail') || 'admin@getyourride.com';
 
         const targetUrl = `${window.location.origin}${PROFILE_API_URL}?email=${encodeURIComponent(loggedInEmail)}`;
 

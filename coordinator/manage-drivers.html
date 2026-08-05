@@ -107,8 +107,21 @@
             </div>
 
             <div class="table-card">
-                <div class="table-header">
+                <div class="table-header" style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px;">
                     <h3>Driver Roster <span class="semester-badge">AUTUMN SEMESTER</span></h3>
+                    <div style="display:flex; gap:10px; align-items:center;">
+                        <input type="text" id="driverSearchBox" placeholder="Search drivers..."
+                               style="padding:8px 12px; border-radius:6px; border:1px solid #cbd5e1; font-size:13px;"
+                               onkeyup="applyDriverFilters()">
+                        <select id="statusFilterSelect"
+                                style="padding:8px 12px; border-radius:6px; border:1px solid #cbd5e1; font-size:13px;"
+                                onchange="applyDriverFilters()">
+                            <option value="">All Statuses</option>
+                            <option value="Active">Active</option>
+                            <option value="On Break">On Break</option>
+                            <option value="Off Duty">Off Duty</option>
+                        </select>
+                    </div>
                 </div>
 
                 <table class="data-table">
@@ -153,12 +166,19 @@
                     <label style="display:block; margin-bottom:5px; font-weight:600; font-size:13px;">Email Address</label>
                     <input type="email" id="txtDriverEmail" required placeholder="e.g. m.dorsey@university.edu" style="width:100%; padding:8px; border-radius:6px; border:1px solid #cbd5e1; box-sizing:border-box;">
                 </div>
-               
+
                 <div class="form-group" style="margin-bottom: 15px;">
                     <label style="display:block; margin-bottom:5px; font-weight:600; font-size:13px;">Phone Number</label>
                     <input type="text" id="txtDriverPhone" placeholder="e.g. 0821234567" style="width:100%; padding:8px; border-radius:6px; border:1px solid #cbd5e1; box-sizing:border-box;">
                 </div>
-
+                <div class="form-group" style="margin-bottom: 15px;">
+                    <label style="display:block; margin-bottom:5px; font-weight:600; font-size:13px;">Status</label>
+                    <select id="txtDriverStatus" style="width:100%; padding:8px; border-radius:6px; border:1px solid #cbd5e1; box-sizing:border-box;">
+                        <option value="Active">Active</option>
+                        <option value="On Break">On Break</option>
+                        <option value="Off Duty">Off Duty</option>
+                    </select>
+                </div>
                 <div class="modal-actions" style="display:flex; gap:10px; justify-content:flex-end;">
                     <button type="button" id="btnCancelDriverModal" class="close-modal-btn" style="margin:0; background:#64748b; width:auto; padding:8px 16px;">Cancel</button>
                     <button type="submit" class="close-modal-btn" style="margin:0; background:#f97316; width:auto; padding:8px 16px;">Save Profile</button>

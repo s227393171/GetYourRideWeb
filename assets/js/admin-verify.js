@@ -31,7 +31,7 @@ function renderVerificationTable(list) {
             <td>${driver.email}</td>
             <td>
                 <a href="review-application.html?id=${driver.studentNumber}" class="btn-action verify-approve" style="display: inline-block; text-decoration: none; text-align: center;">
-                    🛡️ Approve & Verify Profile
+                    Verify Profile
                 </a>
             </td>
         `;
