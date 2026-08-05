@@ -282,6 +282,260 @@ app.MapGet("/api/admin/unverified-drivers", async (IConfiguration config) => {
     return Results.Ok(unverified);
 });
 
+// Admin: List all driver applications (optionally filtered by status)
+app.MapGet("/api/admin/applications", async (string? status, IConfiguration config) =>
+{
+    string connectionString = config.GetConnectionString("DefaultConnection");
+    var apps = new List<object>();
+
+    try
+    {
+        using var connection = new MySqlConnection(connectionString);
+        await connection.OpenAsync();
+
+        string query = @"
+            SELECT da.ApplicationID,
+                   d.driver_id,
+                   CONCAT(d.first_name, ' ', d.last_name) AS FullName,
+                   d.email,
+                   da.contact_number,
+                   da.vehicle_make_model,
+                   da.registration_number AS RegistrationNumber,
+                   da.seating_capacity,
+                   da.vehicle_color,
+                   da.LicenseImagePath,
+                   da.RegistrationFilePath,
+                   da.ApplicationStatus,
+                   d.is_verified
+            FROM driverapplications da
+            LEFT JOIN users u ON da.UserID = u.UserID
+            LEFT JOIN driver d ON u.email = d.email
+        ";
+
+        if (!string.IsNullOrWhiteSpace(status))
+        {
+            query += " WHERE da.ApplicationStatus = @Status";
+        }
+
+        query += " ORDER BY da.ApplicationID DESC;";
+
+        using var command = new MySqlCommand(query, connection);
+        if (!string.IsNullOrWhiteSpace(status)) command.Parameters.AddWithValue("@Status", status);
+
+        using var reader = await command.ExecuteReaderAsync();
+        while (await reader.ReadAsync())
+        {
+            apps.Add(new
+            {
+                applicationId = Convert.ToInt32(reader["ApplicationID"]),
+                driverId = reader["driver_id"] != DBNull.Value ? Convert.ToInt32(reader["driver_id"]) : (int?)null,
+                fullName = reader["FullName"] != DBNull.Value ? reader["FullName"].ToString() : string.Empty,
+                email = reader["email"] != DBNull.Value ? reader["email"].ToString() : string.Empty,
+                contactNumber = reader["contact_number"] != DBNull.Value ? reader["contact_number"].ToString() : string.Empty,
+                vehicleMakeModel = reader["vehicle_make_model"] != DBNull.Value ? reader["vehicle_make_model"].ToString() : string.Empty,
+                registrationNumber = reader["RegistrationNumber"] != DBNull.Value ? reader["RegistrationNumber"].ToString() : string.Empty,
+                seatingCapacity = reader["seating_capacity"] != DBNull.Value ? Convert.ToInt32(reader["seating_capacity"]) : (int?)null,
+                vehicleColor = reader["vehicle_color"] != DBNull.Value ? reader["vehicle_color"].ToString() : string.Empty,
+                licenseImagePath = reader["LicenseImagePath"] != DBNull.Value ? reader["LicenseImagePath"].ToString() : string.Empty,
+                registrationFilePath = reader["RegistrationFilePath"] != DBNull.Value ? reader["RegistrationFilePath"].ToString() : string.Empty,
+                applicationStatus = reader["ApplicationStatus"] != DBNull.Value ? reader["ApplicationStatus"].ToString() : string.Empty,
+                isVerified = reader["is_verified"] != DBNull.Value ? Convert.ToInt32(reader["is_verified"]) == 1 : false
+            });
+        }
+    }
+    catch (Exception ex)
+    {
+        Console.WriteLine($"[API Error] List applications failed: {ex.Message}");
+        return Results.Json(new { error = ex.Message }, statusCode: 500);
+    }
+
+    return Results.Ok(apps);
+});
+
+// Admin: Get single application by ApplicationID
+app.MapGet("/api/admin/applications/{applicationId:int}", async (int applicationId, IConfiguration config) =>
+{
+    string connectionString = config.GetConnectionString("DefaultConnection");
+
+    try
+    {
+        using var connection = new MySqlConnection(connectionString);
+        await connection.OpenAsync();
+
+        string query = @"
+            SELECT da.ApplicationID,
+                   d.driver_id,
+                   CONCAT(d.first_name, ' ', d.last_name) AS FullName,
+                   d.email,
+                   da.contact_number,
+                   da.vehicle_make_model,
+                   da.registration_number AS RegistrationNumber,
+                   da.seating_capacity,
+                   da.vehicle_color,
+                   da.LicenseImagePath,
+                   da.RegistrationFilePath,
+                   da.ApplicationStatus,
+                   d.is_verified
+            FROM driverapplications da
+            LEFT JOIN users u ON da.UserID = u.UserID
+            LEFT JOIN driver d ON u.email = d.email
+            WHERE da.ApplicationID = @AppId
+            LIMIT 1;";
+
+        using var command = new MySqlCommand(query, connection);
+        command.Parameters.AddWithValue("@AppId", applicationId);
+
+        using var reader = await command.ExecuteReaderAsync();
+        if (await reader.ReadAsync())
+        {
+            return Results.Ok(new
+            {
+                applicationId = Convert.ToInt32(reader["ApplicationID"]),
+                driverId = reader["driver_id"] != DBNull.Value ? Convert.ToInt32(reader["driver_id"]) : (int?)null,
+                fullName = reader["FullName"] != DBNull.Value ? reader["FullName"].ToString() : string.Empty,
+                email = reader["email"] != DBNull.Value ? reader["email"].ToString() : string.Empty,
+                contactNumber = reader["contact_number"] != DBNull.Value ? reader["contact_number"].ToString() : string.Empty,
+                vehicleMakeModel = reader["vehicle_make_model"] != DBNull.Value ? reader["vehicle_make_model"].ToString() : string.Empty,
+                registrationNumber = reader["RegistrationNumber"] != DBNull.Value ? reader["RegistrationNumber"].ToString() : string.Empty,
+                seatingCapacity = reader["seating_capacity"] != DBNull.Value ? Convert.ToInt32(reader["seating_capacity"]) : (int?)null,
+                vehicleColor = reader["vehicle_color"] != DBNull.Value ? reader["vehicle_color"].ToString() : string.Empty,
+                licenseImagePath = reader["LicenseImagePath"] != DBNull.Value ? reader["LicenseImagePath"].ToString() : string.Empty,
+                registrationFilePath = reader["RegistrationFilePath"] != DBNull.Value ? reader["RegistrationFilePath"].ToString() : string.Empty,
+                applicationStatus = reader["ApplicationStatus"] != DBNull.Value ? reader["ApplicationStatus"].ToString() : string.Empty,
+                isVerified = reader["is_verified"] != DBNull.Value ? Convert.ToInt32(reader["is_verified"]) == 1 : false
+            });
+        }
+
+        return Results.NotFound(new { message = $"Application with ID {applicationId} not found." });
+    }
+    catch (Exception ex)
+    {
+        Console.WriteLine($"[API Error] Single application lookup failed: {ex.Message}");
+        return Results.Json(new { error = ex.Message }, statusCode: 500);
+    }
+});
+
+// Admin: Approve application (sets driver.is_verified = 1 and application status = 'Approved')
+app.MapPut("/api/admin/applications/{applicationId:int}/approve", async (int applicationId, IConfiguration config) =>
+{
+    string connectionString = config.GetConnectionString("DefaultConnection");
+
+    try
+    {
+        using var connection = new MySqlConnection(connectionString);
+        await connection.OpenAsync();
+
+        using var transaction = await connection.BeginTransactionAsync();
+
+        // Find associated driver_id
+        string lookup = @"
+            SELECT d.driver_id
+            FROM driverapplications da
+            LEFT JOIN users u ON da.UserID = u.UserID
+            LEFT JOIN driver d ON u.email = d.email
+            WHERE da.ApplicationID = @AppId
+            LIMIT 1;";
+
+        int? driverId = null;
+        using (var cmd = new MySqlCommand(lookup, connection, (MySqlTransaction)transaction))
+        {
+            cmd.Parameters.AddWithValue("@AppId", applicationId);
+            var res = await cmd.ExecuteScalarAsync();
+            if (res != null && res != DBNull.Value) driverId = Convert.ToInt32(res);
+        }
+
+        if (!driverId.HasValue)
+        {
+            await transaction.RollbackAsync();
+            return Results.NotFound(new { message = "Associated driver not found for this application." });
+        }
+
+        // Update driver as verified
+        using (var upd = new MySqlCommand("UPDATE driver SET is_verified = 1 WHERE driver_id = @DriverId;", connection, (MySqlTransaction)transaction))
+        {
+            upd.Parameters.AddWithValue("@DriverId", driverId.Value);
+            await upd.ExecuteNonQueryAsync();
+        }
+
+        // Update application status
+        using (var updApp = new MySqlCommand("UPDATE driverapplications SET ApplicationStatus = 'Approved' WHERE ApplicationID = @AppId;", connection, (MySqlTransaction)transaction))
+        {
+            updApp.Parameters.AddWithValue("@AppId", applicationId);
+            await updApp.ExecuteNonQueryAsync();
+        }
+
+        await transaction.CommitAsync();
+
+        // Return updated application
+        return Results.Ok(new { success = true, applicationId = applicationId, status = "Approved", driverId = driverId.Value });
+    }
+    catch (Exception ex)
+    {
+        Console.WriteLine($"[API Error] Approve application failed: {ex.Message}");
+        return Results.Json(new { success = false, message = ex.Message }, statusCode: 500);
+    }
+});
+
+// Admin: Reject application (sets driver.is_verified = 0 and application status = 'Rejected')
+app.MapPut("/api/admin/applications/{applicationId:int}/reject", async (int applicationId, IConfiguration config) =>
+{
+    string connectionString = config.GetConnectionString("DefaultConnection");
+
+    try
+    {
+        using var connection = new MySqlConnection(connectionString);
+        await connection.OpenAsync();
+
+        using var transaction = await connection.BeginTransactionAsync();
+
+        // Find associated driver_id
+        string lookup = @"
+            SELECT d.driver_id
+            FROM driverapplications da
+            LEFT JOIN users u ON da.UserID = u.UserID
+            LEFT JOIN driver d ON u.email = d.email
+            WHERE da.ApplicationID = @AppId
+            LIMIT 1;";
+
+        int? driverId = null;
+        using (var cmd = new MySqlCommand(lookup, connection, (MySqlTransaction)transaction))
+        {
+            cmd.Parameters.AddWithValue("@AppId", applicationId);
+            var res = await cmd.ExecuteScalarAsync();
+            if (res != null && res != DBNull.Value) driverId = Convert.ToInt32(res);
+        }
+
+        if (!driverId.HasValue)
+        {
+            await transaction.RollbackAsync();
+            return Results.NotFound(new { message = "Associated driver not found for this application." });
+        }
+
+        // Ensure driver is not verified
+        using (var upd = new MySqlCommand("UPDATE driver SET is_verified = 0 WHERE driver_id = @DriverId;", connection, (MySqlTransaction)transaction))
+        {
+            upd.Parameters.AddWithValue("@DriverId", driverId.Value);
+            await upd.ExecuteNonQueryAsync();
+        }
+
+        // Update application status
+        using (var updApp = new MySqlCommand("UPDATE driverapplications SET ApplicationStatus = 'Rejected' WHERE ApplicationID = @AppId;", connection, (MySqlTransaction)transaction))
+        {
+            updApp.Parameters.AddWithValue("@AppId", applicationId);
+            await updApp.ExecuteNonQueryAsync();
+        }
+
+        await transaction.CommitAsync();
+
+        return Results.Ok(new { success = true, applicationId = applicationId, status = "Rejected", driverId = driverId.Value });
+    }
+    catch (Exception ex)
+    {
+        Console.WriteLine($"[API Error] Reject application failed: {ex.Message}");
+        return Results.Json(new { success = false, message = ex.Message }, statusCode: 500);
+    }
+});
+
 app.MapPost("/api/admin/verify-driver", async (VerifyActionRequest req, IConfiguration config) => {
     string connectionString = config.GetConnectionString("DefaultConnection");
 
@@ -316,23 +570,52 @@ app.MapGet("/api/admin/drivers/{driverId:int}", async (int driverId, IConfigurat
         await connection.OpenAsync();
 
         string query = @"
-            SELECT CONCAT(IFNULL(d.first_name, ''), ' ', IFNULL(d.last_name, '')) AS FullName, 
-                   IFNULL(d.email, '') AS email, 
-                   d.phone AS ContactNumber,
-                   COALESCE(NULLIF(s.student_number, 'undefined'), CONCAT('DRV-', d.driver_id)) AS StudentNum,
-                   da.VehicleMakeModel, 
-                   da.RegistrationNumber,
-                   da.SeatingCapacity, 
-                   da.VehicleColor, 
-                   da.LicenseImagePath,
-                   da.RegistrationFilePath, 
-                   da.ApplicationStatus
+            SELECT 
+                CONCAT(
+                    IFNULL(d.first_name, ''), 
+                    ' ', 
+                    IFNULL(d.last_name, '')
+                ) AS FullName,
+
+                IFNULL(d.email, '') AS email,
+
+                d.phone AS ContactNumber,
+
+                COALESCE(
+                    NULLIF(s.student_number, 'undefined'),
+                    CONCAT('DRV-', d.driver_id)
+                ) AS StudentNum,
+
+                -- VEHICLE INFORMATION
+                v.model AS VehicleMakeModel,
+                v.registration_number AS RegistrationNumber,
+                v.capacity AS SeatingCapacity,
+                v.colour AS VehicleColor,
+
+               da.license_image_path AS LicenseImagePath,
+da.registration_file_path AS RegistrationFilePath,
+da.application_status AS ApplicationStatus
+
+
             FROM driver d
-            LEFT JOIN student s ON d.email = s.email
-            LEFT JOIN users u ON d.email = u.email
-            LEFT JOIN driverapplications da ON u.UserID =da.UserID 
-            WHERE d.driver_id = @DriverId 
-            LIMIT 1;";
+
+            LEFT JOIN student s 
+                ON d.email = s.email
+
+            LEFT JOIN users u 
+                ON d.email = u.email
+
+            LEFT JOIN driverapplications da 
+     ON d.driver_id = da.driver_id
+
+
+            LEFT JOIN vehicle v 
+                ON d.driver_id = v.driver_id
+
+            WHERE d.driver_id = @DriverId
+
+            LIMIT 1;
+        ";
 
         using var command = new MySqlCommand(query, connection);
         command.Parameters.AddWithValue("@DriverId", driverId);
@@ -341,35 +624,69 @@ app.MapGet("/api/admin/drivers/{driverId:int}", async (int driverId, IConfigurat
 
         if (await reader.ReadAsync())
         {
-            // Safe helper lambdas to handle DBNull
-            string GetSafeString(string col) => reader[col] != DBNull.Value ? reader[col].ToString() : string.Empty;
-            int GetSafeInt(string col) => reader[col] != DBNull.Value ? Convert.ToInt32(reader[col]) : 0;
+            string GetSafeString(string col) =>
+                reader[col] != DBNull.Value
+                    ? reader[col].ToString()
+                    : string.Empty;
+
+            int GetSafeInt(string col) =>
+                reader[col] != DBNull.Value
+                    ? Convert.ToInt32(reader[col])
+                    : 0;
 
             return Results.Ok(new
             {
                 fullName = GetSafeString("FullName").Trim(),
+
                 email = GetSafeString("email"),
+
                 studentNumber = GetSafeString("StudentNum"),
-                contactNumber = reader["ContactNumber"] != DBNull.Value ? reader["ContactNumber"].ToString() : "N/A",
+
+                contactNumber =
+                    reader["ContactNumber"] != DBNull.Value
+                        ? reader["ContactNumber"].ToString()
+                        : "N/A",
+
                 vehicleMakeModel = GetSafeString("VehicleMakeModel"),
+
                 registrationNumber = GetSafeString("RegistrationNumber"),
+
                 seatingCapacity = GetSafeInt("SeatingCapacity"),
+
                 vehicleColor = GetSafeString("VehicleColor"),
+
+                
                 licenseImagePath = GetSafeString("LicenseImagePath"),
+
                 registrationFilePath = GetSafeString("RegistrationFilePath"),
+
                 applicationStatus = GetSafeString("ApplicationStatus")
             });
         }
 
-        return Results.NotFound(new { message = $"No application or driver found with ID {driverId}." });
+        return Results.NotFound(
+            new
+            {
+                message = $"No application or driver found with ID {driverId}."
+            }
+        );
     }
     catch (Exception ex)
     {
-        Console.WriteLine($"[API Error] Driver detail lookup failed: {ex}");
-        return Results.Json(new { message = ex.Message, stackTrace = ex.StackTrace }, statusCode: 500);
+        Console.WriteLine(
+            $"[API Error] Driver detail lookup failed: {ex}"
+        );
+
+        return Results.Json(
+            new
+            {
+                message = ex.Message,
+                stackTrace = ex.StackTrace
+            },
+            statusCode: 500
+        );
     }
 });
-
 
 app.MapPost("/api/admin/drivers/{driverId:int}/status", async (int driverId, DynamicStatusUpdate req, IConfiguration config) =>
 {
@@ -393,8 +710,8 @@ app.MapPost("/api/admin/drivers/{driverId:int}/status", async (int driverId, Dyn
         string updateQuery = @"
           UPDATE driver dr
            LEFT JOIN users u ON dr.email = u.email
-                 LEFT JOIN driverapplications da ON u.UserID = da.UserID
-                 SET da.ApplicationStatus = @Status, 
+                 LEFT JOIN driverapplications  da ON dr.driver_id = da.driver_id
+                 SET da.application_status = @Status, 
                  dr.is_verified = @IsVerified
                  WHERE dr.driver_id = @DriverId;";
 
@@ -655,6 +972,17 @@ app.MapDelete("/api/coordinator/shuttles/{id:int}", async (int id, IConfiguratio
         int rowsAffected = await deleteCmd.ExecuteNonQueryAsync();
         return rowsAffected > 0
             ? Results.Ok(new { success = true, message = "Shuttle removed successfully." })
+            : Results.NotFound();
+    }
+    catch (Exception ex)
+    {
+        Console.WriteLine($"[API Error] Delete shuttle failed: {ex.Message}");
+        return Results.Json(new { success = false, message = ex.Message }, statusCode: 500);
+    }
+});
+
+
+app.MapGet("/api/coordinator/drivers", async (IConfiguration config) => {
     string connectionString = config.GetConnectionString("DefaultConnection");
     var drivers = new List<object>();
 
@@ -947,7 +1275,7 @@ app.MapGet("/api/coordinator/routes", async (IConfiguration config) => {
                 r.route_id, 
                 s1.stop_name AS FromStop,
                 s2.stop_name AS ToStop
-            FROM routes r
+            FROM route r
             JOIN shuttle_stop s1 ON r.origin_stop_id = s1.stop_id
             JOIN shuttle_stop s2 ON r.destination_stop_id = s2.stop_id
             ORDER BY s1.stop_name ASC;";
@@ -989,12 +1317,22 @@ app.MapGet("/api/coordinator/schedules", async (IConfiguration config) => {
         await connection.OpenAsync();
 
         string query = @"
-            SELECT t.trip_id, t.departure_stop, t.destination_stop, t.departure_time, t.status,
+            SELECT t.trip_id, t.departure_stop, t.destination_stop, t.departure_time, 
+                   t.status, t.driver_id, t.registration_number,
+                   COALESCE(v.vehicle_id, 0) AS vehicle_id,
                    COALESCE(v.model, 'Unassigned') AS ShuttleName,
-                   COALESCE(CONCAT(d.first_name, ' ', d.last_name), 'Unassigned') AS DriverName
+                   COALESCE(CONCAT(d.first_name, ' ', d.last_name), 'Unassigned') AS DriverName,
+                   COALESCE(r.route_id, 0) AS route_id
             FROM trip t
             LEFT JOIN vehicle v ON t.registration_number = v.registration_number
             LEFT JOIN driver d ON t.driver_id = d.driver_id
+            LEFT JOIN route r ON r.route_id = (
+                SELECT r2.route_id FROM route r2
+                JOIN shuttle_stop s1 ON r2.origin_stop_id = s1.stop_id
+                JOIN shuttle_stop s2 ON r2.destination_stop_id = s2.stop_id
+                WHERE s1.stop_name = t.departure_stop AND s2.stop_name = t.destination_stop
+                LIMIT 1
+            )
             WHERE t.trip_type = 'SHUTTLE'
             ORDER BY t.departure_time DESC;";
 
@@ -1009,6 +1347,9 @@ app.MapGet("/api/coordinator/schedules", async (IConfiguration config) => {
             {
                 tripId = Convert.ToInt32(reader["trip_id"]),
                 scheduleId = Convert.ToInt32(reader["trip_id"]),
+                routeId = Convert.ToInt32(reader["route_id"]),
+                shuttleId = Convert.ToInt32(reader["vehicle_id"]),
+                driverId = Convert.ToInt32(reader["driver_id"]),
                 routeName = $"{reader["departure_stop"]} \u2794 {reader["destination_stop"]}",
                 departureTime = departureDateTime.ToString("HH:mm"),
                 scheduleDate = departureDateTime.ToString("yyyy-MM-dd"),
@@ -1076,6 +1417,7 @@ app.MapGet("/api/coordinator/schedules/{id:int}", async (int id, IConfiguration 
 
 
 app.MapPost("/api/coordinator/schedules", async (ScheduleDirectDto req, IConfiguration config) => {
+    Console.WriteLine($"[DEBUG] RouteID={req.RouteID}, ShuttleID={req.ShuttleID}, DriverID={req.DriverID}, Date={req.ScheduleDate}, Time={req.DepartureTime}");
     string connectionString = config.GetConnectionString("DefaultConnection");
 
     try
@@ -1096,7 +1438,7 @@ app.MapPost("/api/coordinator/schedules", async (ScheduleDirectDto req, IConfigu
         string toLocation = "";
         string routeLookupQuery = @"
             SELECT s1.stop_name AS FromStop, s2.stop_name AS ToStop
-            FROM routes r
+            FROM route r
             JOIN shuttle_stop s1 ON r.origin_stop_id = s1.stop_id
             JOIN shuttle_stop s2 ON r.destination_stop_id = s2.stop_id
             WHERE r.route_id = @RouteId LIMIT 1;";
@@ -1140,22 +1482,23 @@ app.MapPost("/api/coordinator/schedules", async (ScheduleDirectDto req, IConfigu
         {
             return Results.BadRequest(new { success = false, message = $"Could not locate a matching vehicle asset for ID/Plate: '{req.ShuttleID}'." });
         }
-
         string insertQuery = @"
-            INSERT INTO trip (driver_id, registration_number, trip_type, departure_stop, destination_stop,
-                               departure_time, available_seats, price, status)
-            VALUES (@DriverID, @RegNumber, 'SHUTTLE', @From, @To, @DepartureDateTime, @Seats, 0.00, 'SCHEDULED');";
+    INSERT INTO shuttle_assignment (route_id, driver_id, registration_number, assignment_date, 
+                                    shift_start, shift_end, status, created_at)
+    VALUES (@RouteID, @DriverID, @RegNumber, @AssignmentDate, @ShiftStart, 
+            DATE_ADD(@ShiftStart, INTERVAL 1 HOUR), 'SCHEDULED', NOW());";
+
 
         using var command = new MySqlCommand(insertQuery, connection);
-        command.Parameters.AddWithValue("@From", fromLocation);
-        command.Parameters.AddWithValue("@To", toLocation);
-        command.Parameters.AddWithValue("@DepartureDateTime", departureDateTime);
-        command.Parameters.AddWithValue("@RegNumber", regNumber);
-        command.Parameters.AddWithValue("@Seats", capacity);
+        command.Parameters.AddWithValue("@RouteID", req.RouteID);
         command.Parameters.AddWithValue("@DriverID", req.DriverID);
+        command.Parameters.AddWithValue("@RegNumber", regNumber);
+        command.Parameters.AddWithValue("@AssignmentDate", dateString);
+        command.Parameters.AddWithValue("@ShiftStart", departureDateTime);
 
         await command.ExecuteNonQueryAsync();
         return Results.Ok(new { success = true, message = "Assignment recorded successfully." });
+
     }
     catch (Exception ex)
     {
@@ -1201,7 +1544,7 @@ app.MapPut("/api/coordinator/schedules/{id:int}", async (int id, ScheduleDirectD
         string toLocation = "";
         string routeLookupQuery = @"
             SELECT s1.stop_name AS FromStop, s2.stop_name AS ToStop
-            FROM routes r
+            FROM route r
             JOIN shuttle_stop s1 ON r.origin_stop_id = s1.stop_id
             JOIN shuttle_stop s2 ON r.destination_stop_id = s2.stop_id
             WHERE r.route_id = @RouteId LIMIT 1;";

@@ -153,31 +153,26 @@
     async function populateDropdowns() {
         try {
             const results = await Promise.allSettled([
-                fetch(`${apiBaseUrl}/stops`),
+                fetch(`${apiBaseUrl}/routes`),
                 fetch(`${apiBaseUrl}/shuttles`),
                 fetch(`${apiBaseUrl}/drivers`)
             ]);
 
-            const [stopsResult, shuttlesResult, driversResult] = results;
+            const [routesResult, shuttlesResult, driversResult] = results;
+
 
             
-            if (stopsResult.status === "fulfilled" && stopsResult.value.ok) {
-                const stops = await stopsResult.value.json();
-                if (routeSelect && Array.isArray(stops)) {
-                    const routeOptions = stops.flatMap(from =>
-                        stops
-                            .filter(to => from.stopId !== to.stopId)
-                            .map(to => {
-                                const label = `${from.stopName} -> ${to.stopName}`;
-                                return `<option value="${label}">${label}</option>`;
-                            })
-                    );
-                    routeSelect.innerHTML = `<option value="">-- Select Route --</option>` + routeOptions.join('');
+            if (routesResult.status === "fulfilled" && routesResult.value.ok) {
+                const routes = await routesResult.value.json();
+                if (routeSelect && Array.isArray(routes)) {
+                    routeSelect.innerHTML = `<option value="">-- Select Route --</option>` +
+                        routes.map(r => `<option value="${r.routeId}">${r.fromStop} → ${r.toStop}</option>`).join('');
                 }
             } else {
-                console.error("Failed to load stops:", stopsResult.reason || stopsResult.value?.statusText);
+                console.error("Failed to load routes:", routesResult.reason || routesResult.value?.statusText);
                 showToast("Could not load route options.", "warning");
             }
+
 
             
             if (shuttlesResult.status === "fulfilled" && shuttlesResult.value.ok) {
@@ -207,7 +202,8 @@
                 showToast("Could not load driver options.", "warning");
             }
 
-            if (stopsResult.status === "fulfilled" && shuttlesResult.status === "fulfilled" && driversResult.status === "fulfilled") {
+            if (routesResult.status === "fulfilled" && shuttlesResult.status === "fulfilled" && driversResult.status === "fulfilled") {
+
                 showToast("Form options loaded successfully.", "success");
             }
 
@@ -234,31 +230,31 @@
                 return;
             }
 
-            
-            const fromStop = schedule.fromStop || "";
-            const toStop = schedule.toStop || "";
-            const routeValue = `${fromStop} -> ${toStop}`;
-            if (routeSelect) {
-                const match = Array.from(routeSelect.options).find(
-                    opt => opt.value.trim().toLowerCase() === routeValue.trim().toLowerCase()
-                );
-                if (match) routeSelect.value = match.value;
+            // Set route by ID
+            const routeId = schedule.routeId ?? schedule.routeID ?? schedule.RouteID;
+            if (routeSelect && routeId != null) {
+                routeSelect.value = routeId;
             }
 
-            
-            const shuttleId = schedule.shuttleId ?? schedule.shuttleID;
-            if (shuttleSelect && shuttleId != null) shuttleSelect.value = shuttleId;
+            // Set shuttle by ID
+            const shuttleId = schedule.shuttleId ?? schedule.shuttleID ?? schedule.ShuttleID;
+            if (shuttleSelect && shuttleId != null) {
+                shuttleSelect.value = shuttleId;
+            }
 
-            const driverId = schedule.driverId ?? schedule.driverID;
-            if (driverSelect && driverId != null) driverSelect.value = driverId;
+            // Set driver by ID
+            const driverId = schedule.driverId ?? schedule.driverID ?? schedule.DriverID;
+            if (driverSelect && driverId != null) {
+                driverSelect.value = driverId;
+            }
 
-           
+            // Set date and time
             const dateInput = document.getElementById("txtScheduleDate") || document.getElementById("runDate");
             const timeInput = document.getElementById("txtDepartureTime") || document.getElementById("clockTime");
-            if (dateInput) dateInput.value = schedule.scheduleDate || "";
+            if (dateInput) dateInput.value = schedule.scheduleDate || schedule.assignmentDate || "";
             if (timeInput) timeInput.value = schedule.departureTime || "";
 
-           
+            // Update heading and button
             const heading = document.querySelector(".form-header h2");
             if (heading) heading.textContent = "Edit Fleet Route Dispatch";
 
@@ -272,7 +268,6 @@
             showPopup("Failed to load schedule details. Please try again.", "error");
         }
     }
-
     
     if (scheduleForm) {
         scheduleForm.addEventListener("submit", async (event) => {
@@ -310,7 +305,7 @@
                 showPopup("Please set a <strong>departure time</strong> before saving.", "warning");
                 return;
             }
-
+            
             const payload = {
                 RouteID: selectedRouteId,
                 ScheduleDate: dateInput.value,
