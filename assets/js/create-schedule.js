@@ -320,10 +320,7 @@
                 showPopup("Please set a <strong>departure time</strong> before saving.", "warning");
                 return;
             }
-            if (timeInput.value < "06:00" || timeInput.value > "22:00") {
-                showPopup("Departure time must be between <strong>06:00</strong> and <strong>22:00</strong>.", "warning");
-                return;
-            }
+
             const payload = {
                 RouteID: selectedRouteId,
                 ScheduleDate: dateInput.value,
