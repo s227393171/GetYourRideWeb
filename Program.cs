@@ -829,6 +829,7 @@ app.MapGet("/api/coordinator/shuttles", async (IConfiguration config) => {
 
         string query = @"
             SELECT v.vehicle_id, v.model, v.registration_number, v.capacity, v.driver_id, v.status,
+                   v.vehicle_year, v.colour,
                    COALESCE(CONCAT(d.first_name, ' ', d.last_name), 'Unassigned') AS DriverName
             FROM vehicle v
             LEFT JOIN driver d ON v.driver_id = d.driver_id
@@ -847,6 +848,8 @@ app.MapGet("/api/coordinator/shuttles", async (IConfiguration config) => {
                 licensePlate = reader["registration_number"].ToString(),
                 capacity = Convert.ToInt32(reader["capacity"]),
                 status = reader["status"].ToString(),
+                vehicleYear = reader["vehicle_year"] != DBNull.Value ? Convert.ToInt32(reader["vehicle_year"]) : (int?)null,
+                colour = reader["colour"] != DBNull.Value ? reader["colour"].ToString() : "",
                 driverId = reader["driver_id"] != DBNull.Value ? Convert.ToInt32(reader["driver_id"]) : (int?)null,
                 driverName = reader["DriverName"].ToString()
             });
@@ -869,13 +872,15 @@ app.MapPost("/api/coordinator/shuttles", async (ShuttleDto newShuttle, IConfigur
         using var connection = new MySqlConnection(connectionString);
         await connection.OpenAsync();
 
-        string query = @"INSERT INTO vehicle (driver_id, registration_number, model, capacity, status)
-                         VALUES (@DriverId, @Plate, @Name, @Capacity, @Status);";
+        string query = @"INSERT INTO vehicle (driver_id, registration_number, model, vehicle_year, colour, capacity, status)
+                         VALUES (@DriverId, @Plate, @Name, @Year, @Colour, @Capacity, @Status);";
 
         using var command = new MySqlCommand(query, connection);
         command.Parameters.AddWithValue("@DriverId", newShuttle.DriverId.HasValue ? (object)newShuttle.DriverId.Value : DBNull.Value);
         command.Parameters.AddWithValue("@Name", newShuttle.ShuttleName);
         command.Parameters.AddWithValue("@Plate", newShuttle.LicensePlate);
+        command.Parameters.AddWithValue("@Year", newShuttle.VehicleYear.HasValue ? (object)newShuttle.VehicleYear.Value : DBNull.Value);
+        command.Parameters.AddWithValue("@Colour", string.IsNullOrWhiteSpace(newShuttle.Colour) ? (object)DBNull.Value : newShuttle.Colour);
         command.Parameters.AddWithValue("@Capacity", newShuttle.Capacity);
         command.Parameters.AddWithValue("@Status", string.IsNullOrEmpty(newShuttle.Status) ? "Active" : newShuttle.Status);
 
@@ -907,6 +912,8 @@ app.MapPut("/api/coordinator/shuttles/{id:int}", async (int id, ShuttleDto req, 
             SET driver_id = @DriverId,
                 model = @Name,
                 registration_number = @Plate,
+                vehicle_year = @Year,
+                colour = @Colour,
                 capacity = @Capacity,
                 status = @Status
             WHERE vehicle_id = @Id;";
@@ -916,6 +923,8 @@ app.MapPut("/api/coordinator/shuttles/{id:int}", async (int id, ShuttleDto req, 
         command.Parameters.AddWithValue("@DriverId", req.DriverId.HasValue ? (object)req.DriverId.Value : DBNull.Value);
         command.Parameters.AddWithValue("@Name", req.ShuttleName);
         command.Parameters.AddWithValue("@Plate", req.LicensePlate);
+        command.Parameters.AddWithValue("@Year", req.VehicleYear.HasValue ? (object)req.VehicleYear.Value : DBNull.Value);
+        command.Parameters.AddWithValue("@Colour", string.IsNullOrWhiteSpace(req.Colour) ? (object)DBNull.Value : req.Colour);
         command.Parameters.AddWithValue("@Capacity", req.Capacity);
         command.Parameters.AddWithValue("@Status", string.IsNullOrEmpty(req.Status) ? "Active" : req.Status);
 
@@ -1087,6 +1096,47 @@ app.MapGet("/api/coordinator/drivers/{id:int}", async (int id, IConfiguration co
 });
 
 
+// Returns the login password for a specific driver so the coordinator can view
+// it from the driver roster (Actions column).
+app.MapGet("/api/coordinator/drivers/{id:int}/password", async (int id, IConfiguration config) => {
+    string connectionString = config.GetConnectionString("DefaultConnection");
+
+    try
+    {
+        using var connection = new MySqlConnection(connectionString);
+        await connection.OpenAsync();
+
+        string query = @"
+            SELECT CONCAT(first_name, ' ', last_name) AS FullName, email, password
+            FROM driver
+            WHERE driver_id = @Id
+            LIMIT 1;";
+
+        using var command = new MySqlCommand(query, connection);
+        command.Parameters.AddWithValue("@Id", id);
+        using var reader = await command.ExecuteReaderAsync();
+
+        if (await reader.ReadAsync())
+        {
+            return Results.Ok(new
+            {
+                success = true,
+                fullName = reader["FullName"].ToString(),
+                email = reader["email"].ToString(),
+                password = reader["password"] != DBNull.Value ? reader["password"].ToString() : ""
+            });
+        }
+
+        return Results.NotFound(new { success = false, message = $"Driver #{id} not found." });
+    }
+    catch (Exception ex)
+    {
+        Console.WriteLine($"[API Error] Driver password lookup failed: {ex.Message}");
+        return Results.Json(new { success = false, message = ex.Message }, statusCode: 500);
+    }
+});
+
+
 app.MapPut("/api/coordinator/drivers/{id:int}", async (int id, DriverUpsertDto req, IConfiguration config) => {
     string connectionString = config.GetConnectionString("DefaultConnection");
 
@@ -1136,19 +1186,24 @@ app.MapPost("/api/coordinator/drivers", async (DriverUpsertDto req, IConfigurati
         string[] nameParts = req.FullName.Trim().Split(' ', 2);
         if (nameParts.Length > 1) { firstName = nameParts[0]; lastName = nameParts[1]; }
 
+        // Auto-generate a random password derived from the driver's full name and
+        // email, so every new driver gets a unique login credential.
+        string generatedPassword = PasswordHelper.GenerateDriverPassword(req.FullName, req.Email);
+
         string insertQuery = @"
             INSERT INTO driver (first_name, last_name, email, phone, role, is_verified, join_date, password, total_trips, status)
-            VALUES (@First, @Last, @Email, @Phone, 'SHUTTLE_DRIVER', 1, CURDATE(), 'Driver@GetYourRide2026', 0, @Status);";
+            VALUES (@First, @Last, @Email, @Phone, 'SHUTTLE_DRIVER', 1, CURDATE(), @Password, 0, @Status);";
 
         using var command = new MySqlCommand(insertQuery, connection);
         command.Parameters.AddWithValue("@First", firstName);
         command.Parameters.AddWithValue("@Last", lastName);
         command.Parameters.AddWithValue("@Email", req.Email);
         command.Parameters.AddWithValue("@Phone", string.IsNullOrEmpty(req.Phone) ? (object)DBNull.Value : req.Phone);
+        command.Parameters.AddWithValue("@Password", generatedPassword);
         command.Parameters.AddWithValue("@Status", string.IsNullOrEmpty(req.Status) ? "Active" : req.Status);
 
         await command.ExecuteNonQueryAsync();
-        return Results.Ok(new { success = true, message = "Driver added successfully." });
+        return Results.Ok(new { success = true, message = "Driver added successfully.", generatedPassword = generatedPassword });
     }
     catch (MySqlException ex) when (ex.Number == 1062)
     {
@@ -1832,7 +1887,7 @@ app.Run();
 public record LoginRequest(string Email, string Password);
 public record VerifyActionRequest(int DriverId);
 public record DynamicStatusUpdate(string Status);
-public record ShuttleDto(int? DriverId, string ShuttleName, string LicensePlate, int Capacity, string? Status);
+public record ShuttleDto(int? DriverId, string ShuttleName, string LicensePlate, int Capacity, string? Status, int? VehicleYear, string? Colour);
 public record DriverUpsertDto(string FullName, string Email, string? Phone, string? Status);
 public record ForgotPasswordRequest(string Email);
 public record ResetPasswordRequest(string Token, string NewPassword);
@@ -1845,4 +1900,59 @@ public class ScheduleDirectDto
     public string DepartureTime { get; set; } = "";
     public object? ShuttleID { get; set; }
     public int DriverID { get; set; }
+}
+
+
+// Generates a random login password for a newly added driver.
+// The password is derived from the driver's full name and email (so it is
+// personalised and recognisable) plus a random component (so it is unique and
+// not guessable). Result is always at least 6 characters long.
+public static class PasswordHelper
+{
+    private const string RandomChars = "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789";
+
+    // Target length for the generated password: at least 6, less than 8 characters.
+    private const int PasswordLength = 7;
+
+    public static string GenerateDriverPassword(string fullName, string email)
+    {
+        // Two letters from the first name, capitalised initial (e.g. "Si").
+        string firstName = (fullName ?? "").Trim();
+        int spaceIdx = firstName.IndexOf(' ');
+        if (spaceIdx > 0) firstName = firstName.Substring(0, spaceIdx);
+        firstName = new string(firstName.Where(char.IsLetter).ToArray());
+        if (firstName.Length == 0) firstName = "Dr";
+        string namePart = firstName.Length >= 2 ? firstName.Substring(0, 2) : firstName;
+        namePart = char.ToUpper(namePart[0]) + (namePart.Length > 1 ? namePart.Substring(1).ToLower() : "");
+
+        // Two letters from the email local-part (before the @), e.g. "si".
+        string emailLocal = (email ?? "").Trim();
+        int atIdx = emailLocal.IndexOf('@');
+        if (atIdx > 0) emailLocal = emailLocal.Substring(0, atIdx);
+        emailLocal = new string(emailLocal.Where(char.IsLetterOrDigit).ToArray());
+        string emailPart = emailLocal.Length >= 2 ? emailLocal.Substring(0, 2).ToLower() : emailLocal.ToLower();
+
+        // Fill the rest with random characters so the password stays unique/unguessable.
+        string prefix = namePart + emailPart;
+        if (prefix.Length > PasswordLength) prefix = prefix.Substring(0, PasswordLength);
+        int fillCount = PasswordLength - prefix.Length;
+        string randomFill = fillCount > 0 ? GenerateRandomString(fillCount) : "";
+
+        return prefix + randomFill;
+    }
+
+    private static string GenerateRandomString(int length)
+    {
+        var chars = new char[length];
+        for (int i = 0; i < length; i++)
+        {
+            chars[i] = RandomChars[GetRandomInt(RandomChars.Length)];
+        }
+        return new string(chars);
+    }
+
+    private static int GetRandomInt(int maxExclusive)
+    {
+        return System.Security.Cryptography.RandomNumberGenerator.GetInt32(maxExclusive);
+    }
 }

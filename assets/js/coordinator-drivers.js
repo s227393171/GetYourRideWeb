@@ -301,6 +301,7 @@ async function loadDriversTable() {
                 <td><span style="color:#475569;"><i class="fa-solid fa-bus"></i> ${displayShuttle}</span></td>
                 <td><span class="badge ${badgeClass}">${statusText}</span></td>
                 <td class="actions-cell">
+                    <button class="action-icon-btn" onclick="viewDriverPassword(${currentId})" title="View Password"><i class="fa-solid fa-key"></i></button>
                 <button class="action-icon-btn" onclick="openDriverEditModal(${currentId}, '${d.fullName}', '${displayStudentNum}', '${d.email}', '${displayPhone}', '${statusText}')" title="Edit Profile"><i class="fa-solid fa-pen"></i></button>
                     <button class="action-icon-btn" onclick="deleteDriverProfile(${currentId})" title="Delete Profile"><i class="fa-solid fa-trash"></i></button>
                 </td>
@@ -354,6 +355,27 @@ async function handleDriverFormSubmit(e) {
 
         if (response.ok) {
             document.getElementById("driverFormModal").style.display = "none";
+
+            // For newly added drivers, show the auto-generated login password so
+            // the coordinator can pass it on to the driver.
+            if (!isEditing) {
+                let generatedPassword = "";
+                try {
+                    const result = await response.json();
+                    generatedPassword = result?.generatedPassword || "";
+                } catch (_) { /* no body / not JSON */ }
+
+                if (generatedPassword) {
+                    await showAlertModal(
+                        `Driver <strong>${payload.fullName}</strong> was added successfully.<br><br>` +
+                        `Their temporary login password is:<br>` +
+                        `<div style="margin-top:8px; padding:10px 12px; background:#f1f5f9; border-radius:6px; font-family:monospace; font-size:1rem; font-weight:700; color:#0f172a; text-align:center; user-select:all;">${generatedPassword}</div>` +
+                        `<br><small>Share this with the driver. They can change it later.</small>`,
+                        { title: "Driver Added", tone: "info" }
+                    );
+                }
+            }
+
             loadDriversTable();
         } else {
             await showAlertModal("Error processing transaction request.", { title: "Request Failed", tone: "error" });
@@ -377,6 +399,35 @@ function openDriverEditModal(id, name, studentNum, email, phone, status) {
     }
     document.getElementById("modalDriverFormTitle").innerText = "Edit Driver Profile Details";
     document.getElementById("driverFormModal").style.display = "flex";
+}
+
+async function viewDriverPassword(id) {
+    try {
+        const response = await fetch(`${DRIVER_API_URL}/${id}/password`);
+        if (!response.ok) {
+            await showAlertModal("Could not retrieve the driver's password.", { title: "Lookup Failed", tone: "error" });
+            return;
+        }
+
+        const data = await response.json();
+        const password = data?.password || "";
+        const name = data?.fullName || "this driver";
+
+        if (!password) {
+            await showAlertModal(`No password is set for <strong>${name}</strong>.`, { title: "No Password", tone: "warn" });
+            return;
+        }
+
+        await showAlertModal(
+            `Login password for <strong>${name}</strong>:<br>` +
+            `<div style="margin-top:8px; padding:10px 12px; background:#f1f5f9; border-radius:6px; font-family:monospace; font-size:1rem; font-weight:700; color:#0f172a; text-align:center; user-select:all;">${password}</div>` +
+            `<br><small>Keep this confidential. Share it only with the driver.</small>`,
+            { title: "Driver Password", tone: "info" }
+        );
+    } catch (err) {
+        console.error(err);
+        await showAlertModal("Server communication fault error.", { title: "Connection Error", tone: "error" });
+    }
 }
 
 async function deleteDriverProfile(id) {
