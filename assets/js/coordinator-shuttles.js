@@ -136,7 +136,7 @@ async function loadShuttleFleet() {
         console.error("Error loading shuttle fleet:", err);
         const tableBody = document.getElementById("shuttleTableBody");
         if (tableBody) {
-            tableBody.innerHTML = `<tr><td colspan="5" style="text-align:center; padding:20px; color:#ef4444;"><i class="fa-solid fa-triangle-exclamation"></i> Unable to connect to backend server.</td></tr>`;
+            tableBody.innerHTML = `<tr><td colspan="6" style="text-align:center; padding:20px; color:#ef4444;"><i class="fa-solid fa-triangle-exclamation"></i> Unable to connect to backend server.</td></tr>`;
         }
         showToast("Failed to load the shuttle fleet from the server.", "error");
     }
@@ -149,7 +149,7 @@ function renderShuttleTable(shuttles) {
     tableBody.innerHTML = "";
 
     if (!shuttles || shuttles.length === 0) {
-        tableBody.innerHTML = `<tr><td colspan="5" style="text-align:center; padding:30px; color:#64748b;">No shuttles registered in the fleet.</td></tr>`;
+        tableBody.innerHTML = `<tr><td colspan="6" style="text-align:center; padding:30px; color:#64748b;">No shuttles registered in the fleet.</td></tr>`;
         return;
     }
 
@@ -160,6 +160,8 @@ function renderShuttleTable(shuttles) {
         const capacity = s.capacity ?? 0;
         const status = s.status || "Active";
         const driverName = s.driverName || "Unassigned";
+        const year = s.vehicleYear || "—";
+        const colour = s.colour || "—";
 
         let badgeClass = "badge-active";
         if (status.toLowerCase() === "maintenance") badgeClass = "badge-break";
@@ -169,6 +171,7 @@ function renderShuttleTable(shuttles) {
         row.innerHTML = `
             <td><strong>${name}</strong><br><small style="color:#64748b;">${driverName}</small></td>
             <td><code style="background:#f1f5f9; padding:4px 8px; border-radius:4px; font-weight:600;">${plate}</code></td>
+            <td>${year} &middot; ${colour}</td>
             <td>${capacity} seats</td>
             <td><span class="badge ${badgeClass}">${status}</span></td>
             <td class="actions-cell">
@@ -235,6 +238,8 @@ function openEditModal(id) {
     if (document.getElementById("formName")) document.getElementById("formName").value = shuttle.shuttleName || "";
     if (document.getElementById("formPlate")) document.getElementById("formPlate").value = shuttle.licensePlate || "";
     if (document.getElementById("formCapacity")) document.getElementById("formCapacity").value = shuttle.capacity ?? "";
+    if (document.getElementById("formYear")) document.getElementById("formYear").value = shuttle.vehicleYear ?? "";
+    if (document.getElementById("formColour")) document.getElementById("formColour").value = shuttle.colour ?? "";
     if (document.getElementById("formDriver")) document.getElementById("formDriver").value = shuttle.driverId ?? "";
     if (document.getElementById("formStatus")) document.getElementById("formStatus").value = shuttle.status || "Active";
 
@@ -256,11 +261,16 @@ async function saveShuttleForm(e) {
 
     const driverVal = document.getElementById("formDriver").value;
 
+    const yearVal = document.getElementById("formYear")?.value;
+    const colourVal = document.getElementById("formColour")?.value;
+
     const payload = {
         DriverId: driverVal ? parseInt(driverVal) : null,
         ShuttleName: document.getElementById("formName").value,
         LicensePlate: document.getElementById("formPlate").value,
         Capacity: parseInt(document.getElementById("formCapacity").value),
+        VehicleYear: yearVal ? parseInt(yearVal) : null,
+        Colour: colourVal || null,
         Status: document.getElementById("formStatus").value
     };
 
