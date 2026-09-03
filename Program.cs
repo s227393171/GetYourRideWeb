@@ -308,8 +308,7 @@ app.MapGet("/api/admin/applications", async (string? status, IConfiguration conf
                    da.ApplicationStatus,
                    d.is_verified
             FROM driverapplications da
-            LEFT JOIN users u ON da.UserID = u.UserID
-            LEFT JOIN driver d ON u.email = d.email
+            LEFT JOIN driver d ON da.driver_id = d.driver_id
         ";
 
         if (!string.IsNullOrWhiteSpace(status))
@@ -377,8 +376,7 @@ app.MapGet("/api/admin/applications/{applicationId:int}", async (int application
                    da.ApplicationStatus,
                    d.is_verified
             FROM driverapplications da
-            LEFT JOIN users u ON da.UserID = u.UserID
-            LEFT JOIN driver d ON u.email = d.email
+            LEFT JOIN driver d ON da.driver_id = d.driver_id
             WHERE da.ApplicationID = @AppId
             LIMIT 1;";
 
@@ -431,8 +429,7 @@ app.MapPut("/api/admin/applications/{applicationId:int}/approve", async (int app
         string lookup = @"
             SELECT d.driver_id
             FROM driverapplications da
-            LEFT JOIN users u ON da.UserID = u.UserID
-            LEFT JOIN driver d ON u.email = d.email
+            LEFT JOIN driver d ON da.driver_id = d.driver_id
             WHERE da.ApplicationID = @AppId
             LIMIT 1;";
 
@@ -492,8 +489,7 @@ app.MapPut("/api/admin/applications/{applicationId:int}/reject", async (int appl
         string lookup = @"
             SELECT d.driver_id
             FROM driverapplications da
-            LEFT JOIN users u ON da.UserID = u.UserID
-            LEFT JOIN driver d ON u.email = d.email
+            LEFT JOIN driver d ON da.driver_id = d.driver_id
             WHERE da.ApplicationID = @AppId
             LIMIT 1;";
 
