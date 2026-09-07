@@ -791,3 +791,302 @@ body {
     .btn-submit:hover {
         background: #c2410c;
     }
+
+/* Sidebar profile footer + dropdown (ported from driver-dashboard.css so the
+   coordinator page no longer needs to load that stylesheet, which was locking
+   the page height with body { height:100vh; overflow:hidden } and blocking scroll). */
+.sidebar-profile-footer {
+    padding: 16px;
+    border-top: 1px solid #1e293b;
+    position: relative;
+}
+
+.profile-trigger-area {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    cursor: pointer;
+    padding: 8px;
+    border-radius: 6px;
+    transition: background 0.2s ease;
+}
+
+    .profile-trigger-area:hover {
+        background-color: #1e293b;
+    }
+
+.profile-info-text {
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+.user-display-name {
+    font-size: 13px;
+    font-weight: 600;
+    color: #ffffff;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+    overflow: hidden;
+}
+
+.user-display-email {
+    font-size: 11px;
+    color: #94a3b8;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+    overflow: hidden;
+}
+
+.profile-dropdown-menu {
+    position: absolute;
+    bottom: 75px;
+    left: 16px;
+    right: 16px;
+    background-color: #ffffff;
+    border-radius: 8px;
+    box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.15), 0 4px 6px rgba(0, 0, 0, 0.05);
+    display: none;
+    flex-direction: column;
+    z-index: 100;
+    overflow: hidden;
+    border: 1px solid #f1f5f9;
+}
+
+    .profile-dropdown-menu.show {
+        display: flex;
+    }
+
+.dropdown-link {
+    padding: 12px 16px;
+    font-size: 13px;
+    color: #334155;
+    text-decoration: none;
+    transition: background 0.15s ease;
+}
+
+    .dropdown-link:hover {
+        background-color: #f8fafc;
+    }
+
+.dropdown-divider {
+    margin: 0;
+    border: 0;
+    border-top: 1px solid #f1f5f9;
+}
+
+.logout-action {
+    color: #ef4444;
+    font-weight: 600;
+}
+
+/* Modal + navbar styles ported from driver-dashboard.css.
+   The coordinator pages use these classes (profile-modal-overlay/-card,
+   close-modal-btn, portal-badge, top-logout-btn, avatar-placeholder) but no
+   longer load driver-dashboard.css. Without these rules the modals lost their
+   display:none default and rendered inline on the page. */
+.profile-modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: rgba(15, 23, 42, 0.6);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+}
+
+    .profile-modal-overlay.active {
+        display: flex;
+    }
+
+.profile-modal-card {
+    background: #ffffff;
+    padding: 24px;
+    border-radius: 12px;
+    width: 100%;
+    max-width: 400px;
+    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+}
+
+    .profile-modal-card h3 {
+        margin-top: 0;
+        color: #0f172a;
+        border-bottom: 1px solid #f1f5f9;
+        padding-bottom: 12px;
+    }
+
+.modal-body-content p {
+    font-size: 14px;
+    color: #334155;
+    margin: 12px 0;
+}
+
+.close-modal-btn {
+    width: 100%;
+    padding: 10px;
+    background-color: #111625;
+    color: #ffffff;
+    border: none;
+    border-radius: 6px;
+    font-weight: 600;
+    cursor: pointer;
+    margin-top: 16px;
+}
+
+    .close-modal-btn:hover {
+        background-color: #1e2538;
+    }
+
+.portal-badge {
+    font-weight: 600;
+    font-size: 14px;
+    color: #334155;
+}
+
+.top-logout-btn {
+    background-color: #fee2e2;
+    color: #b91c1c;
+    border: 1px solid #fca5a5;
+    padding: 8px 16px;
+    border-radius: 6px;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    transition: all 0.2s ease;
+}
+
+    .top-logout-btn:hover {
+        background-color: #fca5a5;
+        color: #991b1b;
+        box-shadow: 0 2px 4px rgba(239, 68, 68, 0.1);
+    }
+
+.avatar-placeholder {
+    width: 32px;
+    height: 32px;
+    background-color: #cbd5e1;
+    border-radius: 50%;
+    flex-shrink: 0;
+}
+
+/* ============================================================
+   RESPONSIVE LAYER
+   The coordinator layout used fixed widths (260px sidebar,
+   4/3-column grids, fixed padding) and had no media queries,
+   so it only fit when the browser was zoomed out. These
+   breakpoints let it adapt to normal laptop, tablet and phone
+   widths.
+   ============================================================ */
+
+/* Large laptops / smaller desktops: tighten padding, drop grids a column */
+@media (max-width: 1200px) {
+    .content-body {
+        padding: 28px 28px;
+    }
+
+    .metrics-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+
+    .use-case-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+/* Tablets: collapse the sidebar to a slim icon rail so content gets room */
+@media (max-width: 992px) {
+    .sidebar {
+        width: 74px;
+        padding: 20px 10px;
+        align-items: center;
+    }
+
+        .sidebar .brand h1,
+        .sidebar .brand span {
+            display: none;
+        }
+
+        .sidebar .brand {
+            padding-bottom: 12px;
+            margin-bottom: 12px;
+            text-align: center;
+            width: 100%;
+        }
+
+        .sidebar .brand::after {
+            content: "GYR";
+            font-weight: 800;
+            font-size: 0.85rem;
+            color: #ffffff;
+            letter-spacing: 1px;
+        }
+
+    .menu-item {
+        justify-content: center;
+        padding: 12px 0;
+        font-size: 0; /* hide label text, keep the icon */
+    }
+
+        .menu-item i {
+            font-size: 1.1rem;
+        }
+
+    /* profile footer + dropdown don't fit in a 74px rail; hide on this width */
+    .sidebar-profile-footer {
+        display: none;
+    }
+
+    .main-content {
+        margin-left: 74px;
+    }
+
+    .use-case-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+/* Phones / very narrow: single column, full-width content, wrap navbar */
+@media (max-width: 768px) {
+    .content-body {
+        padding: 20px 16px;
+    }
+
+    .metrics-grid,
+    .use-case-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .top-navbar {
+        height: auto;
+        padding: 12px 16px;
+        flex-wrap: wrap;
+        gap: 10px;
+    }
+
+    .top-navbar-right {
+        gap: 10px;
+        flex-wrap: wrap;
+    }
+
+    .view-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 12px;
+    }
+
+    /* let tables scroll sideways instead of overflowing the screen */
+    .table-card {
+        overflow-x: auto;
+    }
+
+    .data-table,
+    .scheduler-table {
+        min-width: 640px;
+    }
+}
