@@ -121,6 +121,37 @@
                         </tr>
                     </tbody>
                 </table>
+                <div id="verificationShowMoreWrap" style="text-align:center; padding:14px; display:none;">
+                    <button id="verificationShowMoreBtn" onclick="togglePendingList()" style="background:#f8fafc; border:1px solid #cbd5e1; color:#334155; font-weight:600; font-size:13px; padding:8px 18px; border-radius:8px; cursor:pointer;">Show more</button>
+                </div>
+            </div>
+
+            <div class="view-header" style="margin-top:32px;">
+                <div>
+                    <h2>Verified Student Drivers</h2>
+                    <p class="subtitle">Student drivers whose credentials have been approved.</p>
+                </div>
+            </div>
+
+            <div class="table-card">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Driver Name</th>
+                            <th>Student ID</th>
+                            <th>Contact Email</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody id="verifiedTableBody">
+                        <tr>
+                            <td colspan="4" style="text-align: center; color: var(--text-muted); padding: 20px;">Loading verified drivers...</td>
+                        </tr>
+                    </tbody>
+                </table>
+                <div id="verifiedShowMoreWrap" style="text-align:center; padding:14px; display:none;">
+                    <button id="verifiedShowMoreBtn" onclick="toggleVerifiedList()" style="background:#f8fafc; border:1px solid #cbd5e1; color:#334155; font-weight:600; font-size:13px; padding:8px 18px; border-radius:8px; cursor:pointer;">Show more</button>
+                </div>
             </div>
         </div>
     </div>
