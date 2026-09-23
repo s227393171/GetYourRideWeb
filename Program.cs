@@ -282,6 +282,51 @@ app.MapGet("/api/admin/unverified-drivers", async (IConfiguration config) => {
     return Results.Ok(unverified);
 });
 
+// Admin: List student drivers that have been verified (is_verified = 1 and role = STUDENT_DRIVER)
+app.MapGet("/api/admin/verified-student-drivers", async (IConfiguration config) => {
+    string connectionString = config.GetConnectionString("DefaultConnection");
+    var verified = new List<object>();
+
+    try
+    {
+        using var connection = new MySqlConnection(connectionString);
+        await connection.OpenAsync();
+
+        string query = @"
+            SELECT d.driver_id,
+                   CONCAT(d.first_name, ' ', d.last_name) AS FullName,
+                   d.email,
+                   d.phone,
+                   COALESCE(NULLIF(s.student_number, 'undefined'), CONCAT('DRV-', d.driver_id)) AS display_id
+            FROM driver d
+            LEFT JOIN student s ON d.email = s.email
+            WHERE d.is_verified = 1 AND d.role = 'STUDENT_DRIVER'
+            ORDER BY d.driver_id DESC;";
+
+        using var command = new MySqlCommand(query, connection);
+        using var reader = await command.ExecuteReaderAsync();
+
+        while (await reader.ReadAsync())
+        {
+            verified.Add(new
+            {
+                driverId = Convert.ToInt32(reader["driver_id"]),
+                fullName = reader["FullName"].ToString(),
+                email = reader["email"].ToString(),
+                studentNumber = reader["display_id"].ToString(),
+                phone = reader["phone"] != DBNull.Value ? reader["phone"].ToString() : "N/A"
+            });
+        }
+    }
+    catch (Exception ex)
+    {
+        Console.WriteLine($"[API Error] Verified student drivers lookup failed: {ex.Message}");
+        return Results.Json(new { error = ex.Message }, statusCode: 500);
+    }
+
+    return Results.Ok(verified);
+});
+
 // Admin: List all driver applications (optionally filtered by status)
 app.MapGet("/api/admin/applications", async (string? status, IConfiguration config) =>
 {
