@@ -4,28 +4,68 @@
     <meta charset="UTF-8">
     <title>GetYourRide - Login</title>
 
-    <link rel="stylesheet" href="/assets/css/styles.css">
 </head>
 <body>
+    <link rel="stylesheet" href="/assets/css/admin-dashboard.css">
+    <link rel="stylesheet" href="/assets/css/login.css">
 
-    <div class="login-container">
-      
-        <img src="/assets/img/logo.png" alt="GetYourRide Logo" class="logo">
+    <div class="login-split">
+        <aside class="brand-panel">
+            <div class="brand-inner">
+                <div class="brand-top">
+                    <div class="brand-logo-tile">
+                        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 17H3v-4l2-5h11l4 5v4h-2"></path><circle cx="7.5" cy="17.5" r="1.5"></circle><circle cx="17.5" cy="17.5" r="1.5"></circle><path d="M9 17h6"></path></svg>
+                    </div>
+                    <div class="brand-text">
+                        <h1>GetYourRide</h1>
+                        <span>UNIVERSITY ADMIN PORTAL</span>
+                    </div>
+                </div>
 
-        <h1>GetYourRide</h1>
-        <p class="tagline">Reliable campus mobility for everyone</p>
+                <h2 class="brand-headline">Manage campus mobility<br>from one place.</h2>
+                <p class="brand-desc">Review driver applications, monitor trips, and keep ratings honest—all in a single dashboard built for university admins.</p>
 
-        <form id="loginForm">
-            <input type="email" id="email" placeholder="Email" required>
-            <input type="password" id="password" placeholder="Password" required>
-            <button type="submit">Login</button>
-        </form>
+                <div class="brand-stats">
+                    <div class="stat-item"><div class="stat-val" id="statActive">—</div><div class="stat-label">Active drivers</div></div>
+                    <div class="stat-item"><div class="stat-val" id="statPending">—</div><div class="stat-label">Pending review</div></div>
+                    <div class="stat-item"><div class="stat-val" id="statAvg">—</div><div class="stat-label">Avg rating</div></div>
+                </div>
 
-        <p id="errorMessage"></p>
+                <footer class="brand-foot">© 2026 GetYourRide — Nelson Mandela University</footer>
+            </div>
+        </aside>
 
-        <a href="Forgot.html" class="link">Forgot Password?</a>
+        <main class="form-panel">
+            <div class="form-content">
+                <form id="loginForm" novalidate>
+                    <h3>Welcome back</h3>
+                    <p class="sub">Sign in to manage drivers and monitor activity.</p>
+
+                    <label for="email">Email</label>
+                    <input type="email" id="email" name="email" placeholder="you@university.edu" required autocomplete="username">
+
+                    <label for="password">Password</label>
+                    <div class="pwd-row">
+                        <input type="password" id="password" name="password" placeholder="Password" required autocomplete="current-password">
+                        <button type="button" class="pwd-show" id="pwdShow" aria-pressed="false">Show</button>
+                    </div>
+
+                    <div class="form-meta">
+                        <label class="remember"><input type="checkbox" id="remember"> Remember me</label>
+                        <a href="Forgot.html" class="forgot">Forgot password?</a>
+                    </div>
+
+                    <button type="submit" class="btn-primary">Log in</button>
+
+                    <!-- SSO and related contact line removed as requested -->
+                </form>
+
+                <p id="errorMessage" class="form-error"></p>
+            </div>
+        </main>
     </div>
 
     <script src="/assets/js/login.js"></script>
+    <script src="/assets/js/login-ui.js"></script>
 </body>
 </html>

@@ -242,18 +242,76 @@ async function loadApplicationProfile(studentId) {
         document.getElementById("lblColor").textContent = data.vehicleColor;
 
        
+        // Document: Driver's License
+        const licenseContainer = document.getElementById("imgLicense")?.parentElement;
+        const licenseLink = document.getElementById("linkLicenseFull");
         if (data.licenseImagePath) {
-            document.getElementById("imgLicense").src = data.licenseImagePath;
-            document.getElementById("linkLicenseFull").href = data.licenseImagePath;
+            if (licenseContainer) {
+                licenseContainer.innerHTML = `<img id="imgLicense" src="${data.licenseImagePath}" alt="Driver's License">`;
+            }
+            if (licenseLink) {
+                licenseLink.href = data.licenseImagePath;
+                licenseLink.classList.remove('doc-link--disabled');
+                licenseLink.removeAttribute('aria-disabled');
+            }
+        } else {
+            // show empty state and disable link
+            if (licenseContainer) {
+                licenseContainer.innerHTML = `
+                    <div style="display:flex; flex-direction:column; align-items:center; gap:8px; color:#94a3b8;">
+                        <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"></rect><path d="M7 9h10M7 13h6"></path></svg>
+                        <div style="font-weight:600;">No document uploaded</div>
+                    </div>
+                `;
+            }
+            if (licenseLink) {
+                licenseLink.removeAttribute('href');
+                licenseLink.classList.add('doc-link--disabled');
+                licenseLink.setAttribute('aria-disabled', 'true');
+            }
         }
+
+        // Document: Vehicle Registration
+        const regContainer = document.getElementById("imgRegistration")?.parentElement;
+        const regLink = document.getElementById("linkRegFull");
         if (data.registrationFilePath) {
-            document.getElementById("imgRegistration").src = data.registrationFilePath;
-            document.getElementById("linkRegFull").href = data.registrationFilePath;
+            if (regContainer) {
+                regContainer.innerHTML = `<img id="imgRegistration" src="${data.registrationFilePath}" alt="Vehicle Registration">`;
+            }
+            if (regLink) {
+                regLink.href = data.registrationFilePath;
+                regLink.classList.remove('doc-link--disabled');
+                regLink.removeAttribute('aria-disabled');
+            }
+        } else {
+            if (regContainer) {
+                regContainer.innerHTML = `
+                    <div style="display:flex; flex-direction:column; align-items:center; gap:8px; color:#94a3b8;">
+                        <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"></rect><path d="M7 9h10M7 13h6"></path></svg>
+                        <div style="font-weight:600;">No document uploaded</div>
+                    </div>
+                `;
+            }
+            if (regLink) {
+                regLink.removeAttribute('href');
+                regLink.classList.add('doc-link--disabled');
+                regLink.setAttribute('aria-disabled', 'true');
+            }
         }
 
         
-        if (data.applicationStatus) {
-            document.getElementById("applicationStatusLabel").textContent = data.applicationStatus.toUpperCase();
+        // Application status: show only when a final decision exists (not while pending)
+        const statusLabel = document.getElementById("applicationStatusLabel");
+        if (statusLabel) {
+            const statusVal = (data.applicationStatus || "").toString().trim();
+            const lower = statusVal.toLowerCase();
+            const isPending = lower === "pending" || lower === "pending review" || lower === "pending_review" || lower === "";
+            if (isPending) {
+                statusLabel.style.display = 'none';
+            } else {
+                statusLabel.style.display = '';
+                statusLabel.textContent = statusVal.toUpperCase();
+            }
         }
 
         

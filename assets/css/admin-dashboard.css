@@ -1630,3 +1630,98 @@ body.dark-mode {
         color: #0f172a;
         box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
     }
+
+/* === Admin UI enhancements (spacing, focus, accessibility) === */
+
+/* Note: original .content-body padding and width are retained earlier in the file.
+   Removed the max-width and side padding to preserve the original content sizing per request. */
+
+/* Slightly larger headings for better hierarchy without changing colors */
+.content-body h1, .content-body h2, .content-body h3 {
+    line-height: 1.15;
+}
+
+/* Card focus and hover affordances */
+.metric-card, .dash-stat-card, .action-card, .table-card, .modal-card {
+    transition: transform 0.16s ease, box-shadow 0.16s ease;
+}
+
+.metric-card:focus, .metric-card:hover,
+.dash-stat-card:focus, .dash-stat-card:hover,
+.action-card:focus, .action-card:hover,
+.table-card:focus {
+    transform: translateY(-4px);
+    box-shadow: 0 12px 30px -12px rgba(15,23,42,0.12);
+    outline: none;
+}
+
+/* Accessible focus ring for keyboard users (does not change color scheme) */
+:focus {
+    outline: 3px solid rgba(255, 122, 0, 0.12);
+    outline-offset: 3px;
+}
+
+/* Make action-card keyboard accessible look like a control */
+.action-card {
+    cursor: pointer;
+}
+
+/* Small utility for visually-hidden text for screen readers */
+.sr-only {
+    position: absolute !important;
+    width: 1px !important;
+    height: 1px !important;
+    padding: 0 !important;
+    margin: -1px !important;
+    overflow: hidden !important;
+    clip: rect(0, 0, 0, 0) !important;
+    white-space: nowrap !important; /* added line */
+    border: 0 !important;
+}
+
+/* Responsive: stack metric grid on small screens */
+@media (max-width: 900px) {
+    .metrics-grid {
+        flex-direction: column;
+    }
+
+    .search-bar {
+        width: 100%;
+        max-width: none;
+    }
+
+    .brand h1 {
+        font-size: 17px;
+    }
+}
+
+/* Lightweight skeleton loader to indicate loading states where needed */
+.skeleton {
+    background: linear-gradient(90deg, rgba(0,0,0,0.03) 25%, rgba(0,0,0,0.06) 37%, rgba(0,0,0,0.03) 63%);
+    background-size: 400% 100%;
+    animation: shimmer 1.2s linear infinite;
+    border-radius: 6px;
+}
+
+@keyframes shimmer {
+    0% { background-position: 100% 0 }
+    100% { background-position: -100% 0 }
+}
+
+/* Table improvements: row hover subtle lift */
+table.data-table tbody tr:hover {
+    background-color: #fbfdff;
+}
+
+/* ensure buttons remain recognizable and consistent spacing */
+.btn-action, .btn-primary, .top-logout-btn {
+    border-radius: 8px;
+}
+
+/* Small utility to centralize focusable card role visuals */
+.focusable-card:focus {
+    box-shadow: 0 8px 24px rgba(15,23,42,0.12);
+    transform: translateY(-3px);
+}
+
+/* end admin enhancements */

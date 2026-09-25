@@ -84,6 +84,14 @@
         text-decoration: underline;
     }
 
+.doc-link--disabled {
+    color: #94a3b8;
+    pointer-events: none;
+    text-decoration: none;
+    cursor: default;
+    opacity: 0.9;
+}
+
 .action-tray {
     display: flex;
     justify-content: flex-end;

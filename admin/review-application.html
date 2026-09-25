@@ -30,7 +30,7 @@
     </style>
 </head>
 <body>
-    <div class="sidebar">
+    <div class="sidebar" role="navigation" aria-label="Admin navigation">
         <div class="brand">
             <h1>GetYourRide</h1>
             <span>University Admin Portal</span>
@@ -96,9 +96,17 @@
         </div>
     </div>
 
-    <div class="main-content">
+    <div class="main-content" role="main" aria-label="Admin main content">
         <div class="top-navbar">
-            <div style="color: var(--text-muted); font-size: 0.9rem; font-weight: 600;">DRIVER VERIFICATION &gt; REVIEW PROFILE</div>
+            <div style="display:flex; align-items:center; gap:14px;">
+                <div style="color: var(--text-muted); font-size: 0.9rem; font-weight: 600; display:flex; align-items:center; gap:12px;">
+                    <a href="verify-drivers.html" style="color:var(--text-muted); text-decoration:none; font-weight:600; display:flex; align-items:center; gap:8px;">
+                        <svg class="icon-inline icon-sm" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
+                        <span style="font-weight:600;">Return to List</span>
+                    </a>
+                    <div>DRIVER VERIFICATION &gt; REVIEW PROFILE</div>
+                </div>
+            </div>
 
             <div class="top-navbar-right">
                 <div class="portal-badge">
@@ -117,7 +125,7 @@
                 <div>
                     <h2>Review Application</h2>
                 </div>
-                <span class="badge-pending" id="applicationStatusLabel">PENDING REVIEW</span>
+                <!-- status pill removed per request; status now shown via action buttons only -->
             </div>
 
             <div class="review-container">
@@ -190,10 +198,6 @@
             </div>
 
             <div class="action-tray">
-                <a href="verify-drivers.html" class="btn btn-secondary">
-                    <svg class="icon-inline icon-sm" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
-                    Return to List
-                </a>
                 <button class="btn btn-danger" onclick="updateApplicationStatus('Rejected')">
                     <svg class="icon-inline icon-sm" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
                     Reject Application
@@ -289,5 +293,6 @@
 
     <script src="../assets/js/admin-review.js"></script>
     <script src="../assets/js/admin-dropdown.js"></script>
+    <script src="../assets/js/admin-enhancements.js"></script>
 </body>
 </html>

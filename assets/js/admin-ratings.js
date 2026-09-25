@@ -8,11 +8,13 @@ async function loadDriverRatingsData() {
         const rawData = await response.json();
 
        
+        // Filter out student drivers/accounts. Do NOT exclude university domain emails (they may be valid drivers).
         globalDriversCached = (rawData || []).filter(driver => {
             const role = (driver.role || "").toUpperCase();
             const email = (driver.email || "").toLowerCase();
             if (role === "STUDENT_DRIVER" || role === "STUDENT") return false;
-            if (/^s\d+@/i.test(email) || email.endsWith("@mandela.ac.za")) return false;
+            // keep drivers with university emails; only exclude accounts that look like student-number accounts (s12345@...)
+            if (/^s\d+@/i.test(email)) return false;
             return true;
         });
 

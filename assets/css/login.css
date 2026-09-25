@@ -1,0 +1,61 @@
+/* Login page styles matching the reference split-screen layout */
+/* Reuses variables from admin-dashboard.css where available */
+
+:root {
+    --login-left-bg: var(--bg-sidebar, #0f2540);
+    --login-right-bg: #f6f7fb;
+}
+
+.login-split {
+    display:flex; min-height:100vh; font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+}
+
+.brand-panel {
+    width:46%; background: var(--login-left-bg); color:#fff; padding:40px 48px; box-sizing:border-box; display:flex; align-items:flex-start;
+}
+.brand-inner { width:100%; }
+.brand-top { display:flex; align-items:center; gap:12px; margin-bottom:28px; }
+.brand-logo-tile { width:44px; height:44px; border-radius:10px; background:var(--primary-orange); display:flex; align-items:center; justify-content:center; }
+.brand-logo-tile svg { stroke:#fff; }
+.brand-text h1 { font-size:18px; margin:0; font-weight:700; }
+.brand-text span { font-size:11px; color:rgba(255,255,255,0.8); display:block; margin-top:4px; }
+
+.brand-headline { color:#fff; font-size:34px; line-height:1.05; margin-top:36px; margin-bottom:16px; font-weight:700; }
+.brand-desc { color:rgba(255,255,255,0.78); max-width:360px; margin-bottom:36px; }
+
+.brand-stats { display:flex; gap:36px; margin-top:20px; }
+.stat-item { text-align:left; }
+.stat-val { font-size:22px; font-weight:700; color:#fff; }
+.stat-label { font-size:12px; color:rgba(255,255,255,0.7); margin-top:6px; }
+
+.brand-foot { position:absolute; left:40px; bottom:20px; color:rgba(255,255,255,0.6); font-size:12px; }
+
+/* decorative soft orange glow bottom-right */
+.brand-panel::after { content:""; position:absolute; right:-120px; bottom:-80px; width:340px; height:340px; background: radial-gradient(circle at 70% 70%, rgba(255,122,0,0.18), rgba(255,122,0,0.06) 20%, transparent 60%); pointer-events:none; }
+
+.form-panel { flex:1; background:var(--login-right-bg); display:flex; align-items:flex-start; justify-content:flex-start; padding:0; box-sizing:border-box; }
+.form-content { padding-left:64px; padding-top:140px; width:100%; max-width:720px; }
+.form-content h3 { margin:0 0 8px 0; font-size:26px; color:var(--text-main, #0f172a); }
+.form-content .sub { margin:0 0 20px 0; color:var(--text-muted); max-width:520px; }
+
+.form-content form { background:transparent; padding:0; border-radius:0; box-shadow:none; border:none; width:480px; }
+.form-content label { display:block; font-size:14px; color:var(--text-muted); margin-bottom:8px; }
+.form-content input[type="email"], .form-content input[type="password"] { width:100%; padding:14px 16px; border-radius:8px; border:1px solid #e6e9ef; box-sizing:border-box; margin-bottom:16px; font-size:15px; background:#fbfcff; }
+.pwd-row { display:flex; gap:8px; align-items:center; }
+.pwd-row input { flex:1; }
+.pwd-show { background:transparent; border:none; color:var(--text-muted); cursor:pointer; font-weight:600; }
+.form-meta { display:flex; justify-content:space-between; align-items:center; margin-bottom:18px; }
+.remember { display:flex; align-items:center; gap:8px; color:var(--text-muted); }
+.forgot { color:var(--primary-orange); text-decoration:none; font-weight:600; }
+
+.btn-primary { width:100%; background:var(--primary-orange); color:#fff; border:none; padding:14px; border-radius:8px; font-weight:700; cursor:pointer; font-size:16px; }
+.btn-sso { width:100%; background:#fff; border:1px solid var(--border-color); padding:12px; border-radius:8px; margin-top:12px; }
+.or-row { text-align:center; color:var(--text-muted); margin:14px 0; }
+.form-error { color:#ef4444; min-height:18px; margin-top:8px; }
+
+/* Responsive: stack panels */
+@media (max-width: 900px) {
+    .login-split { flex-direction:column; }
+    .brand-panel { display:none; }
+    .form-panel { padding:24px; }
+}
