@@ -8,15 +8,8 @@ async function loadDriverRatingsData() {
         const rawData = await response.json();
 
        
-        // Filter out student drivers/accounts. Do NOT exclude university domain emails (they may be valid drivers).
-        globalDriversCached = (rawData || []).filter(driver => {
-            const role = (driver.role || "").toUpperCase();
-            const email = (driver.email || "").toLowerCase();
-            if (role === "STUDENT_DRIVER" || role === "STUDENT") return false;
-            // keep drivers with university emails; only exclude accounts that look like student-number accounts (s12345@...)
-            if (/^s\d+@/i.test(email)) return false;
-            return true;
-        });
+        // Load all drivers from the API (show every driver in the database)
+        globalDriversCached = rawData || [];
 
         renderRatingsTable(globalDriversCached);
         calculateSummaryMetrics(globalDriversCached);
@@ -59,7 +52,17 @@ function renderRatingsTable(driversList) {
 
         const safeName = name.replace(/'/g, "\\'");
 
-        let actionCellHtml = `<button class="btn-review-profile" onclick="openDriverDetailsModal(${driverId}, '${safeName}', '${displayId}', '${joinDate}')">View Details</button>`;
+        // role badge HTML
+        let roleLabel = 'Unknown';
+        const roleUpper = (role || '').toUpperCase();
+        if (roleUpper === 'SHUTTLE_DRIVER' || roleUpper === 'SHUTTLE') roleLabel = 'Shuttle Driver';
+        else if (roleUpper === 'STUDENT_DRIVER' || roleUpper === 'STUDENT') roleLabel = 'Student Driver';
+        else if (roleUpper) roleLabel = roleUpper.replace(/_/g, ' ').toLowerCase().replace(/(^|\s)\S/g, s => s.toUpperCase());
+
+        const roleBadgeHtml = `<span class="role-badge" style="margin-left:8px; background:#eef2ff; color:#334155; padding:4px 8px; border-radius:999px; font-weight:700; font-size:12px;">${roleLabel}</span>`;
+
+        // Navigate to dedicated driver details page instead of opening an in-page modal
+        let actionCellHtml = `<a class="btn-review-profile" href="driver-details.html?id=${driverId}">View Details</a>`;
         let flagAlertText = "";
 
         if (avgRating > 0 && avgRating < 3.0) {
@@ -74,7 +77,7 @@ function renderRatingsTable(driversList) {
                 <div class="recent-driver-cell">
                     <div class="recent-avatar">${initials}</div>
                     <div>
-                        <div class="recent-driver-name">${name}</div>
+                        <div class="recent-driver-name">${name}${roleBadgeHtml}</div>
                         <div class="recent-muted" style="font-size:11px;">Joined ${joinDate}</div>
                         ${flagAlertText}
                     </div>

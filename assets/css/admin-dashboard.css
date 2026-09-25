@@ -1,9 +1,10 @@
 ﻿
 :root {
-    --bg-sidebar: #1b2a5c;
+    /* Harmonized theme variables for Admin + Coordinator portals */
+    --bg-sidebar: #14213D; /* navy used across portals */
     --bg-sidebar-hover: #24356e;
     --bg-main: #f4f6fa;
-    --primary-orange: #ff7a00;
+    --primary-orange: #FF7A29; /* taxi orange mark */
     --text-main: #1e293b;
     --text-muted: #64748b;
     --border-color: #e2e8f0;

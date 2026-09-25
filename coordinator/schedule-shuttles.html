@@ -5,7 +5,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Coordinator Portal - Schedule Shuttles</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <link rel="stylesheet" href="../assets/css/admin-dashboard.css">
     <link rel="stylesheet" href="../assets/css/styles.css">
+    <link rel="stylesheet" href="../assets/css/admin-dashboard.css">
     <link rel="stylesheet" href="../assets/css/coordinator.css">
     <style>
         .main-content {
@@ -18,8 +20,13 @@
 <body>
     <div class="sidebar">
         <div class="brand">
-            <h1>GETYOURRIDE</h1>
-            <span>Shuttle Coordinator</span>
+            <div class="brand-logo-tile">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 17H3v-4l2-5h11l4 5v4h-2"></path><circle cx="7.5" cy="17.5" r="1.5"></circle><circle cx="17.5" cy="17.5" r="1.5"></circle><path d="M9 17h6"></path></svg>
+            </div>
+            <div class="brand-text">
+                <h1>GetYourRide</h1>
+                <span>Shuttle Coordinator</span>
+            </div>
         </div>
         <ul class="menu-list">
             <li><a href="dashboard.html" class="menu-item"><i class="fa-solid fa-clipboard-list"></i> Dashboard Hub</a></li>
@@ -40,7 +47,7 @@
                 
                 <div class="profile-trigger-area" id="profileTrigger" onclick="toggleProfileMenu()">
                     
-                    <div class="avatar-placeholder" style="display: flex; align-items: center; justify-content: center; background: #cbd5e1; color: #0f172a; font-weight: 700; font-size: 12px;">SC</div>
+                    <div class="avatar-placeholder">SC</div>
                     <div class="profile-info-text">
                       
                         <span class="user-display-name" id="coordinatorNameLabel">Loading profile...</span>

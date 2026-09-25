@@ -265,9 +265,14 @@ async function loadApplicationProfile(studentId) {
                 `;
             }
             if (licenseLink) {
+                // fully disable link: remove href, prevent pointer events, remove from tab order
                 licenseLink.removeAttribute('href');
                 licenseLink.classList.add('doc-link--disabled');
                 licenseLink.setAttribute('aria-disabled', 'true');
+                licenseLink.style.pointerEvents = 'none';
+                licenseLink.tabIndex = -1;
+                // ensure any click handlers are inert
+                licenseLink.onclick = (e) => { e.preventDefault(); };
             }
         }
 
@@ -296,6 +301,9 @@ async function loadApplicationProfile(studentId) {
                 regLink.removeAttribute('href');
                 regLink.classList.add('doc-link--disabled');
                 regLink.setAttribute('aria-disabled', 'true');
+                regLink.style.pointerEvents = 'none';
+                regLink.tabIndex = -1;
+                regLink.onclick = (e) => { e.preventDefault(); };
             }
         }
 

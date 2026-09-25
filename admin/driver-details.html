@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Portal - Driver Details</title>
+    <link rel="stylesheet" href="../assets/css/admin-dashboard.css">
+</head>
+<body>
+    <div class="sidebar" role="navigation" aria-label="Admin navigation">
+        <div class="brand">
+            <div class="brand-logo-tile">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 17H3v-4l2-5h11l4 5v4h-2"></path><circle cx="7.5" cy="17.5" r="1.5"></circle><circle cx="17.5" cy="17.5" r="1.5"></circle><path d="M9 17h6"></path></svg>
+            </div>
+            <div class="brand-text">
+                <h1>GetYourRide</h1>
+                <span>University Admin Portal</span>
+            </div>
+        </div>
+
+        <ul class="menu-list">
+            <li><a href="dashboard.html" class="menu-item">Dashboard</a></li>
+            <li><a href="verify-drivers.html" class="menu-item">Driver Verification</a></li>
+            <li><a href="driver-ratings.html" class="menu-item active">Driver Ratings</a></li>
+        </ul>
+
+        <div class="sidebar-spacer"></div>
+    </div>
+
+    <div class="main-content" role="main">
+        <div class="top-navbar">
+            <div class="search-box-wrapper">
+                <a href="driver-ratings.html" class="menu-item" style="background:transparent; padding:0; color:var(--text-muted); font-weight:600;">
+                    ← Return to Driver Ratings
+                </a>
+            </div>
+            <div class="top-navbar-right">
+                <div class="portal-badge">GetYourRide — Driver Details</div>
+            </div>
+        </div>
+
+        <div class="content-body">
+
+            <div class="view-header">
+                <div>
+                    <h2 id="driverName">Loading...</h2>
+                    <div class="subtitle" id="driverMeta">&nbsp;</div>
+                </div>
+                <div style="text-align:right;">
+                    <div id="avgRatingBadge" class="metric-value" style="background:#ffffff; border-radius:8px; padding:10px 14px; box-shadow:0 4px 12px rgba(0,0,0,0.04);">—</div>
+                </div>
+            </div>
+
+            <div style="display:flex; gap:20px; align-items:flex-start;">
+                <div style="flex:1;">
+                    <div class="metric-card" id="driverInfoCard">
+                        <h3 style="margin-top:0;">Driver & Vehicle Info</h3>
+                        <div style="display:flex; gap:40px; flex-wrap:wrap;">
+                            <div style="flex:1; min-width:220px;">
+                                <div style="font-size:12px; color:var(--text-muted); text-transform:uppercase; font-weight:700;">Contact number</div>
+                                <div id="contactNumber" style="font-weight:600; margin-top:6px;">—</div>
+
+                                <div style="margin-top:14px; font-size:12px; color:var(--text-muted); text-transform:uppercase; font-weight:700;">Vehicle</div>
+                                <div id="vehicleInfo" style="font-weight:600; margin-top:6px;">—</div>
+
+                                <div style="margin-top:14px; font-size:12px; color:var(--text-muted); text-transform:uppercase; font-weight:700;">Seating capacity</div>
+                                <div id="seatingCapacity" style="font-weight:600; margin-top:6px;">—</div>
+                            </div>
+                            <div style="flex:1; min-width:220px;">
+                                <div style="font-size:12px; color:var(--text-muted); text-transform:uppercase; font-weight:700;">Status</div>
+                                <div id="driverStatus" style="font-weight:600; margin-top:6px;">—</div>
+
+                                <div style="margin-top:14px; font-size:12px; color:var(--text-muted); text-transform:uppercase; font-weight:700;">Registration</div>
+                                <div id="registrationNumber" style="font-weight:600; margin-top:6px;">—</div>
+
+                                <div style="margin-top:14px; font-size:12px; color:var(--text-muted); text-transform:uppercase; font-weight:700;">Colour</div>
+                                <div id="vehicleColor" style="font-weight:600; margin-top:6px;">—</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div style="width:360px;">
+                    <div class="metric-card" id="documentsCard">
+                        <h3 style="margin-top:0;">Submitted Documents</h3>
+                        <div style="display:flex; gap:12px; margin-top:12px;">
+                            <div style="flex:1; border:1px solid var(--border-color); border-radius:8px; padding:12px; text-align:center;">
+                                <div style="font-size:12px; color:var(--text-muted); margin-bottom:8px;">Driver's License</div>
+                                <div id="licensePreview" style="height:80px; display:flex; align-items:center; justify-content:center;"></div>
+                                <div style="margin-top:8px;"><a id="licenseLink" class="doc-link" target="_blank" rel="noopener">View Full Document ↗</a></div>
+                            </div>
+                            <div style="flex:1; border:1px solid var(--border-color); border-radius:8px; padding:12px; text-align:center;">
+                                <div style="font-size:12px; color:var(--text-muted); margin-bottom:8px;">Vehicle Registration</div>
+                                <div id="regPreview" style="height:80px; display:flex; align-items:center; justify-content:center;"></div>
+                                <div style="margin-top:8px;"><a id="regLink" class="doc-link" target="_blank" rel="noopener">View Full Document ↗</a></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div style="margin-top:20px;">
+                <div class="metric-card">
+                    <h3 style="margin-top:0;">Trip History & Reviews</h3>
+                    <div id="tripsList" style="margin-top:12px;"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="../assets/js/driver-details.js"></script>
+</body>
+</html>

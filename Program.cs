@@ -207,8 +207,7 @@ app.MapGet("/api/admin/driver-ratings", async (IConfiguration config) => {
             LEFT JOIN trip t ON d.driver_id = t.driver_id
             LEFT JOIN trip_booking tb ON tb.trip_id = t.trip_id
             LEFT JOIN trip_review r ON r.booking_id = tb.booking_id
-            WHERE d.is_verified = 1 
-              AND (d.role = 'SHUTTLE_DRIVER' OR d.role IS NULL OR d.role != 'STUDENT_DRIVER')
+            WHERE d.is_verified = 1
             GROUP BY d.driver_id, d.first_name, d.last_name, d.email, d.role, d.join_date, s.student_number;";
 
         using var command = new MySqlCommand(query, connection);
@@ -629,12 +628,24 @@ app.MapGet("/api/admin/drivers/{driverId:int}", async (int driverId, IConfigurat
 
                 IFNULL(d.email, '') AS email,
 
+                d.role AS Role,
+
                 d.phone AS ContactNumber,
 
                 COALESCE(
                     NULLIF(s.student_number, 'undefined'),
                     CONCAT('DRV-', d.driver_id)
                 ) AS StudentNum,
+                (
+                    SELECT COUNT(DISTINCT t2.trip_id) FROM trip t2 WHERE t2.driver_id = d.driver_id
+                ) AS TotalTrips,
+                (
+                    SELECT COALESCE(AVG(r2.rating), 0.0)
+                    FROM trip t2
+                    LEFT JOIN trip_booking tb2 ON tb2.trip_id = t2.trip_id
+                    LEFT JOIN trip_review r2 ON r2.booking_id = tb2.booking_id
+                    WHERE t2.driver_id = d.driver_id
+                ) AS AvgRating,
 
                 -- VEHICLE INFORMATION
                 v.model AS VehicleMakeModel,
@@ -689,6 +700,7 @@ da.application_status AS ApplicationStatus
                 fullName = GetSafeString("FullName").Trim(),
 
                 email = GetSafeString("email"),
+                role = GetSafeString("Role"),
 
                 studentNumber = GetSafeString("StudentNum"),
 
@@ -711,6 +723,9 @@ da.application_status AS ApplicationStatus
                 registrationFilePath = GetSafeString("RegistrationFilePath"),
 
                 applicationStatus = GetSafeString("ApplicationStatus")
+                ,
+                totalTrips = reader["TotalTrips"] != DBNull.Value ? Convert.ToInt32(reader["TotalTrips"]) : 0,
+                averageRating = reader["AvgRating"] != DBNull.Value ? Math.Round(Convert.ToDouble(reader["AvgRating"]), 1) : 0.0
             });
         }
 
@@ -794,12 +809,18 @@ app.MapGet("/api/admin/drivers/{driverId:long}/trips", async (long driverId, ICo
         await connection.OpenAsync();
 
         string query = @"
-            SELECT t.trip_id, t.departure_stop, t.destination_stop, t.departure_time, t.status,
-                   r.rating, r.review
+            SELECT t.trip_id,
+                   t.departure_stop,
+                   t.destination_stop,
+                   t.departure_time,
+                   t.status,
+                   AVG(r.rating) AS avg_rating,
+                   GROUP_CONCAT(DISTINCT r.review SEPARATOR '|||') AS reviews
             FROM trip t
             LEFT JOIN trip_booking tb ON tb.trip_id = t.trip_id
             LEFT JOIN trip_review r ON r.booking_id = tb.booking_id
             WHERE t.driver_id = @DriverId
+            GROUP BY t.trip_id, t.departure_stop, t.destination_stop, t.departure_time, t.status
             ORDER BY t.departure_time DESC
             LIMIT 20;";
 
@@ -818,8 +839,8 @@ app.MapGet("/api/admin/drivers/{driverId:long}/trips", async (long driverId, ICo
                     ? Convert.ToDateTime(reader["departure_time"]).ToString("yyyy-MM-dd HH:mm")
                     : "",
                 status = reader["status"].ToString(),
-                rating = reader["rating"] != DBNull.Value ? Convert.ToInt32(reader["rating"]) : (int?)null,
-                review = reader["review"] != DBNull.Value ? reader["review"].ToString() : null
+                rating = reader["avg_rating"] != DBNull.Value ? (double?)Convert.ToDouble(reader["avg_rating"]) : (double?)null,
+                reviews = reader["reviews"] != DBNull.Value ? reader["reviews"].ToString() : null
             });
         }
     }
@@ -1279,7 +1300,6 @@ app.MapDelete("/api/coordinator/drivers/{id:int}", async (int id, IConfiguration
         using var connection = new MySqlConnection(connectionString);
         await connection.OpenAsync();
 
-       
         var registrationNumbers = new List<string>();
         string vehicleLookupQuery = "SELECT registration_number FROM vehicle WHERE driver_id = @Id;";
         using (var lookupCmd = new MySqlCommand(vehicleLookupQuery, connection))
@@ -1292,7 +1312,7 @@ app.MapDelete("/api/coordinator/drivers/{id:int}", async (int id, IConfiguration
             }
         }
 
-        
+        // 1) Clear trip rows (references driver_id and registration_number)
         string clearTripQuery = "DELETE FROM trip WHERE driver_id = @Id";
         if (registrationNumbers.Count > 0)
         {
@@ -1311,7 +1331,28 @@ app.MapDelete("/api/coordinator/drivers/{id:int}", async (int id, IConfiguration
             await clearTripCmd.ExecuteNonQueryAsync();
         }
 
-       
+        // ▼▼▼ MOVED UP — must run BEFORE the vehicle delete, since
+        // shuttle_assignment references vehicle.registration_number too ▼▼▼
+        string clearAssignmentsQuery = "DELETE FROM shuttle_assignment WHERE driver_id = @Id";
+        if (registrationNumbers.Count > 0)
+        {
+            var placeholders = string.Join(",", registrationNumbers.Select((_, i) => $"@AReg{i}"));
+            clearAssignmentsQuery += $" OR registration_number IN ({placeholders})";
+        }
+        clearAssignmentsQuery += ";";
+
+        using (var clearAssignmentsCmd = new MySqlCommand(clearAssignmentsQuery, connection))
+        {
+            clearAssignmentsCmd.Parameters.AddWithValue("@Id", id);
+            for (int i = 0; i < registrationNumbers.Count; i++)
+            {
+                clearAssignmentsCmd.Parameters.AddWithValue($"@AReg{i}", registrationNumbers[i]);
+            }
+            await clearAssignmentsCmd.ExecuteNonQueryAsync();
+        }
+        // ▲▲▲ END MOVED BLOCK ▲▲▲
+
+        // 2) Now safe to clear vehicle rows
         string clearVehicleQuery = "DELETE FROM vehicle WHERE driver_id = @Id;";
         using (var clearVehicleCmd = new MySqlCommand(clearVehicleQuery, connection))
         {
@@ -1335,7 +1376,6 @@ app.MapDelete("/api/coordinator/drivers/{id:int}", async (int id, IConfiguration
         return Results.Json(new { success = false, message = ex.Message }, statusCode: 500);
     }
 });
-
 
 app.MapGet("/api/coordinator/stops", async (IConfiguration config) => {
     string connectionString = config.GetConnectionString("DefaultConnection");
