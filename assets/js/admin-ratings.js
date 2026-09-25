@@ -50,6 +50,7 @@ function renderRatingsTable(driversList) {
 
         const name = driver.fullName || driver.driverName || "Unknown Driver";
         const displayId = driver.studentNumber || driver.idNumber || `DRV-${driver.driverId || driver.id}`;
+        const role = (driver.role || '').toUpperCase();
         const avgRating = parseFloat(driver.averageRating ?? driver.avgRating ?? 0);
         const trips = driver.totalTrips ?? driver.trips ?? 0;
         const totalRatings = driver.totalRatingsCount ?? driver.totalRatings ?? 0;
@@ -80,6 +81,7 @@ function renderRatingsTable(driversList) {
                 </div>
             </td>
             <td><span class="verify-student-num">${displayId}</span></td>
+            <!-- role column removed per undo request -->
             <td><span class="rating-highlight">${avgRating.toFixed(1)}</span> ${generateStarRatingHtml(avgRating)}</td>
             <td class="recent-muted">${trips.toLocaleString()}</td>
             <td class="recent-muted">${totalRatings.toLocaleString()}</td>
@@ -196,23 +198,75 @@ async function openDriverDetailsModal(driverId, name, displayId, joinDate) {
     modal.classList.add("show");
 
     try {
+        // Load driver profile (includes documents and vehicle info)
+        const profileResp = await fetch(`/api/admin/drivers/${driverId}`);
+        if (!profileResp.ok) throw new Error('Profile fetch failed');
+        const profile = await profileResp.json();
+
+        // Inject profile info into modal
+        document.getElementById('ddAvatar').innerText = (name.split(' ').map(p=>p[0]).join('').substring(0,2)).toUpperCase();
+        document.getElementById('ddModalMeta').innerText = `${displayId} · ${profile.email || ''}`;
+        document.getElementById('ddContact').innerText = profile.contactNumber || 'N/A';
+        document.getElementById('ddVehicle').innerText = profile.vehicleMakeModel || 'Unassigned';
+        document.getElementById('ddSeating').innerText = profile.seatingCapacity ? `${profile.seatingCapacity} Passengers` : 'N/A';
+        document.getElementById('ddStatus').innerText = profile.applicationStatus || 'Active';
+        document.getElementById('ddReg').innerText = profile.registrationNumber || 'N/A';
+        document.getElementById('ddColor').innerText = profile.vehicleColor || 'N/A';
+
+        // License preview/link
+        const licensePreview = document.getElementById('ddLicensePreview');
+        const licenseLink = document.getElementById('ddLicenseLink');
+        if (profile.licenseImagePath) {
+            licensePreview.innerHTML = `<img src="${profile.licenseImagePath}" alt="License" style="max-height:76px; max-width:100%; object-fit:contain;">`;
+            licenseLink.href = profile.licenseImagePath;
+            licenseLink.classList.remove('doc-link--disabled');
+            licenseLink.removeAttribute('aria-disabled');
+        } else {
+            licensePreview.innerHTML = `<div style="color:#94a3b8;"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="3" width="18" height="18" rx="2"></rect><path d="M7 9h10M7 13h6"></path></svg><div style="margin-top:6px; font-weight:600;">No document uploaded</div></div>`;
+            licenseLink.removeAttribute('href');
+            licenseLink.classList.add('doc-link--disabled');
+            licenseLink.setAttribute('aria-disabled','true');
+        }
+
+        // Registration preview/link
+        const regPreview = document.getElementById('ddRegPreview');
+        const regLink = document.getElementById('ddRegLink');
+        if (profile.registrationFilePath) {
+            regPreview.innerHTML = `<img src="${profile.registrationFilePath}" alt="Registration" style="max-height:76px; max-width:100%; object-fit:contain;">`;
+            regLink.href = profile.registrationFilePath;
+            regLink.classList.remove('doc-link--disabled');
+            regLink.removeAttribute('aria-disabled');
+        } else {
+            regPreview.innerHTML = `<div style="color:#94a3b8;"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="10"></circle><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"></path></svg><div style="margin-top:6px; font-weight:600;">No document uploaded</div></div>`;
+            regLink.removeAttribute('href');
+            regLink.classList.add('doc-link--disabled');
+            regLink.setAttribute('aria-disabled','true');
+        }
+
+        // Load trips
         const response = await fetch(`/api/admin/drivers/${driverId}/trips`);
         if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
         const trips = await response.json();
 
+        const tripsContainer = document.getElementById('ddTripsList');
         if (!trips || trips.length === 0) {
-            tbody.innerHTML = `<tr><td colspan="4" style="padding:12px; text-align:center; color:#64748b;">No trips found for this driver.</td></tr>`;
+            tripsContainer.innerHTML = `<div style="text-align:center; color:#64748b; padding:18px;">No trips found for this driver.</div>`;
             return;
         }
 
-        tbody.innerHTML = trips.map(t => `
-            <tr style="border-bottom:1px solid #f1f5f9;">
-                <td style="padding:8px;">${t.departureStop || t.route || 'Route'} ➔ ${t.destinationStop || ''}</td>
-                <td style="padding:8px;">${t.departureTime || t.date || 'N/A'}</td>
-                <td style="padding:8px;"><span class="badge">${t.status || 'SCHEDULED'}</span></td>
-                <td style="padding:8px;">${t.rating != null ? t.rating + " ★" : "—"}</td>
-            </tr>
-        `).join('');
+        tripsContainer.innerHTML = trips.map(t => {
+            const status = (t.status || 'SCHEDULED').toLowerCase();
+            const statusCls = status === 'completed' ? 'status-badge status-completed' : (status === 'cancelled' ? 'status-badge status-cancelled' : 'status-badge status-pending');
+            const ratingHtml = t.rating != null ? `<div style="color:#f59e0b; font-weight:700;">★ ${t.rating.toFixed(1)}</div><div style="font-style:italic; color:#334155;">"${t.review || ''}"</div>` : (status === 'cancelled' ? '<div style="color:#64748b;">No review — trip was cancelled</div>' : '<div style="color:#64748b;">Upcoming trip — not yet completed</div>');
+            return `
+                <tr style="border-bottom:1px solid #f1f5f9;">
+                    <td style="padding:8px;">${t.departureStop || t.route || 'Route'} ➔ ${t.destinationStop || ''}</td>
+                    <td style="padding:8px;">${t.departureTime || t.departure_time || t.date || 'N/A'}</td>
+                    <td style="padding:8px;"><span class="${statusCls}">${t.status || (status === 'completed' ? 'Completed' : 'Scheduled')}</span></td>
+                    <td style="padding:8px;">${t.rating != null ? t.rating + ' ★' : '—'}</td>
+                </tr>
+            `;
+        }).join('');
     } catch (err) {
         console.error("Error loading driver trips:", err);
         tbody.innerHTML = `<tr><td colspan="4" style="padding:12px; text-align:center; color:#ef4444;">⚠️ Unable to load trip history.</td></tr>`;

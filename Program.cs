@@ -216,7 +216,7 @@ app.MapGet("/api/admin/driver-ratings", async (IConfiguration config) => {
 
         while (await reader.ReadAsync())
         {
-            list.Add(new
+                list.Add(new
             {
                 driverId = Convert.ToInt32(reader["driver_id"]),
                 fullName = reader["full_name"].ToString(),
@@ -226,7 +226,8 @@ app.MapGet("/api/admin/driver-ratings", async (IConfiguration config) => {
                     : "Jan 2025",
                 totalTrips = Convert.ToInt32(reader["total_trips"]),
                 averageRating = Math.Round(Convert.ToDouble(reader["avg_rating"]), 1),
-                totalRatingsCount = Convert.ToInt32(reader["total_reviews"])
+                    totalRatingsCount = Convert.ToInt32(reader["total_reviews"]),
+                    role = reader["role"] != DBNull.Value ? reader["role"].ToString() : string.Empty
             });
         }
     }
@@ -1855,9 +1856,10 @@ app.MapGet("/api/admin/dashboard/summary", async (IConfiguration config) => {
         string query = @"
             SELECT
                 (SELECT COUNT(*) FROM driver WHERE is_verified = 0) AS PendingApplications,
-                (SELECT COUNT(*) FROM driver
-                    WHERE is_verified = 1
-                      AND (role = 'SHUTTLE_DRIVER' OR role IS NULL OR role != 'STUDENT_DRIVER')) AS ActiveDrivers,
+                -- Count all verified drivers. Previous logic attempted to filter by role
+                -- but the OR conditions produced unintended exclusions; count all
+                -- verified drivers to reflect 'Approved Drivers' accurately.
+                (SELECT COUNT(*) FROM driver WHERE is_verified = 1) AS ActiveDrivers,
                 (SELECT COALESCE(AVG(rating), 0.0) FROM trip_review) AS AverageRating,
                 (SELECT COUNT(*) FROM trip WHERE DATE(departure_time) = CURDATE()) AS TripsToday;";
 

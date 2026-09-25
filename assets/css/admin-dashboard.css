@@ -1432,6 +1432,8 @@ body.dark-mode {
     font-weight: 700 !important;
 }
 
+/* Removed role-badge styles during undo */
+
 /* Show more button polish */
 #verificationShowMoreBtn,
 #verifiedShowMoreBtn {
