@@ -175,8 +175,13 @@
 <body>
     <div class="sidebar">
         <div class="brand">
-            <h1>GetYourRide</h1>
-            <span>University Admin Portal</span>
+            <div class="brand-logo-tile">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 17H3v-4l2-5h11l4 5v4h-2"></path><circle cx="7.5" cy="17.5" r="1.5"></circle><circle cx="17.5" cy="17.5" r="1.5"></circle><path d="M9 17h6"></path></svg>
+            </div>
+            <div class="brand-text">
+                <h1>GetYourRide</h1>
+                <span>University Admin Portal</span>
+            </div>
         </div>
         <ul class="menu-list">
             <li>
@@ -243,11 +248,25 @@
 
     <div class="main-content">
         <div class="top-navbar">
-            <div class="search-box-wrapper"></div>
+            <div class="search-box-wrapper">
+                <div class="navbar-search">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+                    <input type="text" id="dashboardSearchInput" placeholder="Search drivers, logs, or status..." aria-label="Search" onkeyup="searchDashboardProfiles()">
+                </div>
+            </div>
 
             <div class="top-navbar-right">
+                <div class="navbar-icon-group">
+                    <span class="navbar-icon-btn" title="Settings" onclick="openSettingsModal()">
+                        <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
+                    </span>
+                    <span class="navbar-icon-btn" title="Support Help" onclick="openSupportModal()">
+                        <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"></path><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>
+                    </span>
+                </div>
+                <div class="navbar-divider"></div>
                 <div class="portal-badge">
-                    <span id="liveClock" style="font-family: monospace; font-weight: 700; color: #ff7a00; margin-right: 15px;">00:00:00</span>
+                    <span id="liveClock" style="font-family: monospace; font-weight: 700; color: #ff7a00; margin-right: 12px;">00:00:00</span>
                     Admin Portal
                 </div>
                 <button class="top-logout-btn" onclick="handleLogout()">
@@ -260,76 +279,91 @@
         <div class="content-body">
 
             
-            <div class="welcome-banner">
-                <div>
-                    <h2 id="greetingHeading">Welcome to the Admin Center</h2>
-                    <p>Select an operational dashboard control panel to view system tracking matrix loops.</p>
-                </div>
-                <div class="banner-date" id="bannerDate">Loading date...</div>
-            </div>
+            <h1 class="overview-title" id="greetingHeading">Overview Dashboard</h1>
+            <p class="overview-subtitle" id="bannerDate">Real-time driver activity and verification metrics.</p>
 
             
-            <div class="stats-row">
-                <div class="stat-card">
-                    <div class="stat-icon-badge" style="background:#fff7ed; color:#ff7a00;">
-                        <svg class="icon-inline" style="margin-right:0;" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2 3 6v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V6l-9-4z"></path></svg>
+            <div class="dash-stats-grid">
+                <div class="dash-stat-card">
+                    <div class="dash-stat-top">
+                        <div class="dash-stat-icon" style="background:#fff7ed; color:#ff7a00;">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
+                        </div>
+                        <span class="dash-stat-badge orange">Awaiting review</span>
                     </div>
                     <div>
-                        <div class="stat-label">Pending Applications</div>
-                        <div class="stat-value" id="statPendingApplications">—</div>
+                        <div class="dash-stat-label">Pending Verifications</div>
+                        <div class="dash-stat-value" id="statPendingApplications">—</div>
                     </div>
                 </div>
-                <div class="stat-card">
-                    <div class="stat-icon-badge" style="background:#eff6ff; color:#3b82f6;">
-                        <svg class="icon-inline" style="margin-right:0;" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
+                <div class="dash-stat-card">
+                    <div class="dash-stat-top">
+                        <div class="dash-stat-icon" style="background:#ecfdf5; color:#10b981;">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>
+                        </div>
+                        <span class="dash-stat-badge green">Active fleet</span>
                     </div>
                     <div>
-                        <div class="stat-label">Active Drivers</div>
-                        <div class="stat-value" id="statActiveDrivers">—</div>
+                        <div class="dash-stat-label">Approved Drivers</div>
+                        <div class="dash-stat-value" id="statActiveDrivers">—</div>
                     </div>
                 </div>
-                <div class="stat-card">
-                    <div class="stat-icon-badge" style="background:#fefce8; color:#ca8a04;">
-                        <svg class="icon-inline" style="margin-right:0;" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>
+                <div class="dash-stat-card">
+                    <div class="dash-stat-top">
+                        <div class="dash-stat-icon" style="background:#eff6ff; color:#3b82f6;">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="20" x2="12" y2="10"></line><line x1="18" y1="20" x2="18" y2="4"></line><line x1="6" y1="20" x2="6" y2="16"></line></svg>
+                        </div>
                     </div>
                     <div>
-                        <div class="stat-label">Average Fleet Rating</div>
-                        <div class="stat-value" id="statAverageRating">—</div>
+                        <div class="dash-stat-label">Trips Today</div>
+                        <div class="dash-stat-value" id="statTripsToday">—</div>
                     </div>
                 </div>
-                <div class="stat-card">
-                    <div class="stat-icon-badge" style="background:#f0fdf4; color:#22c55e;">
-                        <svg class="icon-inline" style="margin-right:0;" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="20" x2="12" y2="10"></line><line x1="18" y1="20" x2="18" y2="4"></line><line x1="6" y1="20" x2="6" y2="16"></line></svg>
+                <div class="dash-stat-card highlighted">
+                    <div class="dash-stat-top">
+                        <div class="dash-stat-icon">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="#f59e0b" stroke="#f59e0b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>
+                        </div>
+                        <div class="dash-stat-avatars">
+                            <span><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg></span>
+                            <span><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg></span>
+                        </div>
                     </div>
                     <div>
-                        <div class="stat-label">Trips Today</div>
-                        <div class="stat-value" id="statTripsToday">—</div>
+                        <div class="dash-stat-label">Average Driver Rating</div>
+                        <div class="dash-stat-value" id="statAverageRating">—</div>
                     </div>
                 </div>
             </div>
 
-            <div class="view-header">
-                <div>
-                    <h2 style="font-size:16px; color:#334155;">Quick Access</h2>
+            <div class="recent-panel">
+                <div class="recent-panel-header">
+                    <h3>Recent Driver Profiles</h3>
+                    <a href="verify-drivers.html" class="recent-view-all">
+                        View All Applications
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg>
+                    </a>
                 </div>
-            </div>
-
-            <div class="action-cards-grid">
-                <div class="action-card" onclick="window.location.href='verify-drivers.html'">
-                    <svg class="icon-inline action-arrow" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="7" y1="17" x2="17" y2="7"></line><polyline points="7 7 17 7 17 17"></polyline></svg>
-                    <div class="action-icon-badge" style="background:#eff6ff; color:#3b82f6;">
-                        <svg class="icon-inline icon-lg" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2 3 6v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V6l-9-4z"></path></svg>
-                    </div>
-                    <h3>Driver Verification Queue</h3>
-                    <p>Review incoming driver applications, verify student documentation, and approve system activation requests.</p>
-                </div>
-                <div class="action-card" onclick="window.location.href='driver-ratings.html'">
-                    <svg class="icon-inline action-arrow" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="7" y1="17" x2="17" y2="7"></line><polyline points="7 7 17 7 17 17"></polyline></svg>
-                    <div class="action-icon-badge" style="background:#fefce8; color:#ca8a04;">
-                        <svg class="icon-inline icon-lg" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>
-                    </div>
-                    <h3>Driver Performance &amp; Ratings</h3>
-                    <p>Track overall score stats, monitor completed transit counts, and evaluate driver feedback rules directly.</p>
+                <table class="recent-table">
+                    <thead>
+                        <tr>
+                            <th>Driver Name</th>
+                            <th>Student Number</th>
+                            <th>Submission Date</th>
+                            <th>Status</th>
+                            <th class="text-right">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="recentProfilesBody">
+                        <tr><td colspan="5" style="text-align:center; padding:30px; color:#64748b;">Loading recent applications...</td></tr>
+                    </tbody>
+                </table>
+                <div class="recent-panel-footer">
+                    <span class="recent-footer-text" id="recentFooterText">Loading...</span>
+                    <a href="verify-drivers.html" class="recent-view-all">
+                        View All Applications
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg>
+                    </a>
                 </div>
             </div>
         </div>

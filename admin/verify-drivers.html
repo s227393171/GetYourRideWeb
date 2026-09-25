@@ -5,7 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Admin Portal - Verify Drivers</title>
     <link rel="stylesheet" href="../assets/css/admin-dashboard.css">
-    <link rel="stylesheet" href="../assets/css/driver-dashboard.css">
     <style>
         .icon-inline {
             width: 16px;
@@ -19,8 +18,13 @@
 <body>
     <div class="sidebar">
         <div class="brand">
-            <h1>GetYourRide</h1>
-            <span>University Admin Portal</span>
+            <div class="brand-logo-tile">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 17H3v-4l2-5h11l4 5v4h-2"></path><circle cx="7.5" cy="17.5" r="1.5"></circle><circle cx="17.5" cy="17.5" r="1.5"></circle><path d="M9 17h6"></path></svg>
+            </div>
+            <div class="brand-text">
+                <h1>GetYourRide</h1>
+                <span>University Admin Portal</span>
+            </div>
         </div>
 
         <ul class="menu-list">
@@ -63,7 +67,9 @@
 
         <div class="sidebar-profile-footer">
             <div class="profile-trigger-area" onclick="toggleProfileMenu()">
-                <div class="avatar-placeholder"></div>
+                <div class="avatar-placeholder">
+                    <svg class="icon-inline" style="margin-right:0;" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
+                </div>
                 <div class="profile-info-text">
                     <span class="user-display-name" id="adminNameLabel">Loading profile...</span>
                     <span class="user-display-email" id="adminEmailLabel">connecting to database...</span>
@@ -86,71 +92,125 @@
 
     <div class="main-content">
         <div class="top-navbar">
-            <input type="text" class="search-bar" id="verifySearchInput" placeholder="Filter registration files..." onkeyup="searchUnverified()">
+            <div class="search-box-wrapper">
+                <div class="navbar-search">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+                    <input type="text" id="verifySearchInput" placeholder="Filter registration files..." aria-label="Search" onkeyup="searchUnverified()">
+                </div>
+            </div>
 
             <div class="top-navbar-right">
+                <div class="navbar-icon-group">
+                    <span class="navbar-icon-btn" title="Settings" onclick="openSettingsModal()">
+                        <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
+                    </span>
+                    <span class="navbar-icon-btn" title="Support Help" onclick="openSupportModal()">
+                        <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"></path><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>
+                    </span>
+                </div>
+                <div class="navbar-divider"></div>
                 <div class="portal-badge">
-                    <span id="liveClock" style="font-family: monospace; font-weight: 700; color: #ff7a00; margin-right: 15px;">00:00:00</span>
+                    <span id="liveClock" style="font-family: monospace; font-weight: 700; color: #ff7a00; margin-right: 12px;">00:00:00</span>
                     Admin Portal
                 </div>
-                <button class="top-logout-btn" onclick="handleLogout()"> Logout</button>
+                <button class="top-logout-btn" onclick="handleLogout()">
+                    <svg class="icon-inline icon-sm" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg>
+                    Logout
+                </button>
             </div>
         </div>
 
         <div class="content-body">
-            <div class="view-header">
+            <div class="verify-header-row">
                 <div>
+                    <h1 class="overview-title">Driver Verification</h1>
+                    <p class="overview-subtitle">Review and manage student driver applications for the campus shuttle service.</p>
+                </div>
+                <div class="filter-tabs" id="verifyFilterTabs">
+                    <button type="button" class="filter-tab active" data-filter="all" onclick="setVerifyFilter('all', this)">All</button>
+                    <button type="button" class="filter-tab" data-filter="pending" onclick="setVerifyFilter('pending', this)">Pending</button>
+                    <button type="button" class="filter-tab" data-filter="approved" onclick="setVerifyFilter('approved', this)">Approved</button>
+                    <button type="button" class="filter-tab" data-filter="rejected" onclick="setVerifyFilter('rejected', this)">Rejected</button>
+                </div>
+            </div>
+
+            <div class="dash-stats-grid" style="grid-template-columns: repeat(2, 1fr); max-width: 640px;">
+                <div class="dash-stat-card">
+                    <div class="dash-stat-top">
+                        <div class="dash-stat-icon" style="background:#fff7ed; color:#ff7a00;">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
+                        </div>
+                    </div>
+                    <div>
+                        <div class="dash-stat-label">Total Pending</div>
+                        <div class="dash-stat-value" id="statVerifyPending">—</div>
+                    </div>
+                </div>
+                <div class="dash-stat-card">
+                    <div class="dash-stat-top">
+                        <div class="dash-stat-icon" style="background:#ecfdf5; color:#10b981;">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>
+                        </div>
+                    </div>
+                    <div>
+                        <div class="dash-stat-label">Approved Drivers</div>
+                        <div class="dash-stat-value" id="statVerifyApproved">—</div>
+                    </div>
+                </div>
+            </div>
+
+            <div id="pendingGroup">
+                <div class="verify-section-head">
                     <h2>Verification Processing Pipeline</h2>
-                    <p class="subtitle">Review academic credentials and activate valid driver roles.</p>
+                    <p>Review academic credentials and activate valid driver roles.</p>
+                </div>
+
+                <div class="table-card">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Driver Name</th>
+                                <th>Student Number</th>
+                                <th>Status</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody id="verificationTableBody">
+                            <tr>
+                                <td colspan="4" style="text-align: center; color: var(--text-muted); padding: 20px;">Loading pending applications...</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                    <div id="verificationShowMoreWrap" style="text-align:center; padding:14px; display:none;">
+                        <button id="verificationShowMoreBtn" onclick="togglePendingList()" style="background:#f8fafc; border:1px solid #cbd5e1; color:#334155; font-weight:600; font-size:13px; padding:8px 18px; border-radius:8px; cursor:pointer;">Show more</button>
+                    </div>
                 </div>
             </div>
 
-            <div class="table-card">
-                <table>
-                    <thead>
-                        <tr>
-                            <th>Applicant Name</th>
-                            <th>Student ID </th>
-                            <th>Contact Email</th>
-                            <th>Verify</th>
-                        </tr>
-                    </thead>
-                    <tbody id="verificationTableBody">
-                        <tr>
-                            <td colspan="4" style="text-align: center; color: var(--text-muted); padding: 20px;">Streaming pending rows...</td>
-                        </tr>
-                    </tbody>
-                </table>
-                <div id="verificationShowMoreWrap" style="text-align:center; padding:14px; display:none;">
-                    <button id="verificationShowMoreBtn" onclick="togglePendingList()" style="background:#f8fafc; border:1px solid #cbd5e1; color:#334155; font-weight:600; font-size:13px; padding:8px 18px; border-radius:8px; cursor:pointer;">Show more</button>
-                </div>
-            </div>
-
-            <div class="view-header" style="margin-top:32px;">
-                <div>
+            <div id="verifiedGroup">
+                <div class="verify-section-head" style="margin-top:32px;">
                     <h2>Verified Student Drivers</h2>
-                    <p class="subtitle">Student drivers whose credentials have been approved.</p>
+                    <p>Student drivers whose credentials have been approved.</p>
                 </div>
-            </div>
 
-            <div class="table-card">
-                <table>
-                    <thead>
-                        <tr>
-                            <th>Driver Name</th>
-                            <th>Student ID</th>
-                            <th>Contact Email</th>
-                            <th>Status</th>
-                        </tr>
-                    </thead>
-                    <tbody id="verifiedTableBody">
-                        <tr>
-                            <td colspan="4" style="text-align: center; color: var(--text-muted); padding: 20px;">Loading verified drivers...</td>
-                        </tr>
-                    </tbody>
-                </table>
-                <div id="verifiedShowMoreWrap" style="text-align:center; padding:14px; display:none;">
-                    <button id="verifiedShowMoreBtn" onclick="toggleVerifiedList()" style="background:#f8fafc; border:1px solid #cbd5e1; color:#334155; font-weight:600; font-size:13px; padding:8px 18px; border-radius:8px; cursor:pointer;">Show more</button>
+                <div class="table-card">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Driver Name</th>
+                                <th>Student Number</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody id="verifiedTableBody">
+                            <tr>
+                                <td colspan="3" style="text-align: center; color: var(--text-muted); padding: 20px;">Loading verified drivers...</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                    <div id="verifiedShowMoreWrap" style="text-align:center; padding:14px; display:none;">
+                        <button id="verifiedShowMoreBtn" onclick="toggleVerifiedList()" style="background:#f8fafc; border:1px solid #cbd5e1; color:#334155; font-weight:600; font-size:13px; padding:8px 18px; border-radius:8px; cursor:pointer;">Show more</button>
+                    </div>
                 </div>
             </div>
         </div>

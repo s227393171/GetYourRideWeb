@@ -7,11 +7,20 @@ let cachedVerified = [];
 let pendingExpanded = false;
 let verifiedExpanded = false;
 
+// Visual helper — initials for the avatar circle (display only)
+function verifyInitials(name) {
+    if (!name) return '?';
+    const parts = name.trim().split(/\s+/);
+    return (parts[0][0] + (parts[1] ? parts[1][0] : '')).toUpperCase();
+}
+
 async function loadVerificationQueue() {
     try {
         const response = await fetch(UNVERIFIED_API);
         cachedUnverified = await response.json();
         renderVerificationTable(cachedUnverified);
+        const pendingStat = document.getElementById('statVerifyPending');
+        if (pendingStat) pendingStat.textContent = (cachedUnverified || []).length;
     } catch (err) {
         console.error(err);
         document.getElementById('verificationTableBody').innerHTML =
@@ -36,13 +45,19 @@ function renderVerificationTable(list) {
     visible.forEach(driver => {
         const row = document.createElement('tr');
         row.innerHTML = `
-            <td><strong>${driver.fullName}</strong></td>
-            <td><code style="background:#f1f5f9; padding:4px 8px; border-radius:4px; font-weight:600;">${driver.studentNumber}</code></td>
-            <td>${driver.email}</td>
             <td>
-                <a href="review-application.html?id=${driver.studentNumber}" class="btn-action verify-approve" style="display: inline-block; text-decoration: none; text-align: center;">
-                    Verify Profile
-                </a>
+                <div class="recent-driver-cell">
+                    <div class="recent-avatar">${verifyInitials(driver.fullName)}</div>
+                    <div>
+                        <div class="recent-driver-name">${driver.fullName}</div>
+                        <div class="recent-driver-email">${driver.email}</div>
+                    </div>
+                </div>
+            </td>
+            <td><span class="verify-student-num">${driver.studentNumber}</span></td>
+            <td><span class="status-pill pending">Pending</span></td>
+            <td class="recent-actions">
+                <a href="review-application.html?id=${driver.studentNumber}" class="btn-review-profile">Verify Profile</a>
             </td>
         `;
         tableBody.appendChild(row);
@@ -63,11 +78,39 @@ function togglePendingList() {
     renderVerificationTable(cachedUnverified);
 }
 
+// Filter tabs: show/hide the Pending and Verified sections
+function setVerifyFilter(filter, btnEl) {
+    document.querySelectorAll('#verifyFilterTabs .filter-tab').forEach(b => b.classList.remove('active'));
+    if (btnEl) btnEl.classList.add('active');
+
+    const pendingGroup = document.getElementById('pendingGroup');
+    const verifiedGroup = document.getElementById('verifiedGroup');
+    if (!pendingGroup || !verifiedGroup) return;
+
+    if (filter === 'pending') {
+        pendingGroup.style.display = '';
+        verifiedGroup.style.display = 'none';
+    } else if (filter === 'approved') {
+        pendingGroup.style.display = 'none';
+        verifiedGroup.style.display = '';
+    } else if (filter === 'rejected') {
+        // No rejected data source — hide both tables
+        pendingGroup.style.display = 'none';
+        verifiedGroup.style.display = 'none';
+    } else {
+        // all
+        pendingGroup.style.display = '';
+        verifiedGroup.style.display = '';
+    }
+}
+
 async function loadVerifiedStudents() {
     try {
         const response = await fetch(VERIFIED_STUDENTS_API);
         cachedVerified = await response.json();
         renderVerifiedTable(cachedVerified);
+        const approvedStat = document.getElementById('statVerifyApproved');
+        if (approvedStat) approvedStat.textContent = (cachedVerified || []).length;
     } catch (err) {
         console.error(err);
         document.getElementById('verifiedTableBody').innerHTML =
@@ -92,10 +135,17 @@ function renderVerifiedTable(list) {
     visible.forEach(driver => {
         const row = document.createElement('tr');
         row.innerHTML = `
-            <td><strong>${driver.fullName}</strong></td>
-            <td><code style="background:#f1f5f9; padding:4px 8px; border-radius:4px; font-weight:600;">${driver.studentNumber}</code></td>
-            <td>${driver.email}</td>
-            <td><span class="status-badge" style="background:#dcfce7; color:#166534; padding:4px 10px; border-radius:12px; font-size:12px; font-weight:600;">Verified</span></td>
+            <td>
+                <div class="recent-driver-cell">
+                    <div class="recent-avatar">${verifyInitials(driver.fullName)}</div>
+                    <div>
+                        <div class="recent-driver-name">${driver.fullName}</div>
+                        <div class="recent-driver-email">${driver.email}</div>
+                    </div>
+                </div>
+            </td>
+            <td><span class="verify-student-num">${driver.studentNumber}</span></td>
+            <td><span class="status-pill approved">Verified</span></td>
         `;
         tableBody.appendChild(row);
     });
@@ -149,10 +199,18 @@ function searchUnverified() {
         filtered.forEach(driver => {
             const row = document.createElement('tr');
             row.innerHTML = `
-                <td><strong>${driver.fullName}</strong></td>
-                <td><code style="background:#f1f5f9; padding:4px 8px; border-radius:4px; font-weight:600;">${driver.studentNumber}</code></td>
-                <td>${driver.email}</td>
-                <td><a href="review-application.html?id=${driver.studentNumber}" class="btn-action verify-approve" style="display:inline-block; text-decoration:none; text-align:center;">Verify Profile</a></td>
+                <td>
+                    <div class="recent-driver-cell">
+                        <div class="recent-avatar">${verifyInitials(driver.fullName)}</div>
+                        <div>
+                            <div class="recent-driver-name">${driver.fullName}</div>
+                            <div class="recent-driver-email">${driver.email}</div>
+                        </div>
+                    </div>
+                </td>
+                <td><span class="verify-student-num">${driver.studentNumber}</span></td>
+                <td><span class="status-pill pending">Pending</span></td>
+                <td class="recent-actions"><a href="review-application.html?id=${driver.studentNumber}" class="btn-review-profile">Verify Profile</a></td>
             `;
             tableBody.appendChild(row);
         });

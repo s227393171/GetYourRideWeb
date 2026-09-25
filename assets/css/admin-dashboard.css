@@ -1,7 +1,7 @@
 ﻿
 :root {
-    --bg-sidebar: #1a2238;
-    --bg-sidebar-hover: #242f4d;
+    --bg-sidebar: #1b2a5c;
+    --bg-sidebar-hover: #24356e;
     --bg-main: #f4f6fa;
     --primary-orange: #ff7a00;
     --text-main: #1e293b;
@@ -34,20 +34,50 @@ body {
 .brand {
     padding: 0 24px;
     margin-bottom: 35px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.brand-logo-tile {
+    width: 40px;
+    height: 40px;
+    border-radius: 10px;
+    background-color: var(--primary-orange);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    color: #ffffff;
+}
+
+    .brand-logo-tile svg {
+        width: 22px;
+        height: 22px;
+        stroke: #ffffff;
+    }
+
+.brand-text {
+    display: flex;
+    flex-direction: column;
 }
 
     .brand h1 {
-        font-size: 20px;
+        font-size: 19px;
         margin: 0;
         font-weight: 700;
         letter-spacing: -0.5px;
+        line-height: 1.1;
     }
 
     .brand span {
-        font-size: 11px;
+        font-size: 10px;
         color: #94a3b8;
         display: block;
         margin-top: 4px;
+        text-transform: uppercase;
+        letter-spacing: 0.8px;
+        font-weight: 600;
     }
 
 .menu-list {
@@ -76,8 +106,9 @@ body {
         background-color: var(--primary-orange);
         color: #ffffff;
         font-weight: 600;
-        border-radius: 0 8px 8px 0;
-        margin-right: 15px;
+        border-radius: 8px;
+        margin: 0 15px;
+        box-shadow: 0 4px 12px -2px rgba(255, 122, 0, 0.4);
     }
 
 
@@ -117,6 +148,23 @@ body {
     cursor: pointer;
     user-select: none;
 }
+
+.profile-trigger-area .avatar-placeholder {
+    width: 38px;
+    height: 38px;
+    border-radius: 50%;
+    background: var(--primary-orange);
+    color: #ffffff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+    .profile-trigger-area .avatar-placeholder svg {
+        width: 18px;
+        height: 18px;
+    }
 
 .profile-info-text {
     display: flex;
@@ -344,7 +392,7 @@ th {
 td {
     padding: 14px 20px;
     border-bottom: 1px solid var(--border-color);
-    font-size: 13px;
+    font-size: 14px;
     color: var(--text-main);
 }
 
@@ -459,7 +507,8 @@ td {
     color: #1e293b !important;
     font-weight: 600 !important;
     display: inline-block !important;
-    width: 120px !important; 
+    width: 120px !important;
+}
 
 .modal-body-content span {
     color: #64748b !important;
@@ -813,4 +862,771 @@ body.dark-mode {
     .action-card:hover .action-arrow {
         transform: translate(3px, -3px);
         color: #0f172a;
+    }
+
+/* ============================================================
+   DASHBOARD REDESIGN — search bar, stat cards, recent profiles
+   (visual-only; IDs and handlers unchanged)
+   ============================================================ */
+
+/* Navbar search bar with leading icon */
+.navbar-search {
+    position: relative;
+    display: flex;
+    align-items: center;
+    width: 440px;
+    max-width: 42vw;
+}
+
+    .navbar-search svg {
+        position: absolute;
+        left: 14px;
+        width: 16px;
+        height: 16px;
+        stroke: #94a3b8;
+        pointer-events: none;
+    }
+
+    .navbar-search input {
+        width: 100%;
+        background: #f4f6fa;
+        border: 1px solid var(--border-color);
+        padding: 10px 16px 10px 42px;
+        border-radius: 999px;
+        font-size: 13px;
+        color: var(--text-main);
+        outline: none;
+        box-sizing: border-box;
+        font-family: inherit;
+    }
+
+        .navbar-search input:focus {
+            border-color: var(--primary-orange);
+            background: #ffffff;
+        }
+
+/* Overview title block */
+.overview-title {
+    margin: 0 0 4px 0;
+    font-size: 26px;
+    font-weight: 800;
+    color: #0f172a;
+    letter-spacing: -0.5px;
+}
+
+.overview-subtitle {
+    margin: 0 0 26px 0;
+    font-size: 14px;
+    color: var(--text-muted);
+}
+
+/* Redesigned stat cards row */
+.dash-stats-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 20px;
+    margin-bottom: 30px;
+}
+
+.dash-stat-card {
+    background: #ffffff;
+    border: 1px solid var(--border-color);
+    border-radius: 16px;
+    padding: 20px 22px 22px;
+    display: flex;
+    flex-direction: column;
+    gap: 22px;
+    transition: box-shadow 0.2s ease, transform 0.2s ease;
+    min-height: 150px;
+    box-sizing: border-box;
+}
+
+    .dash-stat-card:hover {
+        box-shadow: 0 10px 24px -8px rgba(0, 0, 0, 0.12);
+        transform: translateY(-2px);
+    }
+
+.dash-stat-top {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+}
+
+.dash-stat-icon {
+    width: 40px;
+    height: 40px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+    .dash-stat-icon svg {
+        width: 20px;
+        height: 20px;
+    }
+
+/* Decorative badge top-right of stat card */
+.dash-stat-badge {
+    font-size: 11px;
+    font-weight: 700;
+    padding: 3px 0;
+}
+
+    .dash-stat-badge.green {
+        color: #16a34a;
+    }
+
+    .dash-stat-badge.orange {
+        color: var(--primary-orange);
+    }
+
+.dash-stat-label {
+    font-size: 14px;
+    color: var(--text-muted);
+    font-weight: 600;
+    margin: 0 0 6px 0;
+}
+
+.dash-stat-value {
+    font-size: 32px;
+    font-weight: 800;
+    color: #0f172a;
+    line-height: 1;
+}
+
+/* Two small avatars top-right of the highlighted card */
+.dash-stat-avatars {
+    display: flex;
+    align-items: center;
+}
+
+    .dash-stat-avatars span {
+        width: 24px;
+        height: 24px;
+        border-radius: 50%;
+        background: rgba(255, 255, 255, 0.15);
+        border: 2px solid #24356e;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        margin-left: -8px;
+        color: #cbd5e1;
+    }
+
+        .dash-stat-avatars span:first-child {
+            margin-left: 0;
+        }
+
+        .dash-stat-avatars span svg {
+            width: 12px;
+            height: 12px;
+        }
+
+/* Dark highlighted 4th card (Average Rating) */
+.dash-stat-card.highlighted {
+    background: #1b2a5c;
+    border-color: #1b2a5c;
+}
+
+    .dash-stat-card.highlighted .dash-stat-label {
+        color: #cbd5e1;
+    }
+
+    .dash-stat-card.highlighted .dash-stat-value {
+        color: #ffffff;
+    }
+
+    .dash-stat-card.highlighted .dash-stat-icon {
+        background: rgba(255, 255, 255, 0.1);
+    }
+
+        .dash-stat-card.highlighted .dash-stat-icon svg {
+            stroke: #f59e0b;
+            fill: #f59e0b;
+        }
+
+/* Recent Driver Profiles panel */
+.recent-panel {
+    background: #ffffff;
+    border: 1px solid var(--border-color);
+    border-radius: 14px;
+    overflow: hidden;
+}
+
+.recent-panel-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 22px 24px 18px;
+}
+
+    .recent-panel-header h3 {
+        margin: 0;
+        font-size: 18px;
+        font-weight: 700;
+        color: #0f172a;
+    }
+
+.recent-view-all {
+    font-size: 13px;
+    font-weight: 700;
+    color: #0f172a;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    transition: color 0.15s ease;
+}
+
+    .recent-view-all:hover {
+        color: var(--primary-orange);
+    }
+
+.recent-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+    .recent-table th {
+        background: #f8fafc;
+        color: var(--text-muted);
+        font-size: 11px;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        font-weight: 700;
+        padding: 12px 24px;
+        text-align: left;
+        border-top: 1px solid var(--border-color);
+        border-bottom: 1px solid var(--border-color);
+    }
+
+        .recent-table th.text-right {
+            text-align: right;
+        }
+
+    .recent-table td {
+        padding: 16px 24px;
+        border-bottom: 1px solid #f1f5f9;
+        font-size: 15px;
+        color: var(--text-main);
+        vertical-align: middle;
+    }
+
+    .recent-table tr:last-child td {
+        border-bottom: none;
+    }
+
+/* Driver name cell w/ avatar */
+.recent-driver-cell {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.recent-avatar {
+    width: 38px;
+    height: 38px;
+    border-radius: 50%;
+    background: #eff2f7;
+    color: #64748b;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 12px;
+    font-weight: 700;
+    flex-shrink: 0;
+    text-transform: uppercase;
+}
+
+.recent-driver-name {
+    font-weight: 700;
+    color: #0f172a;
+    font-size: 15px;
+}
+
+.recent-driver-email {
+    font-size: 13px;
+    color: var(--text-muted);
+    margin-top: 2px;
+}
+
+.recent-muted {
+    color: var(--text-muted);
+    font-size: 14px;
+}
+
+/* Status pills */
+.status-pill {
+    display: inline-block;
+    padding: 5px 14px;
+    border-radius: 999px;
+    font-size: 12px;
+    font-weight: 700;
+}
+
+    .status-pill.pending {
+        background: #fef3c7;
+        color: #b45309;
+    }
+
+    .status-pill.approved {
+        background: #dcfce7;
+        color: #166534;
+    }
+
+    .status-pill.rejected {
+        background: #fee2e2;
+        color: #b91c1c;
+    }
+
+/* Row actions */
+.recent-actions {
+    text-align: right;
+}
+
+.btn-review {
+    background: var(--primary-orange);
+    color: #ffffff;
+    border: none;
+    padding: 8px 20px;
+    border-radius: 8px;
+    font-size: 13px;
+    font-weight: 700;
+    cursor: pointer;
+    text-decoration: none;
+    display: inline-block;
+    transition: background 0.15s ease;
+}
+
+    .btn-review:hover {
+        background: #e66d00;
+    }
+
+.btn-details {
+    color: #0f172a;
+    font-size: 13px;
+    font-weight: 700;
+    text-decoration: none;
+    padding: 8px 6px;
+}
+
+    .btn-details:hover {
+        color: var(--primary-orange);
+    }
+
+/* Plain status text in the Actions column (approved / rejected) */
+.action-text {
+    font-size: 13px;
+    font-weight: 700;
+}
+
+    .action-text.approved {
+        color: #16a34a;
+    }
+
+    .action-text.rejected {
+        color: #b91c1c;
+    }
+
+/* Panel footer / pagination */
+.recent-panel-footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 16px 24px;
+}
+
+.recent-footer-text {
+    font-size: 14px;
+    color: var(--text-muted);
+}
+
+.recent-pagination {
+    display: flex;
+    gap: 8px;
+}
+
+    .recent-pagination button {
+        width: 34px;
+        height: 34px;
+        border: 1px solid var(--border-color);
+        background: #ffffff;
+        border-radius: 8px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        color: #64748b;
+        transition: background 0.15s ease, color 0.15s ease;
+    }
+
+        .recent-pagination button:hover:not(:disabled) {
+            background: #f8fafc;
+            color: #0f172a;
+        }
+
+        .recent-pagination button:disabled {
+            opacity: 0.4;
+            cursor: not-allowed;
+        }
+
+        .recent-pagination button svg {
+            width: 16px;
+            height: 16px;
+        }
+
+/* Navbar icon cluster (bell / settings / help) */
+.navbar-icon-group {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.navbar-icon-btn {
+    width: 36px;
+    height: 36px;
+    border-radius: 9px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    color: #64748b;
+    cursor: pointer;
+    transition: background 0.15s ease, color 0.15s ease;
+}
+
+    .navbar-icon-btn:hover {
+        background: #f4f6fa;
+        color: var(--primary-orange);
+    }
+
+    .navbar-icon-btn svg {
+        width: 19px;
+        height: 19px;
+    }
+
+.navbar-divider {
+    width: 1px;
+    height: 26px;
+    background: var(--border-color);
+    margin: 0 4px;
+}
+
+/* Defensive: constrain all icons within dashboard components so an
+   inline SVG can never expand to fill its container */
+.dash-stat-icon svg,
+.dash-stat-avatars svg,
+.navbar-search svg,
+.navbar-icon-btn svg,
+.brand-logo-tile svg,
+.recent-view-all svg,
+.recent-pagination svg {
+    max-width: 100%;
+    max-height: 100%;
+    flex-shrink: 0;
+}
+
+/* ============================================================
+   DRIVER VERIFICATION — visual polish (no logic changes)
+   ============================================================ */
+
+/* Section headings */
+.verify-section-head {
+    margin-bottom: 14px;
+}
+
+    .verify-section-head h2 {
+        margin: 0 0 4px 0;
+        font-size: 17px;
+        font-weight: 700;
+        color: #0f172a;
+    }
+
+    .verify-section-head p {
+        margin: 0;
+        font-size: 13px;
+        color: var(--text-muted);
+    }
+
+/* Polished table card */
+.table-card {
+    background: #ffffff;
+    border: 1px solid var(--border-color);
+    border-radius: 14px;
+    overflow: hidden;
+    box-shadow: 0 1px 3px rgba(15, 23, 42, 0.04);
+    margin-bottom: 4px;
+}
+
+    .table-card table {
+        width: 100%;
+        border-collapse: collapse;
+    }
+
+    .table-card th {
+        background: #f8fafc;
+        color: var(--text-muted);
+        font-size: 11px;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        font-weight: 700;
+        padding: 13px 22px;
+        text-align: left;
+        border-bottom: 1px solid var(--border-color);
+    }
+
+    .table-card td {
+        padding: 15px 22px;
+        border-bottom: 1px solid #f1f5f9;
+        font-size: 15px;
+        color: var(--text-main);
+        vertical-align: middle;
+    }
+
+    .table-card tbody tr:last-child td {
+        border-bottom: none;
+    }
+
+    .table-card tbody tr {
+        transition: background 0.12s ease;
+    }
+
+        .table-card tbody tr:hover {
+            background: #fafbfc;
+        }
+
+    /* Applicant / driver name (first cell strong) */
+    .table-card td strong {
+        font-weight: 700;
+        color: #0f172a;
+    }
+
+    /* Student ID chip already inline-styled by JS; refine emails */
+    .table-card td code {
+        color: var(--primary-orange) !important;
+        background: #fff7ed !important;
+    }
+
+/* Upgrade the "Verify Profile" link into an orange button */
+.btn-action.verify-approve {
+    background: var(--primary-orange) !important;
+    color: #ffffff !important;
+    padding: 9px 20px !important;
+    border-radius: 8px !important;
+    font-weight: 700 !important;
+    font-size: 13px !important;
+    transition: background 0.15s ease;
+}
+
+    .btn-action.verify-approve:hover {
+        background: #e66d00 !important;
+    }
+
+/* Verified status badge — pill look */
+.status-badge {
+    display: inline-block;
+    padding: 5px 14px !important;
+    border-radius: 999px !important;
+    font-size: 12px !important;
+    font-weight: 700 !important;
+}
+
+/* Show more button polish */
+#verificationShowMoreBtn,
+#verifiedShowMoreBtn {
+    background: #ffffff !important;
+    border: 1px solid var(--border-color) !important;
+    color: #334155 !important;
+    font-weight: 600 !important;
+    font-size: 13px !important;
+    padding: 9px 20px !important;
+    border-radius: 8px !important;
+    cursor: pointer;
+    transition: background 0.15s ease;
+}
+
+    #verificationShowMoreBtn:hover,
+    #verifiedShowMoreBtn:hover {
+        background: #f8fafc !important;
+    }
+
+/* ============================================================
+   DRIVER VERIFICATION — row styling to match dashboard
+   ============================================================ */
+
+/* Orange student number text */
+.verify-student-num {
+    color: var(--text-main);
+    font-weight: 600;
+    font-size: 14px;
+}
+
+/* Orange "Verify Profile" button (matches dashboard Review button) */
+.btn-review-profile {
+    background: var(--primary-orange);
+    color: #ffffff;
+    border: none;
+    padding: 9px 20px;
+    border-radius: 8px;
+    font-size: 13px;
+    font-weight: 700;
+    cursor: pointer;
+    text-decoration: none;
+    display: inline-block;
+    transition: background 0.15s ease;
+}
+
+    .btn-review-profile:hover {
+        background: #e66d00;
+        color: #ffffff;
+    }
+
+/* Right-align the action cell */
+.recent-actions {
+    text-align: right;
+}
+
+/* ============================================================
+   DRIVER RATINGS SCREEN
+   ============================================================ */
+
+/* Filter bar above the ratings table */
+.ratings-filter-bar {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 18px 22px;
+    flex-wrap: wrap;
+}
+
+.ratings-filter-label {
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+/* Pink "Review Driver" button for flagged (low-rated) drivers */
+.btn-review-driver {
+    background: #fee2e2;
+    color: #b91c1c;
+    border: none;
+    padding: 9px 18px;
+    border-radius: 8px;
+    font-size: 13px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: background 0.15s ease;
+}
+
+    .btn-review-driver:hover {
+        background: #fecaca;
+    }
+
+/* Star + rating number in the ratings table */
+.rating-highlight {
+    font-weight: 700;
+    color: #0f172a;
+    margin-right: 4px;
+}
+
+.star-color {
+    color: #f59e0b;
+}
+
+/* ============================================================
+   Footer + slightly larger fonts across admin tables
+   ============================================================ */
+
+.verify-footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 16px 22px;
+    border-top: 1px solid var(--border-color);
+}
+
+.verify-footer-text {
+    font-size: 14px;
+    color: var(--text-muted);
+}
+
+/* Table header text a touch larger */
+.recent-table th,
+.verify-table th,
+.table-card th {
+    font-size: 12px;
+}
+
+/* Action buttons / pills a touch larger */
+.btn-review,
+.btn-review-profile,
+.btn-review-driver,
+.btn-details,
+.action-text {
+    font-size: 14px;
+}
+
+.status-pill {
+    font-size: 13px;
+}
+
+/* Section subtitles / overview subtitle */
+.overview-subtitle {
+    font-size: 15px;
+}
+
+.verify-section-head p {
+    font-size: 14px;
+}
+
+/* Stat values a touch larger */
+.dash-stat-value {
+    font-size: 34px;
+}
+
+/* ============================================================
+   Verification header row + filter tabs
+   ============================================================ */
+
+.verify-header-row {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 16px;
+    margin-bottom: 24px;
+    flex-wrap: wrap;
+}
+
+.filter-tabs {
+    display: inline-flex;
+    background: #eef1f6;
+    border-radius: 10px;
+    padding: 4px;
+    gap: 2px;
+}
+
+.filter-tab {
+    border: none;
+    background: transparent;
+    padding: 8px 18px;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text-muted);
+    cursor: pointer;
+    transition: background 0.15s ease, color 0.15s ease;
+    font-family: inherit;
+}
+
+    .filter-tab:hover {
+        color: #0f172a;
+    }
+
+    .filter-tab.active {
+        background: #ffffff;
+        color: #0f172a;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
     }

@@ -253,6 +253,7 @@ app.MapGet("/api/admin/unverified-drivers", async (IConfiguration config) => {
                    CONCAT(d.first_name, ' ', d.last_name) AS FullName, 
                    d.email, 
                    d.phone,
+                   d.join_date,
                    COALESCE(NULLIF(s.student_number, 'undefined'), CONCAT('DRV-', d.driver_id)) AS display_id
             FROM driver d
             LEFT JOIN student s ON d.email = s.email
@@ -269,7 +270,10 @@ app.MapGet("/api/admin/unverified-drivers", async (IConfiguration config) => {
                 fullName = reader["FullName"].ToString(),
                 email = reader["email"].ToString(),
                 studentNumber = reader["display_id"].ToString(),
-                phone = reader["phone"] != DBNull.Value ? reader["phone"].ToString() : "N/A"
+                phone = reader["phone"] != DBNull.Value ? reader["phone"].ToString() : "N/A",
+                joinDate = reader["join_date"] != DBNull.Value
+                    ? Convert.ToDateTime(reader["join_date"]).ToString("yyyy-MM-dd")
+                    : null
             });
         }
     }
@@ -297,6 +301,7 @@ app.MapGet("/api/admin/verified-student-drivers", async (IConfiguration config) 
                    CONCAT(d.first_name, ' ', d.last_name) AS FullName,
                    d.email,
                    d.phone,
+                   d.join_date,
                    COALESCE(NULLIF(s.student_number, 'undefined'), CONCAT('DRV-', d.driver_id)) AS display_id
             FROM driver d
             LEFT JOIN student s ON d.email = s.email
@@ -314,7 +319,10 @@ app.MapGet("/api/admin/verified-student-drivers", async (IConfiguration config) 
                 fullName = reader["FullName"].ToString(),
                 email = reader["email"].ToString(),
                 studentNumber = reader["display_id"].ToString(),
-                phone = reader["phone"] != DBNull.Value ? reader["phone"].ToString() : "N/A"
+                phone = reader["phone"] != DBNull.Value ? reader["phone"].ToString() : "N/A",
+                joinDate = reader["join_date"] != DBNull.Value
+                    ? Convert.ToDateTime(reader["join_date"]).ToString("yyyy-MM-dd")
+                    : null
             });
         }
     }

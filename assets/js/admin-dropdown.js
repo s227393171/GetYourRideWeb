@@ -383,10 +383,13 @@ function setGreetingAndDate() {
         ? nameEl.textContent.split(' ')[0]
         : '';
 
-    if (heading) {
+    // Only overwrite when the element opts in via data-greeting.
+    // The redesigned dashboard keeps a static "Overview Dashboard" title,
+    // so those nodes omit the attribute and are left untouched.
+    if (heading && heading.hasAttribute('data-greeting')) {
         heading.textContent = firstName ? `${greeting}, ${firstName}` : `${greeting}`;
     }
-    if (dateEl) {
+    if (dateEl && dateEl.hasAttribute('data-greeting')) {
         dateEl.textContent = now.toLocaleDateString(undefined, { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
     }
 }
@@ -403,10 +406,154 @@ async function loadDashboardStats() {
 
         pendingEl.textContent = data.pendingApplications ?? '—';
         document.getElementById('statActiveDrivers').textContent = data.activeDrivers ?? '—';
-        document.getElementById('statAverageRating').textContent = data.averageRating != null ? Number(data.averageRating).toFixed(2) : '—';
+        document.getElementById('statAverageRating').textContent = data.averageRating != null ? Number(data.averageRating).toFixed(1) : '—';
         document.getElementById('statTripsToday').textContent = data.tripsToday ?? '—';
     } catch (error) {
         console.warn('Dashboard summary unavailable, showing placeholders:', error);
+    }
+}
+
+
+// ---------------------------------------------------------
+// loadRecentDriverProfiles — populates the dashboard's
+// "Recent Driver Profiles" table from the real `driver` table
+// (Pending = unverified, Approved = verified student drivers),
+// with a real submission date, working pagination and status-aware actions.
+// ---------------------------------------------------------
+// Show only the few most recent drivers as a snapshot — the full list
+// lives on the Driver Verification screen (linked via "View All Applications").
+const RECENT_SHOW_COUNT = 5;
+let recentDriverListFull = [];
+
+function recentInitials(name) {
+    if (!name) return '?';
+    const parts = name.trim().split(/\s+/);
+    return (parts[0][0] + (parts[1] ? parts[1][0] : '')).toUpperCase();
+}
+
+// Render a given list of drivers into the dashboard's recent table
+function renderRecentRows(list, footerLabel) {
+    const tableBody = document.getElementById('recentProfilesBody');
+    const footerText = document.getElementById('recentFooterText');
+    if (!tableBody) return;
+
+    tableBody.innerHTML = '';
+
+    if (!list || list.length === 0) {
+        tableBody.innerHTML = `<tr><td colspan="5" style="text-align:center; padding:30px; color:#64748b;">No matching drivers.</td></tr>`;
+        if (footerText) footerText.textContent = footerLabel || 'No results';
+        return;
+    }
+
+    list.forEach(driver => {
+        const status = driver.__status;
+        let statusLabel, statusCls, actionHtml;
+        const idParam = driver.driverId != null ? driver.driverId : '';
+
+        if (status === 'approved') {
+            statusLabel = 'Approved'; statusCls = 'approved';
+            actionHtml = `<span class="action-text approved">Approved</span>`;
+        } else if (status === 'rejected') {
+            statusLabel = 'Rejected'; statusCls = 'rejected';
+            actionHtml = `<span class="action-text rejected">Rejected</span>`;
+        } else {
+            statusLabel = 'Pending'; statusCls = 'pending';
+            actionHtml = `<a href="review-application.html?id=${idParam}" class="btn-review">Review</a>`;
+        }
+
+        const studentNumber = driver.studentNumber || (driver.driverId != null ? `DRV-${driver.driverId}` : '&mdash;');
+        const submissionDate = formatSubmissionDate(driver.joinDate);
+
+        const row = document.createElement('tr');
+        row.innerHTML = `
+            <td>
+                <div class="recent-driver-cell">
+                    <div class="recent-avatar">${recentInitials(driver.fullName)}</div>
+                    <div>
+                        <div class="recent-driver-name">${driver.fullName || 'Unknown Driver'}</div>
+                        <div class="recent-driver-email">${driver.email || ''}</div>
+                    </div>
+                </div>
+            </td>
+            <td class="recent-muted">${studentNumber}</td>
+            <td class="recent-muted">${submissionDate}</td>
+            <td><span class="status-pill ${statusCls}">${statusLabel}</span></td>
+            <td class="recent-actions">${actionHtml}</td>
+        `;
+        tableBody.appendChild(row);
+    });
+
+    if (footerText) footerText.textContent = footerLabel || `Showing ${list.length}`;
+}
+
+// Dashboard search — filters the full driver list; empty term restores the recent snapshot
+function searchDashboardProfiles() {
+    const input = document.getElementById('dashboardSearchInput');
+    const term = input ? input.value.trim().toUpperCase() : '';
+
+    if (!term) {
+        renderRecentRows(recentDriverListFull.slice(0, RECENT_SHOW_COUNT), `Showing ${Math.min(RECENT_SHOW_COUNT, recentDriverListFull.length)} most recent`);
+        return;
+    }
+
+    const matches = recentDriverListFull.filter(d =>
+        (d.fullName && d.fullName.toUpperCase().includes(term)) ||
+        (d.studentNumber && d.studentNumber.toUpperCase().includes(term)) ||
+        (d.email && d.email.toUpperCase().includes(term))
+    );
+    renderRecentRows(matches, `Showing ${matches.length} match${matches.length === 1 ? '' : 'es'}`);
+}
+
+function formatSubmissionDate(value) {
+    if (!value) return '&mdash;';
+    const d = new Date(value);
+    if (isNaN(d.getTime())) return '&mdash;';
+    return d.toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
+}
+
+async function loadRecentDriverProfiles() {
+    const tableBody = document.getElementById('recentProfilesBody');
+    if (!tableBody) return;
+    const footerText = document.getElementById('recentFooterText');
+
+    try {
+        // Pull real driver records from the same source the Driver Verification
+        // screen uses (the `driver` table), since driverapplications may be empty.
+        // Pending = unverified drivers; Approved = verified student drivers.
+        const [pendingRes, approvedRes] = await Promise.all([
+            fetch(`${window.location.origin}/api/admin/unverified-drivers`),
+            fetch(`${window.location.origin}/api/admin/verified-student-drivers`)
+        ]);
+
+        const pendingList = pendingRes.ok ? await pendingRes.json() : [];
+        const approvedList = approvedRes.ok ? await approvedRes.json() : [];
+
+        const combined = [
+            ...(Array.isArray(pendingList) ? pendingList.map(d => ({ ...d, __status: 'pending' })) : []),
+            ...(Array.isArray(approvedList) ? approvedList.map(d => ({ ...d, __status: 'approved' })) : [])
+        ];
+
+        // Newest first (higher driverId = more recent signup)
+        combined.sort((a, b) => (b.driverId || 0) - (a.driverId || 0));
+        recentDriverListFull = combined;
+
+        if (combined.length === 0) {
+            tableBody.innerHTML = `<tr><td colspan="5" style="text-align:center; padding:30px; color:#64748b;">No recent driver activity.</td></tr>`;
+            if (footerText) footerText.textContent = 'No recent activity';
+            return;
+        }
+
+        // Respect an active search term if the user already typed one
+        const searchInput = document.getElementById('dashboardSearchInput');
+        if (searchInput && searchInput.value.trim()) {
+            searchDashboardProfiles();
+        } else {
+            renderRecentRows(combined.slice(0, RECENT_SHOW_COUNT), `Showing ${Math.min(RECENT_SHOW_COUNT, combined.length)} most recent`);
+        }
+    } catch (error) {
+        console.warn('Recent driver profiles unavailable:', error);
+        tableBody.innerHTML = `<tr><td colspan="5" style="text-align:center; padding:30px; color:#94a3b8;">Unable to load recent drivers.</td></tr>`;
+        if (footerText) footerText.textContent = 'No recent activity';
     }
 }
 
@@ -434,6 +581,7 @@ window.addEventListener('load', async () => {
 
     setGreetingAndDate();
     await loadDashboardStats();
+    await loadRecentDriverProfiles();
 
   
     setTimeout(setGreetingAndDate, 800);

@@ -56,28 +56,32 @@ function renderRatingsTable(driversList) {
 
         const safeName = name.replace(/'/g, "\\'");
 
-        let actionCellHtml = `<button class="btn-action" onclick="openDriverDetailsModal(${driverId}, '${safeName}', '${displayId}', '${joinDate}')">View Details</button>`;
+        let actionCellHtml = `<button class="btn-review-profile" onclick="openDriverDetailsModal(${driverId}, '${safeName}', '${displayId}', '${joinDate}')">View Details</button>`;
         let flagAlertText = "";
 
         if (avgRating > 0 && avgRating < 3.0) {
-            actionCellHtml = `<button class="btn-action review-required" onclick="triggerAudit(this, '${safeName}')">Review Driver</button>`;
-            flagAlertText = `<span style="color:#ef4444; display:block; font-size:10px; font-weight:700; margin-top:2px;">⚠️ Performance Flag</span>`;
+            actionCellHtml = `<button class="btn-review-driver" onclick="triggerAudit(this, '${safeName}')">Review Driver</button>`;
+            flagAlertText = `<span style="color:#ef4444; display:block; font-size:10px; font-weight:700; margin-top:2px;">⚠️ Rating Alert</span>`;
         }
 
         const initials = name.split(' ').map(n => n[0]).join('').toUpperCase().substring(0, 2);
 
         row.innerHTML = `
             <td>
-                <div style="display:flex; align-items:center; gap:12px;">
-                    <div style="width:36px; height:36px; background:#1e293b; color:#ffffff; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:11px; font-weight:600;">${initials}</div>
-                    <div><strong>${name}</strong><br><span class="driver-meta" style="font-size:11px; color:#64748b;">Joined ${joinDate}</span>${flagAlertText}</div>
+                <div class="recent-driver-cell">
+                    <div class="recent-avatar">${initials}</div>
+                    <div>
+                        <div class="recent-driver-name">${name}</div>
+                        <div class="recent-muted" style="font-size:11px;">Joined ${joinDate}</div>
+                        ${flagAlertText}
+                    </div>
                 </div>
             </td>
-            <td><span style="color:#64748b; font-weight:500;">${displayId}</span></td>
-            <td><span class="rating-highlight" style="font-weight:bold;">${avgRating.toFixed(1)}</span> ${generateStarRatingHtml(avgRating)}</td>
-            <td>${trips.toLocaleString()}</td>
-            <td>${totalRatings.toLocaleString()}</td>
-            <td>${actionCellHtml}</td>
+            <td><span class="verify-student-num">${displayId}</span></td>
+            <td><span class="rating-highlight">${avgRating.toFixed(1)}</span> ${generateStarRatingHtml(avgRating)}</td>
+            <td class="recent-muted">${trips.toLocaleString()}</td>
+            <td class="recent-muted">${totalRatings.toLocaleString()}</td>
+            <td class="recent-actions">${actionCellHtml}</td>
         `;
         tableBody.appendChild(row);
     });
@@ -92,10 +96,11 @@ function calculateSummaryMetrics(drivers) {
     const activeEl = document.getElementById('metricActiveDrivers');
     const avgRatingEl = document.getElementById('metricAverageRating');
     const tripsEl = document.getElementById('metricTotalTrips');
+    const flagsEl = document.getElementById('metricPoorFlags');
 
     if (activeEl) activeEl.innerText = drivers.length;
 
-    let totalTrips = 0, sumRatings = 0, ratedDriverCount = 0;
+    let totalTrips = 0, sumRatings = 0, ratedDriverCount = 0, poorFlags = 0;
 
     drivers.forEach(d => {
         const avg = parseFloat(d.averageRating ?? d.avgRating ?? 0);
@@ -105,6 +110,7 @@ function calculateSummaryMetrics(drivers) {
         if (avg > 0) {
             sumRatings += avg;
             ratedDriverCount++;
+            if (avg < 3.0) poorFlags++;
         }
     });
 
@@ -112,6 +118,7 @@ function calculateSummaryMetrics(drivers) {
 
     if (avgRatingEl) avgRatingEl.innerText = averageScore.toFixed(2);
     if (tripsEl) tripsEl.innerText = totalTrips.toLocaleString();
+    if (flagsEl) flagsEl.innerText = String(poorFlags).padStart(2, '0');
 }
 
 

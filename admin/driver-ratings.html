@@ -5,14 +5,18 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Admin Portal - Driver Ratings</title>
     <link rel="stylesheet" href="../assets/css/admin-dashboard.css">
-    <link rel="stylesheet" href="../assets/css/driver-dashboard.css">
 
 </head>
 <body>
     <div class="sidebar">
         <div class="brand">
-            <h1>GetYourRide</h1>
-            <span>University Admin Portal</span>
+            <div class="brand-logo-tile">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 17H3v-4l2-5h11l4 5v4h-2"></path><circle cx="7.5" cy="17.5" r="1.5"></circle><circle cx="17.5" cy="17.5" r="1.5"></circle><path d="M9 17h6"></path></svg>
+            </div>
+            <div class="brand-text">
+                <h1>GetYourRide</h1>
+                <span>University Admin Portal</span>
+            </div>
         </div>
 
         <ul class="menu-list">
@@ -55,7 +59,9 @@
 
         <div class="sidebar-profile-footer">
             <div class="profile-trigger-area" onclick="toggleProfileMenu()">
-                <div class="avatar-placeholder"></div>
+                <div class="avatar-placeholder">
+                    <svg class="icon-inline" style="margin-right:0;" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
+                </div>
                 <div class="profile-info-text">
                     <span class="user-display-name" id="adminNameLabel">Loading profile...</span>
                     <span class="user-display-email" id="adminEmailLabel">connecting to database...</span>
@@ -78,52 +84,105 @@
 
     <div class="main-content">
         <div class="top-navbar">
-            <input type="text" class="search-bar" id="globalSearchInput" placeholder="Search operational roster..." onkeyup="searchDrivers()">
+            <div class="search-box-wrapper">
+                <div class="navbar-search">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+                    <input type="text" id="globalSearchInput" placeholder="Search operational roster..." aria-label="Search" onkeyup="searchDrivers()">
+                </div>
+            </div>
 
             <div class="top-navbar-right">
+                <div class="navbar-icon-group">
+                    <span class="navbar-icon-btn" title="Settings" onclick="openSettingsModal()">
+                        <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
+                    </span>
+                    <span class="navbar-icon-btn" title="Support Help" onclick="openSupportModal()">
+                        <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"></path><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>
+                    </span>
+                </div>
+                <div class="navbar-divider"></div>
                 <div class="portal-badge">
-                    <span id="liveClock" style="font-family: monospace; font-weight: 700; color: #ff7a00; margin-right: 15px;">00:00:00</span>
+                    <span id="liveClock" style="font-family: monospace; font-weight: 700; color: #ff7a00; margin-right: 12px;">00:00:00</span>
                     Admin Portal
                 </div>
-                <button class="top-logout-btn" onclick="handleLogout()"> Logout</button>
+                <button class="top-logout-btn" onclick="handleLogout()">
+                    <svg class="icon-inline icon-sm" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg>
+                    Logout
+                </button>
             </div>
         </div>
 
         <div class="content-body">
-            <div class="view-header">
-                <div>
-                    <h2>Driver Performance Matrix</h2>
-                    <p class="subtitle">Track ratings, trip counts, and standout drivers across the fleet.</p>
+            <h1 class="overview-title">Driver Performance &amp; Ratings</h1>
+            <p class="overview-subtitle">Monitor and manage service quality across your shuttle fleet.</p>
+
+            <div class="dash-stats-grid">
+                <div class="dash-stat-card">
+                    <div class="dash-stat-top">
+                        <div class="dash-stat-icon" style="background:#eff6ff; color:#3b82f6;">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
+                        </div>
+                    </div>
+                    <div>
+                        <div class="dash-stat-label">Total Active Drivers</div>
+                        <div class="dash-stat-value" id="metricActiveDrivers">0</div>
+                    </div>
+                </div>
+                <div class="dash-stat-card">
+                    <div class="dash-stat-top">
+                        <div class="dash-stat-icon" style="background:#fefce8; color:#ca8a04;">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="#ca8a04" stroke="#ca8a04" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>
+                        </div>
+                    </div>
+                    <div>
+                        <div class="dash-stat-label">Fleet Average Rating</div>
+                        <div class="dash-stat-value" id="metricAverageRating">0.00</div>
+                    </div>
+                </div>
+                <div class="dash-stat-card">
+                    <div class="dash-stat-top">
+                        <div class="dash-stat-icon" style="background:#ecfdf5; color:#10b981;">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="20" x2="12" y2="10"></line><line x1="18" y1="20" x2="18" y2="4"></line><line x1="6" y1="20" x2="6" y2="16"></line></svg>
+                        </div>
+                    </div>
+                    <div>
+                        <div class="dash-stat-label">Trips Completed</div>
+                        <div class="dash-stat-value" id="metricTotalTrips">0</div>
+                    </div>
+                </div>
+                <div class="dash-stat-card">
+                    <div class="dash-stat-top">
+                        <div class="dash-stat-icon" style="background:#fef2f2; color:#ef4444;">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>
+                        </div>
+                    </div>
+                    <div>
+                        <div class="dash-stat-label">Poor Ratings Flags</div>
+                        <div class="dash-stat-value" id="metricPoorFlags">0</div>
+                    </div>
                 </div>
             </div>
 
-            <div class="metrics-grid">
-                <div class="metric-card" style="transition: transform 0.15s ease, box-shadow 0.15s ease;" onmouseover="this.style.transform='translateY(-3px)'; this.style.boxShadow='0 8px 20px rgba(0,0,0,0.08)';" onmouseout="this.style.transform=''; this.style.boxShadow='';"><div class="metric-header"><span class="metric-title">Active Drivers</span></div><span class="metric-value" id="metricActiveDrivers">0</span></div>
-                <div class="metric-card" style="transition: transform 0.15s ease, box-shadow 0.15s ease;" onmouseover="this.style.transform='translateY(-3px)'; this.style.boxShadow='0 8px 20px rgba(0,0,0,0.08)';" onmouseout="this.style.transform=''; this.style.boxShadow='';"><div class="metric-header"><span class="metric-title">Average Fleet Rating</span></div><span class="metric-value" id="metricAverageRating">0.00</span></div>
-                <div class="metric-card" style="transition: transform 0.15s ease, box-shadow 0.15s ease;" onmouseover="this.style.transform='translateY(-3px)'; this.style.boxShadow='0 8px 20px rgba(0,0,0,0.08)';" onmouseout="this.style.transform=''; this.style.boxShadow='';"><div class="metric-header"><span class="metric-title">Global Trips Logged</span></div><span class="metric-value" id="metricTotalTrips">0</span></div>
-            </div>
-
-
-            <div class="table-card">
-                <table>
+            <div class="recent-panel">
+                <table class="verify-table">
                     <thead>
                         <tr>
-                            <th>Driver Name</th>
-                            <th>ID Number</th>
+                            <th>Driver Profile</th>
+                            <th>Student Number</th>
                             <th>Average Rating</th>
-                            <th>Trips</th>
+                            <th>Total Trips</th>
                             <th>Total Ratings</th>
-                            <th>Action</th>
+                            <th class="text-right">Action</th>
                         </tr>
                     </thead>
                     <tbody id="driverRatingsTableBody">
                         <tr>
-                            <td colspan="6" style="text-align: center; color: var(--text-muted); padding: 20px;">Loading driver ratings…</td>
+                            <td colspan="6" style="text-align: center; color: var(--text-muted); padding: 30px;">Loading driver ratings…</td>
                         </tr>
                     </tbody>
                 </table>
-                <div class="table-footer">
-                    <span id="showingEntriesCount">Loading entries…</span>
+                <div class="verify-footer">
+                    <span class="verify-footer-text" id="showingEntriesCount">Loading entries…</span>
                 </div>
             </div>
         </div>
