@@ -507,10 +507,10 @@ body {
 
 .btn-primary {
     padding: 10px 16px;
-    background: #f97316;
+    background: #ff7a00;
     color: white;
     border: none;
-    border-radius: 6px;
+    border-radius: 8px;
     cursor: pointer;
     font-weight: 600;
 }
@@ -567,7 +567,7 @@ body {
 
 .semester-badge {
     font-size: 0.7rem;
-    background-color: #38bdf8;
+    background-color: #2563eb;
     color: white;
     padding: 2px 6px;
     border-radius: 4px;
@@ -582,7 +582,7 @@ body {
 
 .user-profile-link {
     font-size: 0.85rem;
-    color: #2563eb;
+    color: #ff7a00;
     cursor: pointer;
     text-decoration: underline;
     margin-left: 8px;
@@ -615,13 +615,14 @@ body {
 }
 
 .view-profile-link {
-    color: #2563eb;
+    color: #ff7a00;
     text-decoration: none;
     font-size: 0.9rem;
-    font-weight: 500;
+    font-weight: 600;
 }
 
     .view-profile-link:hover {
+        color: #e05e00;
         text-decoration: underline;
     }
 
@@ -672,18 +673,18 @@ body {
 
 
 .btn-primary {
-    background: #ea580c;
+    background: #ff7a00;
     color: white;
     padding: 10px 16px;
     border: none;
-    border-radius: 6px;
+    border-radius: 8px;
     cursor: pointer;
     font-weight: 600;
     transition: background 0.2s;
 }
 
     .btn-primary:hover {
-        background: #c2410c;
+        background: #e05e00;
     }
 
 
@@ -779,17 +780,17 @@ body {
     }
 
 .btn-submit {
-    background: #ea580c;
+    background: #ff7a00;
     color: white;
     padding: 8px 14px;
     border: none;
-    border-radius: 4px;
+    border-radius: 8px;
     cursor: pointer;
-    font-weight: 500;
+    font-weight: 600;
 }
 
     .btn-submit:hover {
-        background: #c2410c;
+        background: #e05e00;
     }
 
 /* Sidebar profile footer + dropdown (ported from driver-dashboard.css so the

@@ -85,10 +85,10 @@ function injectDialogStyles() {
         }
         .dlg-btn-secondary:hover { background: #e2e8f0; }
         .dlg-btn-primary {
-            background: #3b82f6;
+            background: #ff7a00;
             color: #fff;
         }
-        .dlg-btn-primary:hover { background: #2563eb; }
+        .dlg-btn-primary:hover { background: #e05e00; }
         .dlg-btn-danger {
             background: #ef4444;
             color: #fff;

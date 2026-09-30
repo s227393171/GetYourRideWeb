@@ -3,6 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <title>Forgot Password - GetYourRide</title>
+    <link rel="stylesheet" href="/assets/css/gyr-theme.css">
     <style>
         * {
             margin: 0;
@@ -12,32 +13,43 @@
 
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            /* Branded navy backdrop with soft orange glow (was off-brand grey/indigo) */
+            background:
+                radial-gradient(900px circle at 15% 15%, rgba(255, 122, 0, 0.18), transparent 55%),
+                radial-gradient(900px circle at 85% 85%, rgba(37, 99, 235, 0.12), transparent 55%),
+                linear-gradient(135deg, #0f172a 0%, #111625 60%, #1a2238 100%);
             margin: 0;
             padding: 0;
             display: flex;
             justify-content: center;
             align-items: center;
-            height: 100vh;
+            min-height: 100vh;
         }
 
         .login-container {
             background-color: #ffffff;
             padding: 2.5rem;
             border-radius: 16px;
-            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.08);
+            box-shadow: 0 24px 48px rgba(15, 23, 42, 0.28);
+            border: 1px solid rgba(255, 255, 255, 0.6);
             width: 100%;
             max-width: 420px;
             box-sizing: border-box;
             text-align: center;
+            animation: gyrCardIn 0.4s cubic-bezier(0.16, 1, 0.3, 1) both;
+        }
+
+        @keyframes gyrCardIn {
+            from { opacity: 0; transform: translateY(14px) scale(0.98); }
+            to   { opacity: 1; transform: translateY(0) scale(1); }
         }
 
             .login-container .icon-circle {
                 width: 64px;
                 height: 64px;
                 border-radius: 50%;
-                background: linear-gradient(135deg, #e0e7ff, #c7d2fe);
-                color: #4f46e5;
+                background: linear-gradient(135deg, #fff1e6, #ffd9b3);
+                color: #ff7a00;
                 display: flex;
                 align-items: center;
                 justify-content: center;
@@ -92,8 +104,8 @@
 
             input[type="email"]:focus {
                 outline: none;
-                border-color: #6366f1;
-                box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.12);
+                border-color: #ff7a00;
+                box-shadow: 0 0 0 3px rgba(255, 122, 0, 0.15);
                 background: #fff;
             }
 
@@ -105,13 +117,13 @@
         }
 
         button[type="submit"] {
-            background: linear-gradient(135deg, #6366f1, #4f46e5);
+            background: linear-gradient(135deg, #ff8c1a, #ff7a00);
             color: #ffffff;
             border: none;
             padding: 0.85rem;
             border-radius: 10px;
             font-size: 1rem;
-            font-weight: 600;
+            font-weight: 700;
             cursor: pointer;
             transition: all 0.2s ease;
             margin-top: 0.5rem;
@@ -119,7 +131,8 @@
 
             button[type="submit"]:hover {
                 transform: translateY(-1px);
-                box-shadow: 0 6px 16px rgba(99, 102, 241, 0.3);
+                box-shadow: 0 8px 20px -6px rgba(255, 122, 0, 0.45);
+                background: linear-gradient(135deg, #ff7a00, #e05e00);
             }
 
             button[type="submit"]:active {
@@ -170,15 +183,15 @@
         .back-link {
             display: inline-block;
             margin-top: 1.5rem;
-            color: #6366f1;
+            color: #ff7a00;
             text-decoration: none;
             font-size: 0.9rem;
-            font-weight: 500;
+            font-weight: 600;
             transition: color 0.2s ease;
         }
 
             .back-link:hover {
-                color: #4338ca;
+                color: #e05e00;
                 text-decoration: underline;
             }
 
@@ -326,7 +339,7 @@
         function showToast(message, type = "success") {
             const root = ensurePopupRoot();
             const colors = {
-                info: { bg: "#eef4ff", border: "#a5b4fc", text: "#3730a3", icon: "info", glow: "rgba(99,102,241,0.15)" },
+                info: { bg: "#fff7ed", border: "#fed7aa", text: "#9a3412", icon: "info", glow: "rgba(255,122,0,0.18)" },
                 success: { bg: "#ecfdf5", border: "#6ee7b7", text: "#065f46", icon: "success", glow: "rgba(16,185,129,0.15)" },
                 error: { bg: "#fef2f2", border: "#fca5a5", text: "#991b1b", icon: "error", glow: "rgba(239,68,68,0.15)" },
                 warning: { bg: "#fffbeb", border: "#fcd34d", text: "#92400e", icon: "warning", glow: "rgba(245,158,11,0.15)" }
@@ -358,7 +371,7 @@
         function showPopup(message, type = "info", onDismiss = null) {
             const root = ensurePopupRoot();
             const colors = {
-                info: { icon: "#6366f1", iconBg: "#e0e7ff" },
+                info: { icon: "#ff7a00", iconBg: "#fff1e6" },
                 success: { icon: "#10b981", iconBg: "#d1fae5" },
                 error: { icon: "#ef4444", iconBg: "#fee2e2" },
                 warning: { icon: "#f59e0b", iconBg: "#fef3c7" }

@@ -1,24 +1,41 @@
-﻿
+﻿/* ============================================================
+   Login / auth entry styles — aligned to GetYourRide brand.
+   Palette source of truth: orange #ff7a00 primary, navy #0f172a
+   surfaces, slate neutrals. (Previously used off-brand #007bff.)
+   Class names & structure unchanged so Login.html is untouched.
+   ============================================================ */
+
 body {
     margin: 0;
     padding: 0;
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-    background-color: #f4f7f6;
+    /* Branded navy backdrop with a soft orange glow instead of flat grey */
+    background:
+        radial-gradient(900px circle at 15% 15%, rgba(255, 122, 0, 0.18), transparent 55%),
+        radial-gradient(900px circle at 85% 85%, rgba(37, 99, 235, 0.12), transparent 55%),
+        linear-gradient(135deg, #0f172a 0%, #111625 60%, #1a2238 100%);
     display: flex;
     justify-content: center;
     align-items: center;
-    height: 100vh;
+    min-height: 100vh;
 }
 
 
 .login-container {
     background-color: #ffffff;
     padding: 40px;
-    border-radius: 8px;
-    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+    border-radius: 16px;
+    box-shadow: 0 24px 48px rgba(15, 23, 42, 0.28);
+    border: 1px solid rgba(255, 255, 255, 0.6);
     width: 100%;
-    max-width: 350px;
+    max-width: 360px;
     text-align: center;
+    animation: gyrCardIn 0.4s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+@keyframes gyrCardIn {
+    from { opacity: 0; transform: translateY(14px) scale(0.98); }
+    to   { opacity: 1; transform: translateY(0) scale(1); }
 }
 
 .logo {
@@ -29,29 +46,34 @@ body {
 h1 {
     margin: 0;
     font-size: 22px;
-    color: #333333;
+    font-weight: 700;
+    color: #0f172a;
+    letter-spacing: -0.3px;
 }
 
 .tagline {
     font-size: 14px;
-    color: #777;
-    margin-bottom: 20px;
+    color: #64748b;
+    margin-bottom: 24px;
 }
 
 
 .login-container input {
     width: 100%;
-    padding: 12px;
+    padding: 12px 14px;
     margin: 8px 0;
     box-sizing: border-box;
-    border: 1px solid #ccc;
-    border-radius: 4px;
+    border: 1.5px solid #e2e8f0;
+    border-radius: 8px;
     font-size: 14px;
-    transition: border-color 0.3s;
+    background: #f8fafc;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
 }
 
     .login-container input:focus {
-        border-color: #007bff;
+        border-color: #ff7a00;
+        background: #ffffff;
+        box-shadow: 0 0 0 3px rgba(255, 122, 0, 0.15);
         outline: none;
     }
 
@@ -59,37 +81,46 @@ h1 {
 .login-container button {
     width: 100%;
     padding: 12px;
-    background-color: #007bff;
-    color: white;
+    background-color: #ff7a00;
+    color: #ffffff;
     border: none;
-    border-radius: 4px;
+    border-radius: 8px;
     font-size: 16px;
-    font-weight: bold;
+    font-weight: 700;
     cursor: pointer;
-    margin-top: 15px;
-    transition: background-color 0.3s;
+    margin-top: 16px;
+    transition: background-color 0.2s ease, transform 0.15s ease, box-shadow 0.2s ease;
 }
 
     .login-container button:hover {
-        background-color: #0056b3;
+        background-color: #e05e00;
+        transform: translateY(-1px);
+        box-shadow: 0 8px 20px -6px rgba(255, 122, 0, 0.45);
+    }
+
+    .login-container button:active {
+        transform: translateY(0);
+        background-color: #c2410c;
     }
 
 #errorMessage {
     margin-top: 15px;
     font-size: 14px;
     font-weight: 500;
-    color: red;
+    color: #dc2626;
 }
 
 
 .link {
-    display: block;
-    margin-top: 10px;
+    display: inline-block;
+    margin-top: 14px;
     font-size: 13px;
-    color: #007bff;
+    color: #ff7a00;
+    font-weight: 600;
     text-decoration: none;
+    transition: color 0.2s ease;
 }
 
     .link:hover {
-        text-decoration: underline;
+        color: #e05e00;
     }

@@ -83,7 +83,7 @@ function showToast(message, type = "success") {
     const root = ensurePopupRoot();
 
     const colors = {
-        info: { bg: "#eef4ff", border: "#a5b4fc", text: "#3730a3", icon: "info", glow: "rgba(99,102,241,0.15)" },
+        info: { bg: "#fff7ed", border: "#fed7aa", text: "#9a3412", icon: "info", glow: "rgba(255,122,0,0.18)" },
         success: { bg: "#ecfdf5", border: "#6ee7b7", text: "#065f46", icon: "success", glow: "rgba(16,185,129,0.15)" },
         error: { bg: "#fef2f2", border: "#fca5a5", text: "#991b1b", icon: "error", glow: "rgba(239,68,68,0.15)" },
         warning: { bg: "#fffbeb", border: "#fcd34d", text: "#92400e", icon: "warning", glow: "rgba(245,158,11,0.15)" }
@@ -117,7 +117,7 @@ function showPopup(message, type = "info", onDismiss = null) {
     const root = ensurePopupRoot();
 
     const colors = {
-        info: { icon: "#6366f1", iconBg: "#e0e7ff" },
+        info: { icon: "#ff7a00", iconBg: "#fff1e6" },
         success: { icon: "#10b981", iconBg: "#d1fae5" },
         error: { icon: "#ef4444", iconBg: "#fee2e2" },
         warning: { icon: "#f59e0b", iconBg: "#fef3c7" }
@@ -163,7 +163,7 @@ function showConfirm(message, onConfirm, options = {}) {
     const colors = {
         warning: { icon: "#f59e0b", iconBg: "#fef3c7", btnBg: "#f59e0b" },
         error: { icon: "#ef4444", iconBg: "#fee2e2", btnBg: "#ef4444" },
-        info: { icon: "#6366f1", iconBg: "#e0e7ff", btnBg: "#6366f1" },
+        info: { icon: "#ff7a00", iconBg: "#fff1e6", btnBg: "#ff7a00" },
         success: { icon: "#10b981", iconBg: "#d1fae5", btnBg: "#10b981" }
     };
     const c = colors[type] || colors.warning;
