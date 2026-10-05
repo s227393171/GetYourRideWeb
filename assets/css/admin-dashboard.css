@@ -535,10 +535,11 @@ td {
     }
 
 body.dark-mode {
-    color: #f8fafc;
+    /* Make overall background navy and force light text for high contrast */
+    color: #ffffff;
+    background-color: var(--bg-sidebar) !important;
 }
 
-    
     body.dark-mode .top-navbar {
         color: #ffffff;
     }
@@ -563,6 +564,40 @@ body.dark-mode {
 
     body.dark-mode .modal-body-content p span {
         color: #e2e8f0 !important;
+    }
+
+    /* Ensure all previously white surfaces become navy for High Contrast Dark Mode */
+    body.dark-mode .main-content,
+    body.dark-mode .content-body,
+    body.dark-mode .table-card,
+    body.dark-mode .metric-card,
+    body.dark-mode .profile-modal-card,
+    body.dark-mode .modal-card,
+    body.dark-mode .welcome-banner,
+    body.dark-mode .table-footer,
+    body.dark-mode .profile-modal-overlay .profile-modal-card,
+    body.dark-mode .sidebar-profile-footer .profile-dropdown-menu,
+    body.dark-mode .modal-overlay .modal-card {
+        background-color: var(--bg-sidebar) !important;
+        border-color: #24356e !important;
+        color: #ffffff !important;
+    }
+
+    /* Table cells, headers and text inside cards should be white/ muted light for contrast */
+    body.dark-mode td,
+    body.dark-mode th,
+    body.dark-mode .metric-card *,
+    body.dark-mode .modal-card *,
+    body.dark-mode .profile-modal-card * {
+        color: #ffffff !important;
+    }
+
+    /* Slightly muted secondary text to keep hierarchy */
+    body.dark-mode .subtitle,
+    body.dark-mode .modal-body-content label,
+    body.dark-mode .modal-body-content p strong,
+    body.dark-mode .toast-content p {
+        color: #cbd5e1 !important;
     }
 
   

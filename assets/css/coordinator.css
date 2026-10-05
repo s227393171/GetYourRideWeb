@@ -1,5 +1,4 @@
-﻿
-* {
+﻿* {
     margin: 0;
     padding: 0;
     box-sizing: border-box;
@@ -34,46 +33,46 @@ body {
     margin-bottom: 22px;
 }
 
-    .brand-logo-tile {
-        width: 40px;
-        height: 40px;
-        border-radius: 10px;
-        background-color: var(--primary-orange, #ff7a00);
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        flex-shrink: 0;
-        color: #ffffff;
-    }
+.brand-logo-tile {
+    width: 40px;
+    height: 40px;
+    border-radius: 10px;
+    background-color: var(--primary-orange, #ff7a00);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    color: #ffffff;
+}
 
-    .brand-text {
-        display: inline-block;
-        margin-left: 12px;
-        vertical-align: top;
-    }
+.brand-text {
+    display: inline-block;
+    margin-left: 12px;
+    vertical-align: top;
+}
 
-    .brand h1 {
-        font-size: 19px;
-        margin: 0;
-        font-weight: 700;
-        letter-spacing: -0.5px;
-        line-height: 1.1;
-        color: #ffffff;
-    }
+.brand h1 {
+    font-size: 19px;
+    margin: 0;
+    font-weight: 700;
+    letter-spacing: -0.5px;
+    line-height: 1.1;
+    color: #ffffff;
+}
 
-    .brand span {
-        font-size: 10px;
-        color: #94a3b8;
-        display: block;
-        margin-top: 4px;
-        text-transform: uppercase;
-        letter-spacing: 0.8px;
-        font-weight: 600;
-    }
+.brand span {
+    font-size: 10px;
+    color: #94a3b8;
+    display: block;
+    margin-top: 4px;
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+    font-weight: 600;
+}
 
 
 .menu-list {
-    list-style: none; 
+    list-style: none;
     display: flex;
     flex-direction: column;
     gap: 8px;
@@ -117,11 +116,14 @@ body {
 
 
 .main-content {
-    margin-left: 260px; 
-    flex-grow: 1;
-    min-height: 100vh;
+    /* Coordinator now shares Admin layout where sidebar and main are flex children.
+       Remove the old left margin (used when sidebar was fixed) so content doesn't double-offset.
+    */
+    flex: 1;
     display: flex;
     flex-direction: column;
+    min-height: 100vh;
+    overflow-y: auto;
 }
 
 
@@ -211,9 +213,9 @@ body {
 
 .content-body {
     padding: 32px 40px;
-    max-width: 1680px; 
+    max-width: 1680px;
     width: 100%;
-    margin: 0; 
+    margin: 0;
 }
 
 .view-header {
@@ -269,14 +271,47 @@ body {
     }
 
 .card-icon {
-    font-size: 1.5rem;
-    background: #f8fafc;
+    font-size: 1.3rem;
+    background: #f1f5f9;
+    color: #475569;
     width: 44px;
     height: 44px;
-    border-radius: 8px;
+    border-radius: 10px;
     display: flex;
     align-items: center;
     justify-content: center;
+    flex-shrink: 0;
+}
+
+    /* Colored variants for stat card icons, matching the reference design.
+   Add one of these alongside "card-icon" on each <span> in the metrics grid,
+   e.g. <span class="card-icon icon-blue">...</span> */
+    .card-icon.icon-blue {
+        background: #e0f2fe;
+        color: #0284c7;
+    }
+
+    .card-icon.icon-green {
+        background: #dcfce7;
+        color: #16a34a;
+    }
+
+    .card-icon.icon-orange {
+        background: #ffedd5;
+        color: #ea580c;
+    }
+
+    .card-icon.icon-gray {
+        background: #f1f5f9;
+        color: #475569;
+    }
+
+.metric-trend {
+    font-size: 0.7rem;
+    font-weight: 700;
+    color: #16a34a;
+    margin-bottom: 4px;
+    display: block;
 }
 
 
@@ -433,6 +468,7 @@ body {
     width: 440px;
     box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1);
 }
+
 .data-table {
     width: 100%;
     border-collapse: collapse;
@@ -482,6 +518,81 @@ body {
     border-radius: 12px;
 }
 
+/* Status pills restyled as toggle switches, matching the reference design.
+   Structure expected inside the cell:
+   <span class="status-toggle is-on">Available</span>
+   <span class="status-toggle is-off">Unavailable</span>
+   <span class="status-toggle is-maintenance">Maintenance</span>
+   The colored "track" is drawn by ::before; the text sits next to it. */
+.status-toggle {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    font-size: 0.85rem;
+    font-weight: 600;
+    /* reserve space for the 34px track + 8px gap before the label text */
+    padding-left: 42px;
+    min-height: 18px;
+}
+
+    .status-toggle::before {
+        content: "";
+        position: absolute;
+        left: 0;
+        top: 50%;
+        transform: translateY(-50%);
+        width: 34px;
+        height: 18px;
+        border-radius: 999px;
+        background: #cbd5e1;
+        transition: background 0.2s ease;
+    }
+
+    .status-toggle::after {
+        content: "";
+        position: absolute;
+        left: 2px;
+        top: 50%;
+        width: 14px;
+        height: 14px;
+        border-radius: 50%;
+        background: #ffffff;
+        transform: translateY(-50%) translateX(0);
+        transition: transform 0.2s ease;
+        box-shadow: 0 1px 2px rgba(0,0,0,0.2);
+    }
+
+    .status-toggle.is-on {
+        color: #ea580c;
+    }
+
+        .status-toggle.is-on::before {
+            background: #f97316;
+        }
+
+        .status-toggle.is-on::after {
+            transform: translateY(-50%) translateX(16px);
+        }
+
+    .status-toggle.is-off {
+        color: #94a3b8;
+    }
+
+    .status-toggle.is-maintenance {
+        color: #b45309;
+    }
+
+        .status-toggle.is-maintenance::before {
+            background: #f59e0b;
+        }
+
+        .status-toggle.is-maintenance::after {
+            transform: translateY(-50%) translateX(8px);
+        }
+
+/* Legacy badge classes kept for any markup still using them, but restyled
+   as pill labels rather than plain colored text so they don't look out of
+   place next to the new toggles. */
 .badge-active {
     background: #dcfce7;
     color: #166534;
@@ -490,6 +601,11 @@ body {
 .badge-inactive {
     background: #fee2e2;
     color: #991b1b;
+}
+
+.badge-maintenance {
+    background: #ffedd5;
+    color: #b45309;
 }
 
 
@@ -616,7 +732,58 @@ body {
 .data-table th {
     background-color: #f8fafc;
     border-top: 1px solid #e2e8f0;
+    font-size: 0.72rem;
+    letter-spacing: 0.4px;
 }
+
+.data-table tbody tr:hover {
+    background-color: #f8fafc;
+}
+
+.action-icon-btn {
+    color: #64748b;
+}
+
+    .action-icon-btn:hover {
+        color: #0f172a;
+    }
+
+.table-pagination {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding-top: 16px;
+    margin-top: 4px;
+    border-top: 1px solid #f1f5f9;
+    font-size: 0.8rem;
+    color: #64748b;
+}
+
+.pagination-controls {
+    display: flex;
+    gap: 6px;
+}
+
+.page-btn {
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    color: #334155;
+    padding: 6px 12px;
+    border-radius: 6px;
+    font-size: 0.8rem;
+    cursor: pointer;
+}
+
+    .page-btn:hover {
+        background: #f8fafc;
+    }
+
+    .page-btn.active {
+        background: #1b2a5c;
+        color: #ffffff;
+        border-color: #1b2a5c;
+        font-weight: 600;
+    }
 
 .nav-profile-section {
     display: flex;
@@ -652,7 +819,7 @@ body {
 
 
 .sidebar {
-    position: relative; 
+    position: relative;
 }
 
 .sidebar-footer {
@@ -1044,13 +1211,13 @@ body {
             width: 100%;
         }
 
-        .sidebar .brand::after {
-            content: "GYR";
-            font-weight: 800;
-            font-size: 0.85rem;
-            color: #ffffff;
-            letter-spacing: 1px;
-        }
+            .sidebar .brand::after {
+                content: "GYR";
+                font-weight: 800;
+                font-size: 0.85rem;
+                color: #ffffff;
+                letter-spacing: 1px;
+            }
 
     .menu-item {
         justify-content: center;
