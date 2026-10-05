@@ -4,6 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Admin Portal - Review Application</title>
+    <script>(function(){try{var t=localStorage.getItem('portalTheme');document.documentElement.setAttribute('data-theme',t==='dark'?'dark':'light');}catch(e){}})();</script>
+    <link rel="stylesheet" href="../assets/css/theme.css">
     <link rel="stylesheet" href="../assets/css/admin-dashboard.css">
     <link rel="stylesheet" href="../assets/css/admin-review.css">
     <style>
@@ -108,16 +110,7 @@
                 </div>
             </div>
 
-            <div class="top-navbar-right">
-                <div class="portal-badge">
-                    <span id="liveClock" style="font-family: monospace; font-weight: 700; color: #ff7a00; margin-right: 15px;">00:00:00</span>
-                    Admin Portal
-                </div>
-                <button class="top-logout-btn" onclick="handleLogout()">
-                    <svg class="icon-inline icon-sm" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg>
-                    Logout
-                </button>
-            </div>
+            <div class="top-navbar-right" id="topbar-actions"></div>
         </div>
 
         <div class="content-body">
@@ -294,5 +287,7 @@
     <script src="../assets/css/js/admin-review.js"></script>
     <script src="../assets/css/js/admin-dropdown.js"></script>
     <script src="../assets/css/js/admin-enhancements.js"></script>
+    <script src="../assets/css/js/theme.js"></script>
+    <script src="../assets/css/js/topbar.js"></script>
 </body>
 </html>

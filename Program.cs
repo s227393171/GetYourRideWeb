@@ -1802,6 +1802,70 @@ app.MapDelete("/api/coordinator/schedules/{id:int}", async (int id, IConfigurati
 });
 
 
+// Coordinator dashboard "Today at a glance" summary.
+// Returns live counts used by the dashboard summary box.
+app.MapGet("/api/coordinator/summary", async (IConfiguration config) => {
+    string connectionString = config.GetConnectionString("DefaultConnection");
+
+    try
+    {
+        using var connection = new MySqlConnection(connectionString);
+        await connection.OpenAsync();
+
+        // A "shuttle" matches the fleet definition used by /shuttles: capacity >= 15 and not Inactive.
+        // Available = those currently Active (excludes Maintenance / Inactive).
+        string query = @"
+            SELECT
+                (SELECT COUNT(*) FROM vehicle
+                    WHERE capacity >= 15 AND status <> 'Inactive') AS ShuttlesTotal,
+                (SELECT COUNT(*) FROM vehicle
+                    WHERE capacity >= 15 AND status = 'Active') AS ShuttlesAvailable,
+                (SELECT COUNT(*) FROM trip
+                    WHERE trip_type = 'SHUTTLE' AND DATE(departure_time) = CURDATE()) AS TripsToday,
+                (SELECT COUNT(DISTINCT driver_id) FROM trip
+                    WHERE trip_type = 'SHUTTLE' AND DATE(departure_time) = CURDATE()
+                      AND driver_id IS NOT NULL) AS DriversOnShift,
+                (SELECT COUNT(*) FROM trip
+                    WHERE trip_type = 'SHUTTLE' AND DATE(departure_time) = CURDATE()
+                      AND driver_id IS NULL) AS UnassignedTrips,
+                (SELECT MIN(departure_time) FROM trip
+                    WHERE trip_type = 'SHUTTLE' AND DATE(departure_time) = CURDATE()
+                      AND departure_time >= NOW()) AS NextDeparture;";
+
+        using var command = new MySqlCommand(query, connection);
+        using var reader = await command.ExecuteReaderAsync();
+
+        if (await reader.ReadAsync())
+        {
+            string nextDeparture = reader["NextDeparture"] != DBNull.Value
+                ? Convert.ToDateTime(reader["NextDeparture"]).ToString("HH:mm")
+                : null;
+
+            return Results.Ok(new
+            {
+                shuttlesAvailable = Convert.ToInt32(reader["ShuttlesAvailable"]),
+                shuttlesTotal = Convert.ToInt32(reader["ShuttlesTotal"]),
+                driversOnShift = Convert.ToInt32(reader["DriversOnShift"]),
+                tripsToday = Convert.ToInt32(reader["TripsToday"]),
+                nextDeparture = nextDeparture,
+                unassignedTrips = Convert.ToInt32(reader["UnassignedTrips"])
+            });
+        }
+
+        return Results.Ok(new
+        {
+            shuttlesAvailable = 0, shuttlesTotal = 0, driversOnShift = 0,
+            tripsToday = 0, nextDeparture = (string)null, unassignedTrips = 0
+        });
+    }
+    catch (Exception ex)
+    {
+        Console.WriteLine($"[API Error] Coordinator summary failed: {ex.Message}");
+        return Results.Json(new { error = ex.Message }, statusCode: 500);
+    }
+});
+
+
 app.MapGet("/api/coordinator/profile", async (string? email, IConfiguration config) => {
     if (string.IsNullOrEmpty(email))
     {

@@ -4,6 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Driver Dashboard - GetYourRide</title>
+    <script>(function(){try{var t=localStorage.getItem('portalTheme');document.documentElement.setAttribute('data-theme',t==='dark'?'dark':'light');}catch(e){}})();</script>
+    <link rel="stylesheet" href="../assets/css/theme.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <link rel="stylesheet" href="../assets/css/driver-dashboard.css">
 
@@ -51,14 +53,7 @@
                 <input type="date" class="date-filter" id="manifestDateFilter" onchange="filterByDate()">
             </div>
 
-            <div class="top-navbar-right">
-                <div class="portal-badge">
-                    <i class="fa-solid fa-route gyr-portal-icon"></i>
-                    <span id="liveClock" style="font-family: monospace; font-weight: 700; color: #ff7a00; margin-right: 15px;">00:00:00</span>
-                    Driver Portal
-                </div>
-                <button class="top-logout-btn" onclick="handleLogout()"><i class="fa-solid fa-right-from-bracket"></i> Logout</button>
-            </div>
+            <div class="top-navbar-right" id="topbar-actions"></div>
         </div>
 
         <div class="content-body">
@@ -191,7 +186,9 @@
         </div>
     </div>
 
-    <script src="../assets/js/driver-dashboard.js"></script>
+    <script src="../assets/css/js/driver-dashboard.js"></script>
+    <script src="../assets/css/js/theme.js"></script>
+    <script src="../assets/css/js/topbar.js"></script>
 
 </body>
 </html>

@@ -11,10 +11,12 @@ function closeProfileModal() {
 }
 
 
-if (document.getElementById('modalFullName')) document.getElementById('modalFullName').innerText = activeCoordinatorProfile.fullName;
-if (document.getElementById('modalIdNumber')) document.getElementById('modalIdNumber').innerText = activeCoordinatorProfile.employeeId;
-if (document.getElementById('modalEmail')) document.getElementById('modalEmail').innerText = activeCoordinatorProfile.email;
-if (document.getElementById('modalRole')) document.getElementById('modalRole').innerText = activeCoordinatorProfile.role;
+if (activeCoordinatorProfile) {
+    if (document.getElementById('modalFullName')) document.getElementById('modalFullName').innerText = activeCoordinatorProfile.fullName;
+    if (document.getElementById('modalIdNumber')) document.getElementById('modalIdNumber').innerText = activeCoordinatorProfile.employeeId;
+    if (document.getElementById('modalEmail')) document.getElementById('modalEmail').innerText = activeCoordinatorProfile.email;
+    if (document.getElementById('modalRole')) document.getElementById('modalRole').innerText = activeCoordinatorProfile.role;
+}
 
 
 const viewProfileLink = document.getElementById("btnDropdownProfile");
@@ -176,3 +178,150 @@ document.addEventListener('DOMContentLoaded', () => {
         btnCloseSupport.addEventListener('click', () => supportModal.style.display = 'none');
     }
 });
+
+
+/* ============================================================
+   "Today at a glance" summary box (coordinator dashboard)
+   ============================================================ */
+(function () {
+    const SUMMARY_API = '/api/coordinator/summary';
+    const card = document.getElementById('glanceCard');
+    if (!card) return; // only runs on the dashboard
+
+    const els = {
+        emptyHeader: document.getElementById('glanceEmptyHeader'),
+        emptyState: document.getElementById('glanceEmptyState'),
+        summary: document.getElementById('glanceSummary'),
+        error: document.getElementById('glanceError'),
+        retry: document.getElementById('glanceRetry'),
+        updated: document.getElementById('glanceUpdated'),
+        stats: document.getElementById('glanceStats'),
+        status: document.getElementById('glanceStatus'),
+        shuttles: document.getElementById('glShuttles'),
+        drivers: document.getElementById('glDrivers'),
+        trips: document.getElementById('glTrips'),
+        next: document.getElementById('glNext'),
+        unassigned: document.getElementById('glUnassigned')
+    };
+
+    let glanceTimer = null;
+
+    function show(el) { if (el) el.hidden = false; }
+    function hide(el) { if (el) el.hidden = true; }
+
+    function nowHHMM() {
+        const d = new Date();
+        return d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false });
+    }
+
+    function showSkeleton() {
+        hide(els.emptyHeader);
+        hide(els.emptyState);
+        hide(els.error);
+        show(els.summary);
+        els.updated.textContent = 'Updating…';
+        [els.shuttles, els.drivers, els.trips, els.next, els.unassigned].forEach(function (n) {
+            if (n) n.innerHTML = '<span class="glance-skel" style="width:36px;height:22px;"></span>';
+            if (n) n.classList.remove('danger');
+        });
+        els.status.className = 'glance-status';
+        els.status.innerHTML = '<span class="glance-skel" style="width:160px;height:14px;"></span>';
+    }
+
+    function showError() {
+        hide(els.emptyHeader);
+        hide(els.emptyState);
+        hide(els.summary);
+        show(els.error);
+    }
+
+    function showEmptyState() {
+        // Truly nothing in the system — restore the original empty state.
+        show(els.emptyHeader);
+        show(els.emptyState);
+        hide(els.summary);
+        hide(els.error);
+    }
+
+    function render(data) {
+        const shuttlesTotal = data.shuttlesTotal || 0;
+        const shuttlesAvailable = data.shuttlesAvailable || 0;
+        const driversOnShift = data.driversOnShift || 0;
+        const tripsToday = data.tripsToday || 0;
+        const unassigned = data.unassignedTrips || 0;
+        const nextDeparture = data.nextDeparture || null;
+
+        // Always show the glance summary when the endpoint responds
+        // (real zeros are shown rather than hiding the whole box).
+        hide(els.emptyHeader);
+        hide(els.emptyState);
+        hide(els.error);
+        show(els.summary);
+
+        els.shuttles.textContent = shuttlesAvailable + ' / ' + shuttlesTotal;
+        els.drivers.textContent = driversOnShift;
+        els.trips.textContent = tripsToday;
+        els.next.textContent = nextDeparture ? nextDeparture : 'None';
+
+        els.unassigned.textContent = unassigned;
+        els.unassigned.classList.toggle('danger', unassigned > 0);
+
+        if (unassigned > 0) {
+            els.status.className = 'glance-status warn';
+            els.status.innerHTML =
+                '<span>' + unassigned + (unassigned === 1 ? ' trip still needs a driver' : ' trips still need a driver') + '</span>' +
+                '<a href="schedule-shuttles.html">Assign drivers →</a>';
+        } else {
+            els.status.className = 'glance-status ok';
+            els.status.innerHTML = '<span>All trips have drivers</span>';
+        }
+
+        els.updated.textContent = 'Updated ' + nowHHMM();
+    }
+
+    async function loadGlance(isAuto) {
+        if (!isAuto) showSkeleton();
+        try {
+            const res = await fetch(window.location.origin + SUMMARY_API);
+            if (!res.ok) throw new Error('summary status ' + res.status);
+            const data = await res.json();
+            console.log('[Glance] summary data:', data);
+            render(data);
+        } catch (err) {
+            console.error('Glance summary failed:', err);
+            // On an auto-refresh failure keep showing the last good data;
+            // only replace the box with the error state on first/manual load.
+            if (!isAuto) showError();
+        }
+    }
+
+    // Auto-refresh using the Settings "Refresh Frequency" (localStorage).
+    function scheduleAutoRefresh() {
+        if (glanceTimer) { clearInterval(glanceTimer); glanceTimer = null; }
+        const saved = localStorage.getItem('portalRefresh'); // 'manual' | ms string
+        let ms = 30000; // default every 30s
+        if (saved === 'manual') { ms = 0; }
+        else if (saved && !isNaN(parseInt(saved, 10))) { ms = parseInt(saved, 10); }
+        if (ms > 0) {
+            glanceTimer = setInterval(function () { loadGlance(true); }, ms);
+        }
+    }
+
+    // Let theme.js's refresh hook also refresh this box.
+    window.portalRefreshData = function () { loadGlance(true); };
+
+    if (els.retry) {
+        els.retry.addEventListener('click', function (e) {
+            e.preventDefault();
+            loadGlance(false);
+        });
+    }
+
+    // React if the refresh frequency changes in another tab / Settings.
+    window.addEventListener('storage', function (e) {
+        if (e.key === 'portalRefresh') scheduleAutoRefresh();
+    });
+
+    loadGlance(false);
+    scheduleAutoRefresh();
+})();

@@ -4,6 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Coordinator Portal - Schedule Shuttles</title>
+    <script>(function(){try{var t=localStorage.getItem('portalTheme');document.documentElement.setAttribute('data-theme',t==='dark'?'dark':'light');}catch(e){}})();</script>
+    <link rel="stylesheet" href="../assets/css/theme.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <link rel="stylesheet" href="../assets/css/admin-dashboard.css">
     <link rel="stylesheet" href="../assets/css/styles.css">
@@ -43,21 +45,17 @@
         </ul>
 
         <div class="sidebar-profile-footer">
-            <div class="sidebar-profile-footer">
-                
-                <div class="profile-trigger-area" id="profileTrigger" onclick="toggleProfileMenu()">
-                    
-                    <div class="avatar-placeholder">SC</div>
-                    <div class="profile-info-text">
-                      
-                        <span class="user-display-name" id="coordinatorNameLabel">Loading profile...</span>
-                        <span class="user-display-email" id="coordinatorEmailLabel">connecting to database...</span>
-                    </div>
+            <div class="profile-trigger-area" id="profileTrigger" onclick="toggleProfileMenu()">
+                <div class="avatar-placeholder">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
+                </div>
+                <div class="profile-info-text">
+                    <span class="user-display-name" id="coordinatorNameLabel">Loading profile...</span>
+                    <span class="user-display-email" id="coordinatorEmailLabel">connecting to database...</span>
                 </div>
             </div>
             <div class="profile-dropdown-menu" id="profileDropdown">
                 <a href="#" class="dropdown-link" id="btnDropdownProfile" onclick="openProfileModal(event)"><i class="fa-solid fa-user"></i> View Profile</a>
-
                 <hr class="dropdown-divider">
                 <a href="#" class="dropdown-link logout-action" onclick="handleLogout()"><i class="fa-solid fa-right-from-bracket"></i> Logout Portal</a>
             </div>
@@ -66,15 +64,14 @@
 
     <div class="main-content">
         <div class="top-navbar">
-            <div class="nav-breadcrumb">Management &gt; <strong>Assignment Scheduler</strong></div>
-
-            <div class="top-navbar-right">
-                <div class="portal-badge">
-                    <span id="liveClock" style="font-family: monospace; font-weight: 700; color: #ff7a00; margin-right: 15px;">00:00:00</span>
-                    Coordinator Portal
+            <div class="search-box-wrapper">
+                <div class="navbar-search">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+                    <input type="text" placeholder="Search shuttles, drivers, or schedules..." aria-label="Search" oninput="gyrFilterTable('scheduleTableBody', this.value)">
                 </div>
-                <button class="top-logout-btn" onclick="handleLogout()"><i class="fa-solid fa-right-from-bracket"></i> Logout</button>
             </div>
+
+            <div class="top-navbar-right" id="topbar-actions"></div>
         </div>
 
         <div class="content-body">
@@ -234,8 +231,10 @@
         </div>
     </div>
 
-    <script src="../assets/js/coordinator-schedules.js"></script>
+    <script src="../assets/css/js/coordinator-schedules.js"></script>
 
-    <script src="../assets/js/admin-dropdown.js"></script>
+    <script src="../assets/css/js/admin-dropdown.js"></script>
+    <script src="../assets/css/js/theme.js"></script>
+    <script src="../assets/css/js/topbar.js"></script>
 </body>
 </html>

@@ -7,9 +7,12 @@ async function loadDriverRatingsData() {
         if (!response.ok) throw new Error("Database sync dropped.");
         const rawData = await response.json();
 
-       
-        // Load all drivers from the API (show every driver in the database)
-        globalDriversCached = rawData || [];
+        // This screen is dedicated to STUDENT DRIVERS only — exclude
+        // shuttle drivers and any other roles.
+        globalDriversCached = (rawData || []).filter(d => {
+            const role = (d.role || '').toUpperCase();
+            return role === 'STUDENT_DRIVER' || role === 'STUDENT';
+        });
 
         renderRatingsTable(globalDriversCached);
         calculateSummaryMetrics(globalDriversCached);

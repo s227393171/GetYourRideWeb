@@ -534,94 +534,8 @@ td {
         background-color: #1e2538 !important;
     }
 
-body.dark-mode {
-    /* Make overall background navy and force light text for high contrast */
-    color: #ffffff;
-    background-color: var(--bg-sidebar) !important;
-}
-
-    body.dark-mode .top-navbar {
-        color: #ffffff;
-    }
-
-    body.dark-mode .portal-badge {
-        color: #cbd5e1;
-    }
-
-    
-    body.dark-mode .view-header h2,
-    body.dark-mode .content-body h2,
-    body.dark-mode .content-body h3,
-    body.dark-mode .profile-modal-card h3 {
-        color: #ffffff !important;
-    }
-
-    body.dark-mode .subtitle,
-    body.dark-mode .modal-body-content label,
-    body.dark-mode .modal-body-content p strong {
-        color: #94a3b8 !important;
-    }
-
-    body.dark-mode .modal-body-content p span {
-        color: #e2e8f0 !important;
-    }
-
-    /* Ensure all previously white surfaces become navy for High Contrast Dark Mode */
-    body.dark-mode .main-content,
-    body.dark-mode .content-body,
-    body.dark-mode .table-card,
-    body.dark-mode .metric-card,
-    body.dark-mode .profile-modal-card,
-    body.dark-mode .modal-card,
-    body.dark-mode .welcome-banner,
-    body.dark-mode .table-footer,
-    body.dark-mode .profile-modal-overlay .profile-modal-card,
-    body.dark-mode .sidebar-profile-footer .profile-dropdown-menu,
-    body.dark-mode .modal-overlay .modal-card {
-        background-color: var(--bg-sidebar) !important;
-        border-color: #24356e !important;
-        color: #ffffff !important;
-    }
-
-    /* Table cells, headers and text inside cards should be white/ muted light for contrast */
-    body.dark-mode td,
-    body.dark-mode th,
-    body.dark-mode .metric-card *,
-    body.dark-mode .modal-card *,
-    body.dark-mode .profile-modal-card * {
-        color: #ffffff !important;
-    }
-
-    /* Slightly muted secondary text to keep hierarchy */
-    body.dark-mode .subtitle,
-    body.dark-mode .modal-body-content label,
-    body.dark-mode .modal-body-content p strong,
-    body.dark-mode .toast-content p {
-        color: #cbd5e1 !important;
-    }
-
-  
-    body.dark-mode .metric-card {
-        background-color: #111625 !important;
-        border: 1px solid #1e2538 !important;
-        color: #ffffff !important;
-    }
-
-    
-    body.dark-mode tr:hover {
-        background-color: #1e2538;
-    }
-
-    body.dark-mode .student-profile span {
-        color: #ffffff;
-    }
-
-    
-    body.dark-mode select {
-        background-color: #1e2538 !important;
-        border-color: #334155 !important;
-        color: #ffffff !important;
-    }
+/* Legacy body.dark-mode rules removed — theming is now handled centrally
+   by theme.css via [data-theme="dark"] on the <html> element. */
 
 .toast-banner {
     position: fixed;
@@ -1141,6 +1055,19 @@ body.dark-mode {
         .recent-table th.text-right {
             text-align: right;
         }
+
+/* Right-align the Action column header + cells on all admin tables */
+.verify-table th.text-right,
+.recent-table th.text-right,
+th.text-right {
+    text-align: right;
+}
+
+.verify-table td.recent-actions,
+.recent-table td.recent-actions,
+td.recent-actions {
+    text-align: right;
+}
 
     .recent-table td {
         padding: 16px 24px;

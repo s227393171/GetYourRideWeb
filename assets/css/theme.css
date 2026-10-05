@@ -1,0 +1,606 @@
+/* ============================================================
+   theme.css — Shared theme system for GetYourRide Admin Portal
+   One source of truth for light/dark colours across EVERY page.
+   Toggled via [data-theme="light" | "dark"] on the <html> element.
+   ============================================================ */
+
+/* ---------- LIGHT (default) ---------- */
+:root,
+[data-theme="light"] {
+    --bg-page: #f4f6fa;
+    --bg-card: #ffffff;
+    --bg-sidebar: #1b2a5c;
+    --bg-sidebar-hover: #24356e;
+    --bg-topbar: #ffffff;
+    --bg-input: #f4f6fa;
+    --bg-subtle: #f8fafc;
+    --table-head-bg: #f8fafc;
+    --table-row-hover: #fafbfc;
+
+    --text-primary: #1e293b;
+    --text-heading: #0f172a;
+    --text-secondary: #64748b;
+    --text-on-sidebar: #ffffff;
+    --text-on-sidebar-muted: #94a3b8;
+    --text-on-accent: #ffffff;
+
+    --border: #e2e8f0;
+    --border-strong: #cbd5e1;
+    --divider: #f1f5f9;
+
+    --accent: #ff7a00;
+    --accent-hover: #e66d00;
+
+    --pill-pending-bg: #fef3c7;
+    --pill-pending-text: #b45309;
+    --pill-approved-bg: #dcfce7;
+    --pill-approved-text: #166534;
+    --pill-rejected-bg: #fee2e2;
+    --pill-rejected-text: #b91c1c;
+
+    --star: #f59e0b;
+    --scrollbar-track: #eef1f6;
+    --scrollbar-thumb: #cbd5e1;
+    --modal-overlay: rgba(15, 23, 42, 0.6);
+    --shadow-card: 0 1px 3px rgba(15, 23, 42, 0.04);
+}
+
+/* ---------- DARK ---------- */
+[data-theme="dark"] {
+    --bg-page: #0d1526;
+    --bg-card: #16203a;
+    --bg-sidebar: #0a1120;
+    --bg-sidebar-hover: #1b2742;
+    --bg-topbar: #111a30;
+    --bg-input: #1b2742;
+    --bg-subtle: #1b2742;
+    --table-head-bg: #1b2742;
+    --table-row-hover: #1f2c4a;
+
+    --text-primary: #e5e9f0;
+    --text-heading: #f8fafc;
+    --text-secondary: #9fb0c9;
+    --text-on-sidebar: #ffffff;
+    --text-on-sidebar-muted: #8ca0c0;
+    --text-on-accent: #ffffff;
+
+    --border: #2a3657;
+    --border-strong: #3a4a73;
+    --divider: #243052;
+
+    --accent: #ff8c1a;
+    --accent-hover: #ff9d3d;
+
+    --pill-pending-bg: #4a3410;
+    --pill-pending-text: #fcd34d;
+    --pill-approved-bg: #11351f;
+    --pill-approved-text: #6ee7a8;
+    --pill-rejected-bg: #4a1a1a;
+    --pill-rejected-text: #fca5a5;
+
+    --star: #fbbf24;
+    --scrollbar-track: #16203a;
+    --scrollbar-thumb: #3a4a73;
+    --modal-overlay: rgba(0, 0, 0, 0.7);
+    --shadow-card: 0 1px 3px rgba(0, 0, 0, 0.4);
+}
+
+/* ---------- Smooth theme transition ---------- */
+body,
+.sidebar, .top-navbar, .main-content, .content-body,
+.table-card, .recent-panel, .dash-stat-card, .metric-card,
+.profile-modal-card, .modal-card,
+input, select, textarea, button, th, td {
+    transition: background-color 0.2s ease, color 0.2s ease, border-color 0.2s ease;
+}
+
+/* ============================================================
+   DARK MODE OVERRIDES (by selector, so every page is covered)
+   ============================================================ */
+
+/* Page + base text */
+[data-theme="dark"] body {
+    background-color: var(--bg-page);
+    color: var(--text-primary);
+}
+
+[data-theme="dark"] .main-content {
+    background-color: var(--bg-page);
+}
+
+[data-theme="dark"] .content-body {
+    background-color: var(--bg-page);
+    color: var(--text-primary);
+}
+
+/* Headings */
+[data-theme="dark"] h1,
+[data-theme="dark"] h2,
+[data-theme="dark"] h3,
+[data-theme="dark"] h4,
+[data-theme="dark"] .overview-title,
+[data-theme="dark"] .view-header h2,
+[data-theme="dark"] .recent-panel-header h3,
+[data-theme="dark"] .verify-section-head h2 {
+    color: var(--text-heading);
+}
+
+[data-theme="dark"] .overview-subtitle,
+[data-theme="dark"] .subtitle,
+[data-theme="dark"] .verify-section-head p,
+[data-theme="dark"] .recent-muted,
+[data-theme="dark"] .recent-footer-text,
+[data-theme="dark"] .verify-footer-text,
+[data-theme="dark"] .dash-stat-label {
+    color: var(--text-secondary);
+}
+
+/* Sidebar (already dark, but align to variables) */
+[data-theme="dark"] .sidebar {
+    background-color: var(--bg-sidebar);
+}
+
+[data-theme="dark"] .sidebar .bottom-menu,
+[data-theme="dark"] .sidebar-profile-footer {
+    border-top-color: var(--bg-sidebar-hover);
+}
+
+/* Top navbar */
+[data-theme="dark"] .top-navbar {
+    background-color: var(--bg-topbar);
+    border-bottom-color: var(--border);
+}
+
+[data-theme="dark"] .portal-badge {
+    color: var(--text-primary);
+}
+
+[data-theme="dark"] .navbar-icon-btn {
+    color: var(--text-secondary);
+}
+
+[data-theme="dark"] .navbar-icon-btn:hover {
+    background: var(--bg-subtle);
+    color: var(--accent);
+}
+
+[data-theme="dark"] .navbar-divider {
+    background: var(--border);
+}
+
+[data-theme="dark"] .navbar-identity .identity-name {
+    color: var(--text-heading);
+}
+
+/* Search bars */
+[data-theme="dark"] .navbar-search input,
+[data-theme="dark"] .search-bar,
+[data-theme="dark"] .date-filter {
+    background: var(--bg-input);
+    border-color: var(--border);
+    color: var(--text-primary);
+}
+
+[data-theme="dark"] .navbar-search svg {
+    stroke: var(--text-secondary);
+}
+
+[data-theme="dark"] .navbar-search input::placeholder,
+[data-theme="dark"] .search-bar::placeholder {
+    color: var(--text-secondary);
+}
+
+/* Cards: stat cards, metric cards, panels, tables */
+[data-theme="dark"] .dash-stat-card,
+[data-theme="dark"] .metric-card,
+[data-theme="dark"] .table-card,
+[data-theme="dark"] .recent-panel,
+[data-theme="dark"] .gyr-stat-card {
+    background: var(--bg-card);
+    border-color: var(--border);
+    box-shadow: var(--shadow-card);
+}
+
+[data-theme="dark"] .dash-stat-value,
+[data-theme="dark"] .metric-value,
+[data-theme="dark"] .recent-driver-name,
+[data-theme="dark"] .verify-driver-name {
+    color: var(--text-heading);
+}
+
+/* Keep the highlighted (navy) stat card readable in dark mode */
+[data-theme="dark"] .dash-stat-card.highlighted {
+    background: #0a1120;
+    border-color: #2a3657;
+}
+
+/* Tables */
+[data-theme="dark"] th,
+[data-theme="dark"] .recent-table th,
+[data-theme="dark"] .verify-table th,
+[data-theme="dark"] .table-card th {
+    background: var(--table-head-bg);
+    color: var(--text-secondary);
+    border-bottom-color: var(--border);
+    border-top-color: var(--border);
+}
+
+[data-theme="dark"] td,
+[data-theme="dark"] .recent-table td,
+[data-theme="dark"] .verify-table td,
+[data-theme="dark"] .table-card td {
+    color: var(--text-primary);
+    border-bottom-color: var(--divider);
+}
+
+[data-theme="dark"] tr:hover,
+[data-theme="dark"] .table-card tbody tr:hover {
+    background-color: var(--table-row-hover);
+}
+
+[data-theme="dark"] .table-footer,
+[data-theme="dark"] .verify-footer,
+[data-theme="dark"] .recent-panel-footer {
+    background: var(--bg-subtle);
+    border-top-color: var(--border);
+    color: var(--text-secondary);
+}
+
+/* Avatars in table rows */
+[data-theme="dark"] .recent-avatar,
+[data-theme="dark"] .verify-photo {
+    background: var(--bg-input);
+    color: var(--text-secondary);
+}
+
+/* Student number / emails (set to primary dark text) */
+[data-theme="dark"] .verify-student-num,
+[data-theme="dark"] .recent-driver-email {
+    color: var(--text-secondary);
+}
+
+/* Status pills */
+[data-theme="dark"] .status-pill.pending,
+[data-theme="dark"] .status-badge.status-pending {
+    background: var(--pill-pending-bg);
+    color: var(--pill-pending-text);
+}
+
+[data-theme="dark"] .status-pill.approved,
+[data-theme="dark"] .status-badge.status-completed,
+[data-theme="dark"] .status-badge.status-confirmed {
+    background: var(--pill-approved-bg);
+    color: var(--pill-approved-text);
+}
+
+[data-theme="dark"] .status-pill.rejected,
+[data-theme="dark"] .status-badge.status-cancelled,
+[data-theme="dark"] .status-badge.status-rejected {
+    background: var(--pill-rejected-bg);
+    color: var(--pill-rejected-text);
+}
+
+[data-theme="dark"] .action-text.approved { color: var(--pill-approved-text); }
+[data-theme="dark"] .action-text.rejected { color: var(--pill-rejected-text); }
+
+/* Star ratings */
+[data-theme="dark"] .star-color,
+[data-theme="dark"] .rating-highlight {
+    color: var(--star);
+}
+
+[data-theme="dark"] .rating-highlight {
+    color: var(--text-heading);
+}
+
+/* Buttons: keep orange, readable text */
+[data-theme="dark"] .btn-review,
+[data-theme="dark"] .btn-review-profile {
+    background: var(--accent);
+    color: var(--text-on-accent);
+}
+
+[data-theme="dark"] .btn-review:hover,
+[data-theme="dark"] .btn-review-profile:hover {
+    background: var(--accent-hover);
+}
+
+[data-theme="dark"] .filter-tabs {
+    background: var(--bg-input);
+}
+
+[data-theme="dark"] .filter-tab {
+    color: var(--text-secondary);
+}
+
+[data-theme="dark"] .filter-tab.active {
+    background: var(--bg-card);
+    color: var(--text-heading);
+}
+
+/* Forms / inputs / dropdowns */
+[data-theme="dark"] input,
+[data-theme="dark"] select,
+[data-theme="dark"] textarea {
+    background: var(--bg-input);
+    border-color: var(--border);
+    color: var(--text-primary);
+}
+
+[data-theme="dark"] select option {
+    background: var(--bg-card);
+    color: var(--text-primary);
+}
+
+/* Modals */
+[data-theme="dark"] .profile-modal-overlay,
+[data-theme="dark"] .modal-overlay,
+[data-theme="dark"] .modal-backdrop {
+    background-color: var(--modal-overlay) !important;
+}
+
+[data-theme="dark"] .profile-modal-card,
+[data-theme="dark"] .modal-card {
+    background: var(--bg-card) !important;
+    color: var(--text-primary);
+}
+
+[data-theme="dark"] .profile-modal-card h3,
+[data-theme="dark"] .modal-card h3,
+[data-theme="dark"] .modal-header h3 {
+    color: var(--text-heading) !important;
+    border-bottom-color: var(--border) !important;
+}
+
+[data-theme="dark"] .modal-body-content p,
+[data-theme="dark"] .modal-body-content label,
+[data-theme="dark"] .modal-body-content strong {
+    color: var(--text-primary) !important;
+}
+
+[data-theme="dark"] .modal-body-content span {
+    color: var(--text-secondary) !important;
+}
+
+[data-theme="dark"] .modal-body-content > div[style] {
+    background: var(--bg-subtle) !important;
+}
+
+/* Theme settings modal selects follow the theme */
+[data-theme="dark"] #themeSelect,
+[data-theme="dark"] #refreshSelect {
+    background: var(--bg-input) !important;
+    border-color: var(--border) !important;
+    color: var(--text-primary) !important;
+}
+
+/* Scrollbars */
+[data-theme="dark"] * {
+    scrollbar-color: var(--scrollbar-thumb) var(--scrollbar-track);
+}
+
+[data-theme="dark"] ::-webkit-scrollbar {
+    width: 12px;
+    height: 12px;
+}
+
+[data-theme="dark"] ::-webkit-scrollbar-track {
+    background: var(--scrollbar-track);
+}
+
+[data-theme="dark"] ::-webkit-scrollbar-thumb {
+    background: var(--scrollbar-thumb);
+    border-radius: 6px;
+    border: 3px solid var(--scrollbar-track);
+}
+
+/* ============================================================
+   Shared Settings modal (injected by theme.js) — styled for
+   both themes so it looks identical everywhere.
+   ============================================================ */
+.gyr-settings-overlay {
+    position: fixed;
+    inset: 0;
+    background: var(--modal-overlay);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    z-index: 100000;
+}
+
+.gyr-settings-overlay.show {
+    display: flex;
+}
+
+.gyr-settings-card {
+    background: var(--bg-card);
+    color: var(--text-primary);
+    width: 100%;
+    max-width: 420px;
+    border-radius: 14px;
+    padding: 24px;
+    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.25);
+    box-sizing: border-box;
+}
+
+.gyr-settings-card h3 {
+    margin: 0 0 18px 0;
+    font-size: 20px;
+    font-weight: 700;
+    color: var(--text-heading);
+    border-bottom: 1px solid var(--border);
+    padding-bottom: 12px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.gyr-settings-card label {
+    display: block;
+    margin: 14px 0 6px;
+    font-weight: 600;
+    font-size: 13px;
+    color: var(--text-primary);
+}
+
+.gyr-settings-card select {
+    width: 100%;
+    padding: 10px;
+    border-radius: 8px;
+    border: 1px solid var(--border);
+    background: var(--bg-input);
+    color: var(--text-primary);
+    outline: none;
+    font-family: inherit;
+    font-size: 14px;
+}
+
+.gyr-settings-save {
+    width: 100%;
+    margin-top: 20px;
+    padding: 12px;
+    border: none;
+    border-radius: 8px;
+    background: var(--accent);
+    color: var(--text-on-accent);
+    font-weight: 700;
+    font-size: 14px;
+    cursor: pointer;
+    transition: background 0.15s ease;
+}
+
+.gyr-settings-save:hover {
+    background: var(--accent-hover);
+}
+
+/* ============================================================
+   Shared top-bar-right actions (built by topbar.js)
+   Uses only theme variables so it works in light + dark.
+   ============================================================ */
+.topbar-actions {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+}
+
+.tb-icon-group {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.tb-icon-btn {
+    width: 36px;
+    height: 36px;
+    border: none;
+    background: transparent;
+    border-radius: 9px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--text-secondary, #64748b);
+    cursor: pointer;
+    transition: background 0.15s ease, color 0.15s ease;
+    padding: 0;
+}
+
+    .tb-icon-btn:hover {
+        background: var(--bg-subtle, #f4f6fa);
+        color: var(--accent, #ff7a00);
+    }
+
+    .tb-icon-btn:focus-visible {
+        outline: 2px solid var(--accent, #ff7a00);
+        outline-offset: 2px;
+    }
+
+.tb-divider {
+    width: 1px;
+    height: 26px;
+    background: var(--border, #e2e8f0);
+    flex: 0 0 auto;
+}
+
+.tb-clock {
+    font-family: 'Courier New', Courier, monospace;
+    font-weight: 700;
+    color: var(--accent, #ff7a00);
+    font-size: 14px;
+    letter-spacing: 0.5px;
+    white-space: nowrap;
+}
+
+.tb-portal-label {
+    font-weight: 700;
+    font-size: 14px;
+    color: var(--text-heading, #0f172a);
+    white-space: nowrap;
+}
+
+.tb-logout {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: var(--pill-rejected-bg, #fee2e2);
+    color: var(--pill-rejected-text, #b91c1c);
+    border: 1px solid var(--pill-rejected-text, #fca5a5);
+    padding: 8px 16px;
+    border-radius: 8px;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: filter 0.15s ease, transform 0.1s ease;
+}
+
+    .tb-logout:hover {
+        filter: brightness(0.96);
+    }
+
+    .tb-logout:active {
+        transform: scale(0.97);
+    }
+
+    .tb-logout:focus-visible {
+        outline: 2px solid var(--pill-rejected-text, #b91c1c);
+        outline-offset: 2px;
+    }
+
+/* Dark mode: ensure icons/label are clearly visible */
+[data-theme="dark"] .tb-icon-btn {
+    color: var(--text-secondary);
+}
+
+[data-theme="dark"] .tb-icon-btn:hover {
+    background: var(--bg-subtle);
+    color: var(--accent);
+}
+
+[data-theme="dark"] .tb-portal-label {
+    color: var(--text-heading);
+}
+
+[data-theme="dark"] .tb-logout {
+    background: var(--pill-rejected-bg);
+    color: var(--pill-rejected-text);
+    border-color: var(--pill-rejected-text);
+}
+
+/* Mobile: hide the portal label, keep icons + clock + logout tidy */
+@media (max-width: 640px) {
+    .topbar-actions {
+        gap: 10px;
+    }
+
+    .tb-portal-label {
+        display: none;
+    }
+
+    .tb-logout span {
+        display: none; /* icon-only logout on small screens */
+    }
+
+    .tb-logout {
+        padding: 8px 10px;
+    }
+}

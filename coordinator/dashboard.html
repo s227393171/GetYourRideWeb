@@ -4,6 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Coordinator Portal - Dashboard</title>
+    <script>(function(){try{var t=localStorage.getItem('portalTheme');document.documentElement.setAttribute('data-theme',t==='dark'?'dark':'light');}catch(e){}})();</script>
+    <link rel="stylesheet" href="../assets/css/theme.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -299,11 +301,6 @@
             border-radius: 8px;
         }
 
-            .menu-item:hover {
-                padding-left: 4px;
-                color: var(--gyr-orange);
-            }
-
             .menu-item.active {
                 position: relative;
             }
@@ -354,10 +351,7 @@
     <div class="sidebar">
         <div class="brand">
             <div class="brand-logo-tile" aria-hidden>
-                <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden>
-                    <path d="M3 11h18v5a2 2 0 0 1-2 2h-1a1 1 0 0 1-1-1v-1H8v1a1 1 0 0 1-1 1H6a2 2 0 0 1-2-2v-5z" stroke="#fff" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/>
-                    <path d="M5 11V9a4 4 0 0 1 4-4h6a4 4 0 0 1 4 4v2" stroke="#fff" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/>
-                </svg>
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 17H3v-4l2-5h11l4 5v4h-2"></path><circle cx="7.5" cy="17.5" r="1.5"></circle><circle cx="17.5" cy="17.5" r="1.5"></circle><path d="M9 17h6"></path></svg>
             </div>
             <div class="brand-text">
                 <h1>GetYourRide</h1>
@@ -379,19 +373,15 @@
         </ul>
 
         <div class="sidebar-profile-footer">
-            <div class="sidebar-profile-footer">
-               
-                <div class="profile-trigger-area" id="profileTrigger" onclick="toggleProfileMenu()">
-           
-                    <div class="avatar-placeholder" style="display: flex; align-items: center; justify-content: center; background: #cbd5e1; color: #0f172a; font-weight: 700; font-size: 12px;">SC</div>
-                    <div class="profile-info-text">
-                        
-                        <span class="user-display-name" id="coordinatorNameLabel">Loading profile...</span>
-                        <span class="user-display-email" id="coordinatorEmailLabel">connecting to database...</span>
-                    </div>
+            <div class="profile-trigger-area" id="profileTrigger" onclick="toggleProfileMenu()">
+                <div class="avatar-placeholder">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
+                </div>
+                <div class="profile-info-text">
+                    <span class="user-display-name" id="coordinatorNameLabel">Loading profile...</span>
+                    <span class="user-display-email" id="coordinatorEmailLabel">connecting to database...</span>
                 </div>
             </div>
-
             <div class="profile-dropdown-menu" id="profileDropdown">
                 <a href="#" class="dropdown-link" id="btnDropdownProfile" onclick="openProfileModal(event)"><i class="fa-solid fa-user"></i> View Profile</a>
                 <hr class="dropdown-divider">
@@ -402,15 +392,9 @@
 
     <div class="main-content">
         <div class="top-navbar">
-            <div class="nav-breadcrumb">Coordinator Portal &gt; <strong>Dashboard Hub</strong></div>
+            <div class="search-box-wrapper"></div>
 
-            <div class="top-navbar-right">
-                <div class="portal-badge">
-                    <span id="liveClock" style="font-family: monospace; font-weight: 700; color: #ff7a00; margin-right: 15px;">00:00:00</span>
-                    Coordinator Portal
-                </div>
-                <button class="top-logout-btn" onclick="handleLogout()"><i class="fa-solid fa-right-from-bracket"></i> Logout</button>
-            </div>
+            <div class="top-navbar-right" id="topbar-actions"></div>
         </div>
 
         <div class="content-body">
@@ -465,12 +449,70 @@
                 </div>
             </div>
 
-            <div class="table-card">
-                <div class="table-header">
+            <div class="table-card" id="glanceCard">
+                <!-- Default empty state (kept for the "no data at all" case) -->
+                <div class="table-header" id="glanceEmptyHeader">
                     <h3>Nothing to show yet</h3>
                 </div>
-                <div class="dashboard-status-placeholder">
+                <div class="dashboard-status-placeholder" id="glanceEmptyState">
                     <p>Pick a card above — shuttles, drivers, or the schedule — and it'll show up here.</p>
+                </div>
+
+                <!-- "Today at a glance" summary (shown once data loads) -->
+                <section class="glance" id="glanceSummary" hidden aria-label="Today at a glance">
+                    <header class="glance-head">
+                        <h3>Today at a glance</h3>
+                        <span class="glance-updated" id="glanceUpdated"></span>
+                    </header>
+
+                    <div class="glance-stats" id="glanceStats">
+                        <div class="glance-stat">
+                            <span class="glance-ic" aria-label="Shuttles available">
+                                <i class="fa-solid fa-van-shuttle" aria-hidden="true"></i>
+                            </span>
+                            <span class="glance-label">Shuttles available</span>
+                            <span class="glance-num" id="glShuttles">—</span>
+                        </div>
+                        <div class="glance-divider" aria-hidden="true"></div>
+                        <div class="glance-stat">
+                            <span class="glance-ic" aria-label="Drivers on shift">
+                                <i class="fa-solid fa-user-clock" aria-hidden="true"></i>
+                            </span>
+                            <span class="glance-label">Drivers on shift</span>
+                            <span class="glance-num" id="glDrivers">—</span>
+                        </div>
+                        <div class="glance-divider" aria-hidden="true"></div>
+                        <div class="glance-stat">
+                            <span class="glance-ic" aria-label="Trips today">
+                                <i class="fa-solid fa-route" aria-hidden="true"></i>
+                            </span>
+                            <span class="glance-label">Trips today</span>
+                            <span class="glance-num" id="glTrips">—</span>
+                        </div>
+                        <div class="glance-divider" aria-hidden="true"></div>
+                        <div class="glance-stat">
+                            <span class="glance-ic" aria-label="Next departure">
+                                <i class="fa-solid fa-clock" aria-hidden="true"></i>
+                            </span>
+                            <span class="glance-label">Next departure</span>
+                            <span class="glance-num" id="glNext">—</span>
+                        </div>
+                        <div class="glance-divider" aria-hidden="true"></div>
+                        <div class="glance-stat">
+                            <span class="glance-ic" aria-label="Unassigned trips">
+                                <i class="fa-solid fa-user-slash" aria-hidden="true"></i>
+                            </span>
+                            <span class="glance-label">Unassigned</span>
+                            <span class="glance-num" id="glUnassigned">—</span>
+                        </div>
+                    </div>
+
+                    <div class="glance-status" id="glanceStatus" aria-live="polite"></div>
+                </section>
+
+                <!-- Error state -->
+                <div class="glance-error" id="glanceError" hidden>
+                    <p>Couldn't load today's summary. <a href="#" id="glanceRetry">Try again</a></p>
                 </div>
             </div>
         </div>
@@ -482,7 +524,9 @@
             <hr style="border:0; border-top:1px solid #e2e8f0; margin: 12px 0 20px 0;">
 
             <div style="text-align: center; margin-bottom: 20px;">
-                <div class="avatar-circle" style="width: 64px; height: 64px; font-size: 1.5rem; margin: 0 auto 12px auto; display: flex; align-items: center; justify-content: center; background: #e2e8f0; border-radius: 50%;">SC</div>
+                <div class="avatar-circle" style="width: 64px; height: 64px; margin: 0 auto 12px auto; display: flex; align-items: center; justify-content: center; background: var(--accent, #ff7a00); color: #ffffff; border-radius: 50%;">
+                    <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
+                </div>
             </div>
 
             <div class="modal-body-content" style="margin-bottom: 20px; line-height: 1.8;">
@@ -553,9 +597,11 @@
         </div>
     </div>
 
-    <script src="../assets/js/coordinator-schedules.js"></script>
-    <script src="../assets/js/coordinator-dashboard.js"></script>
-    <script src="../assets/js/admin-dropdown.js"></script>
+    <script src="../assets/css/js/coordinator-schedules.js?v=3"></script>
+    <script src="../assets/css/js/coordinator-dashboard.js?v=3"></script>
+    <script src="../assets/css/js/admin-dropdown.js?v=3"></script>
+    <script src="../assets/css/js/theme.js?v=3"></script>
+    <script src="../assets/css/js/topbar.js?v=3"></script>
 
     <script>
         (function () {
