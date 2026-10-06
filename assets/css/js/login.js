@@ -22,7 +22,7 @@ document.getElementById('loginForm').addEventListener('submit', async (e) => {
             } else if (role === 'coordinator') {
                 window.location.href = '/coordinator/dashboard.html';
             } else if (role === 'shuttle_driver') {
-                window.location.href = `/driver/dashboard.html?email=${encodeURIComponent(email.trim())}`;
+                showToast("Shuttle drivers use the GetYourRide mobile app, not the web portal.", "error");
             } else {
                 showToast("Role path not found.", "error");
             }

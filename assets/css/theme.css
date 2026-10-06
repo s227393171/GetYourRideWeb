@@ -604,3 +604,427 @@ input, select, textarea, button, th, td {
         padding: 8px 10px;
     }
 }
+
+/* ============================================================
+   UI POLISH LAYER — project-wide visual enhancements.
+   Purely additive: no layout/structure/logic changes.
+   Uses theme variables so it works in light + dark mode.
+   ============================================================ */
+
+/* ---- Global smoothing & nicer font rendering ---- */
+* {
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-osgrayscale: grayscale;
+}
+
+a, button, .menu-item, .uc-card, .action-card, .dash-stat-card,
+.metric-card, .gyr-stat-card, .table-card, .recent-panel,
+.tb-icon-btn, .navbar-icon-btn, .btn-review, .btn-review-profile,
+.btn-review-driver, .status-pill, .filter-tab, input, select, textarea {
+    transition: background-color 0.2s ease, color 0.2s ease,
+                border-color 0.2s ease, box-shadow 0.22s ease,
+                transform 0.18s cubic-bezier(0.22, 1, 0.36, 1), filter 0.18s ease;
+}
+
+/* ---- Cards: softer layered shadow + hover lift ---- */
+.dash-stat-card, .metric-card, .gyr-stat-card,
+.table-card, .recent-panel, .uc-card, .action-card {
+    box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04),
+                0 4px 12px -6px rgba(15, 23, 42, 0.08);
+}
+
+.dash-stat-card:hover, .metric-card:hover, .gyr-stat-card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 8px 24px -8px rgba(15, 23, 42, 0.18);
+}
+
+.uc-card:hover, .action-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 14px 30px -10px rgba(15, 23, 42, 0.2);
+}
+
+[data-theme="dark"] .dash-stat-card,
+[data-theme="dark"] .metric-card,
+[data-theme="dark"] .gyr-stat-card,
+[data-theme="dark"] .table-card,
+[data-theme="dark"] .recent-panel,
+[data-theme="dark"] .uc-card,
+[data-theme="dark"] .action-card {
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.3),
+                0 6px 16px -8px rgba(0, 0, 0, 0.5);
+}
+
+[data-theme="dark"] .dash-stat-card:hover,
+[data-theme="dark"] .metric-card:hover,
+[data-theme="dark"] .gyr-stat-card:hover,
+[data-theme="dark"] .uc-card:hover,
+[data-theme="dark"] .action-card:hover {
+    box-shadow: 0 14px 32px -10px rgba(0, 0, 0, 0.65);
+}
+
+/* ---- Table rows: smooth hover highlight ---- */
+.recent-table tbody tr,
+.verify-table tbody tr,
+.table-card tbody tr {
+    transition: background-color 0.15s ease;
+}
+
+/* ---- Primary / action buttons: subtle gradient + press feedback ---- */
+.btn-review, .btn-review-profile {
+    background-image: linear-gradient(180deg,
+        rgba(255, 255, 255, 0.12), rgba(0, 0, 0, 0.04));
+    box-shadow: 0 2px 6px -1px rgba(255, 122, 0, 0.35);
+}
+
+    .btn-review:hover, .btn-review-profile:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 6px 14px -3px rgba(255, 122, 0, 0.45);
+    }
+
+    .btn-review:active, .btn-review-profile:active {
+        transform: translateY(0) scale(0.98);
+        box-shadow: 0 1px 3px rgba(255, 122, 0, 0.3);
+    }
+
+.tb-logout:active,
+.filter-tab:active {
+    transform: scale(0.97);
+}
+
+/* ---- Icon buttons: gentle scale on hover ---- */
+.tb-icon-btn:hover,
+.navbar-icon-btn:hover {
+    transform: translateY(-1px);
+}
+
+/* ---- Inputs: focus glow in the accent colour ---- */
+input:focus,
+select:focus,
+textarea:focus,
+.navbar-search input:focus {
+    border-color: var(--accent, #ff7a00) !important;
+    box-shadow: 0 0 0 3px rgba(255, 122, 0, 0.15);
+    outline: none;
+}
+
+/* ---- Status pills: a touch more depth ---- */
+.status-pill,
+.status-badge {
+    box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.03);
+}
+
+/* ---- Avatars: subtle ring ---- */
+.recent-avatar, .verify-photo {
+    box-shadow: inset 0 0 0 1px rgba(15, 23, 42, 0.06);
+}
+
+/* ---- Sidebar active item: a bit more life ---- */
+.menu-item.active {
+    position: relative;
+}
+
+.menu-item:not(.active):hover {
+    transform: translateX(2px);
+}
+
+/* ---- Themed, slimmer scrollbars everywhere ---- */
+* {
+    scrollbar-width: thin;
+    scrollbar-color: var(--scrollbar-thumb, #cbd5e1) transparent;
+}
+
+::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+}
+
+::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+    background: var(--scrollbar-thumb, #cbd5e1);
+    border-radius: 6px;
+    border: 2px solid transparent;
+    background-clip: content-box;
+}
+
+    ::-webkit-scrollbar-thumb:hover {
+        background: var(--text-secondary, #94a3b8);
+        background-clip: content-box;
+    }
+
+/* ---- Gentle entrance animation for main content ---- */
+@keyframes gyrFadeInUp {
+    from { opacity: 0; transform: translateY(8px); }
+    to   { opacity: 1; transform: translateY(0); }
+}
+
+.content-body > *:not([hidden]) {
+    animation: gyrFadeInUp 0.35s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+/* Stagger the first few blocks so it feels alive, not all-at-once */
+.content-body > *:nth-child(1) { animation-delay: 0.02s; }
+.content-body > *:nth-child(2) { animation-delay: 0.08s; }
+.content-body > *:nth-child(3) { animation-delay: 0.14s; }
+.content-body > *:nth-child(4) { animation-delay: 0.20s; }
+
+/* ---- Skeleton shimmer utility (for loading states) ---- */
+.gyr-skeleton {
+    background: linear-gradient(90deg,
+        var(--border, #e2e8f0) 25%,
+        var(--bg-subtle, #f8fafc) 37%,
+        var(--border, #e2e8f0) 63%);
+    background-size: 400% 100%;
+    animation: gyrShimmer 1.3s ease-in-out infinite;
+    border-radius: 6px;
+}
+
+@keyframes gyrShimmer {
+    0%   { background-position: 100% 0; }
+    100% { background-position: 0 0; }
+}
+
+/* ---- Respect reduced-motion preferences ---- */
+@media (prefers-reduced-motion: reduce) {
+    *, .content-body > * {
+        animation: none !important;
+        transition: none !important;
+    }
+}
+
+/* ============================================================
+   ANIMATION LAYER (driven by animations.js)
+   ============================================================ */
+
+/* Table row entrance */
+@keyframes gyrRowIn {
+    from { opacity: 0; transform: translateY(6px); }
+    to   { opacity: 1; transform: translateY(0); }
+}
+
+/* Star pop-in */
+@keyframes gyrStarPop {
+    0%   { opacity: 0; transform: scale(0.3) rotate(-18deg); }
+    100% { opacity: 1; transform: scale(1) rotate(0); }
+}
+
+/* Button ripple */
+.gyr-ripple {
+    position: absolute;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.45);
+    transform: scale(0);
+    animation: gyrRipple 0.6s ease-out;
+    pointer-events: none;
+    z-index: 1;
+}
+
+/* Dark buttons / light pills get a darker ripple for visibility */
+.filter-tab .gyr-ripple,
+.recent-view-all .gyr-ripple,
+.uc-link-text .gyr-ripple {
+    background: rgba(255, 122, 0, 0.25);
+}
+
+@keyframes gyrRipple {
+    to { transform: scale(2.5); opacity: 0; }
+}
+
+/* ---- Live "pulse" dot (for status indicators) ---- */
+.gyr-pulse-dot {
+    display: inline-block;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: #22c55e;
+    position: relative;
+    margin-right: 6px;
+    vertical-align: middle;
+}
+
+    .gyr-pulse-dot::after {
+        content: "";
+        position: absolute;
+        inset: 0;
+        border-radius: 50%;
+        background: #22c55e;
+        animation: gyrPulse 1.8s ease-out infinite;
+    }
+
+@keyframes gyrPulse {
+    0%   { transform: scale(1); opacity: 0.6; }
+    70%  { transform: scale(2.6); opacity: 0; }
+    100% { transform: scale(2.6); opacity: 0; }
+}
+
+/* Pulse dot on the live clock to signal "live" */
+.tb-clock::before {
+    content: "";
+    display: inline-block;
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: var(--accent, #ff7a00);
+    margin-right: 7px;
+    vertical-align: middle;
+    animation: gyrClockPulse 1.6s ease-in-out infinite;
+}
+
+@keyframes gyrClockPulse {
+    0%, 100% { opacity: 0.35; transform: scale(0.85); }
+    50%      { opacity: 1; transform: scale(1.1); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .gyr-ripple, .gyr-pulse-dot::after, .tb-clock::before {
+        animation: none !important;
+    }
+}
+
+/* ============================================================
+   PRODUCT POLISH — background depth, stat-card accents, font
+   (Imports a web font; all additive, works light + dark.)
+   ============================================================ */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+
+/* ---- 4. Real web font across the app ---- */
+body {
+    font-family: 'Inter', 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+    letter-spacing: -0.1px;
+}
+
+/* ---- 1. Subtle background depth (soft gradient + faint dot grid) ---- */
+body {
+    background-color: var(--bg-page);
+    background-image:
+        radial-gradient(rgba(15, 23, 42, 0.035) 1px, transparent 1px);
+    background-size: 22px 22px;
+    background-attachment: fixed;
+}
+
+.main-content {
+    background-color: transparent;
+    background-image:
+        radial-gradient(1200px 600px at 85% -10%, rgba(255, 122, 0, 0.05), transparent 60%),
+        radial-gradient(900px 500px at 0% 0%, rgba(27, 42, 92, 0.05), transparent 55%);
+}
+
+[data-theme="dark"] body {
+    background-image:
+        radial-gradient(rgba(255, 255, 255, 0.03) 1px, transparent 1px);
+    background-size: 22px 22px;
+}
+
+[data-theme="dark"] .main-content {
+    background-image:
+        radial-gradient(1200px 600px at 85% -10%, rgba(255, 122, 0, 0.06), transparent 60%),
+        radial-gradient(900px 500px at 0% 0%, rgba(99, 122, 200, 0.05), transparent 55%);
+}
+
+/* ---- 2. Colored top-accent bar on stat cards ---- */
+.dash-stat-card,
+.metric-card,
+.gyr-stat-card {
+    position: relative;
+    overflow: hidden;
+}
+
+    .dash-stat-card::before,
+    .metric-card::before,
+    .gyr-stat-card::before {
+        content: "";
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 3px;
+        background: var(--accent, #ff7a00);
+        opacity: 0.9;
+    }
+
+/* Rotate accent colours per card position so a row looks like a dashboard */
+.dash-stats-grid .dash-stat-card:nth-child(1)::before,
+.metrics-grid .metric-card:nth-child(1)::before { background: #ff7a00; }
+.dash-stats-grid .dash-stat-card:nth-child(2)::before,
+.metrics-grid .metric-card:nth-child(2)::before { background: #10b981; }
+.dash-stats-grid .dash-stat-card:nth-child(3)::before,
+.metrics-grid .metric-card:nth-child(3)::before { background: #3b82f6; }
+.dash-stats-grid .dash-stat-card:nth-child(4)::before,
+.metrics-grid .metric-card:nth-child(4)::before { background: #f59e0b; }
+
+/* The dark highlighted rating card: keep accent gold on top */
+.dash-stat-card.highlighted::before { background: #fbbf24; }
+
+/* ---- Welcome banner: a touch more depth + accent glow ---- */
+.welcome-banner {
+    position: relative;
+    overflow: hidden;
+    background-image:
+        linear-gradient(135deg, #0f172a 0%, #1b2a5c 100%);
+}
+
+    .welcome-banner::after {
+        content: "";
+        position: absolute;
+        top: -40%;
+        right: -5%;
+        width: 320px;
+        height: 320px;
+        background: radial-gradient(circle, rgba(255, 122, 0, 0.22), transparent 65%);
+        pointer-events: none;
+    }
+
+/* ============================================================
+   SIDEBAR POLISH — richer navy gradient + faint dot pattern
+   + static soft orange glow (matches the login panel).
+   Applies to every sidebar; active pill/text/icons unchanged.
+   ============================================================ */
+.sidebar {
+    position: relative;
+    overflow: hidden;
+    background-color: var(--bg-sidebar, #1b2a5c);
+    background-image: linear-gradient(165deg,
+        #0b1430 0%,
+        #16255a 55%,
+        var(--bg-sidebar, #1b2a5c) 100%);
+}
+
+/* faint dot texture */
+.sidebar::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background-image: radial-gradient(rgba(255, 255, 255, 0.04) 1px, transparent 1px);
+    background-size: 24px 24px;
+    pointer-events: none;
+    z-index: 0;
+}
+
+/* static soft orange glow near the bottom */
+.sidebar::after {
+    content: "";
+    position: absolute;
+    left: -80px;
+    bottom: -60px;
+    width: 300px;
+    height: 300px;
+    background: radial-gradient(circle at 40% 60%, rgba(255, 122, 0, 0.18), rgba(255, 122, 0, 0.05) 35%, transparent 65%);
+    pointer-events: none;
+    z-index: 0;
+}
+
+/* keep all sidebar content above the decorative layers */
+.sidebar > * {
+    position: relative;
+    z-index: 1;
+}
+
+/* Dark mode: slightly deeper gradient, keep the glow */
+[data-theme="dark"] .sidebar {
+    background-image: linear-gradient(165deg,
+        #060b18 0%,
+        #0d1830 55%,
+        var(--bg-sidebar, #0a1120) 100%);
+}
