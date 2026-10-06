@@ -241,88 +241,23 @@ async function loadApplicationProfile(studentId) {
         document.getElementById("lblCapacity").textContent = `${data.seatingCapacity} Passengers`;
         document.getElementById("lblColor").textContent = data.vehicleColor;
 
-       
-        // Document: Driver's License
-        const licenseContainer = document.getElementById("imgLicense")?.parentElement;
-        const licenseLink = document.getElementById("linkLicenseFull");
-        if (data.licenseImagePath) {
-            if (licenseContainer) {
-                licenseContainer.innerHTML = `<img id="imgLicense" src="${data.licenseImagePath}" alt="Driver's License">`;
-            }
-            if (licenseLink) {
-                licenseLink.href = data.licenseImagePath;
-                licenseLink.classList.remove('doc-link--disabled');
-                licenseLink.removeAttribute('aria-disabled');
-            }
-        } else {
-            // show empty state and disable link
-            if (licenseContainer) {
-                licenseContainer.innerHTML = `
-                    <div style="display:flex; flex-direction:column; align-items:center; gap:8px; color:#94a3b8;">
-                        <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"></rect><path d="M7 9h10M7 13h6"></path></svg>
-                        <div style="font-weight:600;">No document uploaded</div>
-                    </div>
-                `;
-            }
-            if (licenseLink) {
-                // fully disable link: remove href, prevent pointer events, remove from tab order
-                licenseLink.removeAttribute('href');
-                licenseLink.classList.add('doc-link--disabled');
-                licenseLink.setAttribute('aria-disabled', 'true');
-                licenseLink.style.pointerEvents = 'none';
-                licenseLink.tabIndex = -1;
-                // ensure any click handlers are inert
-                licenseLink.onclick = (e) => { e.preventDefault(); };
-            }
-        }
-
-        // Document: Vehicle Registration
-        const regContainer = document.getElementById("imgRegistration")?.parentElement;
-        const regLink = document.getElementById("linkRegFull");
-        if (data.registrationFilePath) {
-            if (regContainer) {
-                regContainer.innerHTML = `<img id="imgRegistration" src="${data.registrationFilePath}" alt="Vehicle Registration">`;
-            }
-            if (regLink) {
-                regLink.href = data.registrationFilePath;
-                regLink.classList.remove('doc-link--disabled');
-                regLink.removeAttribute('aria-disabled');
-            }
-        } else {
-            if (regContainer) {
-                regContainer.innerHTML = `
-                    <div style="display:flex; flex-direction:column; align-items:center; gap:8px; color:#94a3b8;">
-                        <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"></rect><path d="M7 9h10M7 13h6"></path></svg>
-                        <div style="font-weight:600;">No document uploaded</div>
-                    </div>
-                `;
-            }
-            if (regLink) {
-                regLink.removeAttribute('href');
-                regLink.classList.add('doc-link--disabled');
-                regLink.setAttribute('aria-disabled', 'true');
-                regLink.style.pointerEvents = 'none';
-                regLink.tabIndex = -1;
-                regLink.onclick = (e) => { e.preventDefault(); };
-            }
-        }
+        // Documents — normalized paths, PDF handling, graceful placeholders.
+        renderDocument(
+            document.getElementById("imgLicense")?.parentElement,
+            document.getElementById("linkLicenseFull"),
+            data.licenseImagePath, "Driver's License"
+        );
+        renderDocument(
+            document.getElementById("imgRegistration")?.parentElement,
+            document.getElementById("linkRegFull"),
+            data.registrationFilePath, "Vehicle Registration"
+        );
 
         
-        // Application status: show only when a final decision exists (not while pending)
-        const statusLabel = document.getElementById("applicationStatusLabel");
-        if (statusLabel) {
-            const statusVal = (data.applicationStatus || "").toString().trim();
-            const lower = statusVal.toLowerCase();
-            const isPending = lower === "pending" || lower === "pending review" || lower === "pending_review" || lower === "";
-            if (isPending) {
-                statusLabel.style.display = 'none';
-            } else {
-                statusLabel.style.display = '';
-                statusLabel.textContent = statusVal.toUpperCase();
-            }
-        }
+        // Decide what to show from the normalized status (one helper, no
+        // "anything-not-approved = rejected" trap).
+        applyStatusView(data);
 
-        
         showToast("Application profile loaded successfully.", "success");
 
     } catch (err) {
@@ -331,6 +266,166 @@ async function loadApplicationProfile(studentId) {
     }
 }
 
+
+/* ------------------------------------------------------------------
+   Documents: normalize a stored path into a URL the web server serves,
+   detect PDFs, and fall back to a neat placeholder when missing/broken.
+   ------------------------------------------------------------------ */
+function normalizeDocUrl(raw) {
+    if (!raw) return "";
+    let p = String(raw).trim().replace(/\\/g, "/");   // backslashes -> slashes
+    if (/^https?:\/\//i.test(p)) return p;            // already absolute URL
+    // strip a Windows drive path or wwwroot prefix if present
+    const wwwIdx = p.toLowerCase().indexOf("/wwwroot/");
+    if (wwwIdx !== -1) p = p.substring(wwwIdx + "/wwwroot".length);
+    p = p.replace(/^~\//, "/");                       // ~/foo -> /foo
+    if (!p.startsWith("/")) p = "/" + p;              // ensure root-relative
+    return p;
+}
+
+function docPlaceholder(message) {
+    return `
+        <div style="display:flex; flex-direction:column; align-items:center; gap:8px; color:var(--text-secondary,#94a3b8);">
+            <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"></rect><path d="M7 9h10M7 13h6"></path></svg>
+            <div style="font-weight:600;">${message}</div>
+        </div>`;
+}
+
+function renderDocument(container, link, rawPath, label) {
+    const url = normalizeDocUrl(rawPath);
+
+    // Helper to disable the "View Full Document" link
+    const disableLink = () => {
+        if (!link) return;
+        link.removeAttribute('href');
+        link.classList.add('doc-link--disabled');
+        link.setAttribute('aria-disabled', 'true');
+        link.style.pointerEvents = 'none';
+        link.tabIndex = -1;
+        link.onclick = (e) => e.preventDefault();
+    };
+    const enableLink = () => {
+        if (!link) return;
+        link.href = url;
+        link.classList.remove('doc-link--disabled');
+        link.removeAttribute('aria-disabled');
+        link.style.pointerEvents = '';
+        link.tabIndex = 0;
+        link.onclick = null;
+    };
+
+    if (!url) {
+        if (container) container.innerHTML = docPlaceholder("No document uploaded");
+        disableLink();
+        return;
+    }
+
+    const isPdf = /\.pdf(\?|$)/i.test(url);
+
+    if (isPdf) {
+        // PDFs: show a PDF icon tile instead of an <img>, link opens it.
+        if (container) {
+            container.innerHTML = `
+                <a href="${url}" target="_blank" rel="noopener" style="display:flex; flex-direction:column; align-items:center; gap:8px; color:var(--accent,#ff7a00); text-decoration:none;">
+                    <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline></svg>
+                    <div style="font-weight:700;">PDF Document</div>
+                </a>`;
+        }
+        enableLink();
+        return;
+    }
+
+    // Image: render it, and if it fails to load show the "unavailable" placeholder.
+    if (container) {
+        const img = document.createElement("img");
+        img.alt = label;
+        img.src = url;
+        img.onerror = function () {
+            container.innerHTML = docPlaceholder("Document unavailable");
+            disableLink();
+        };
+        container.innerHTML = "";
+        container.appendChild(img);
+    }
+    enableLink();
+}
+
+/* ------------------------------------------------------------------
+   Status: ONE normalizer + ONE view switch. Shared status vocabulary
+   with the list page: "pending" | "approved" | "rejected".
+   Anything else is treated as "unknown" (NEVER rejected).
+   ------------------------------------------------------------------ */
+function normalizeStatus(raw) {
+    const s = (raw == null ? "" : String(raw)).trim().toLowerCase();
+    if (s === "approved" || s === "approve" || s === "verified") return "approved";
+    if (s === "rejected" || s === "reject" || s === "declined") return "rejected";
+    if (s === "pending" || s === "pending review" || s === "pending_review" || s === "") return "pending";
+    return "unknown";
+}
+
+function applyStatusView(data) {
+    const status = normalizeStatus(data.applicationStatus);
+    const actionTray = document.getElementById("actionTray");
+    const notice = document.getElementById("approvedNotice");
+    const statusLabel = document.getElementById("applicationStatusLabel");
+
+    // reset notice classes/state each render
+    if (notice) {
+        notice.classList.remove("is-rejected", "is-unknown");
+        notice.style.display = "none";
+    }
+    if (actionTray) actionTray.style.display = "none";
+
+    const prettyDate = data.decisionDate
+        ? new Date(data.decisionDate).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' })
+        : null;
+
+    switch (status) {
+        case "pending":
+            // Show the Approve + Reject buttons, no banner.
+            if (actionTray) actionTray.style.display = "";
+            if (statusLabel) statusLabel.style.display = "none";
+            break;
+
+        case "approved":
+            if (notice) {
+                notice.style.display = "flex";
+                notice.querySelector("span").innerHTML =
+                    "This application was <strong>approved</strong>" +
+                    (prettyDate ? " on " + prettyDate : "") + ".";
+            }
+            if (statusLabel) { statusLabel.style.display = ""; statusLabel.textContent = "APPROVED"; }
+            break;
+
+        case "rejected":
+            if (notice) {
+                notice.classList.add("is-rejected");
+                notice.style.display = "flex";
+                const reason = data.rejectionReason ? ' Reason: "' + data.rejectionReason + '".' : "";
+                notice.querySelector("span").innerHTML =
+                    "This application was <strong>rejected</strong>" +
+                    (prettyDate ? " on " + prettyDate : "") + "." + reason;
+            }
+            if (statusLabel) { statusLabel.style.display = ""; statusLabel.textContent = "REJECTED"; }
+            break;
+
+        default: // unknown — never assume rejected
+            if (notice) {
+                notice.classList.add("is-unknown");
+                notice.style.display = "flex";
+                notice.querySelector("span").innerHTML =
+                    'Status unavailable. <a href="#" id="statusRetryLink">Retry</a>';
+                const retry = notice.querySelector("#statusRetryLink");
+                if (retry) retry.onclick = (e) => {
+                    e.preventDefault();
+                    const id = new URLSearchParams(window.location.search).get('id');
+                    loadApplicationProfile((id || '').replace(/^DRV-/i, ''));
+                };
+            }
+            if (statusLabel) statusLabel.style.display = "none";
+            break;
+    }
+}
 
 async function updateApplicationStatus(decision) {
     const urlParams = new URLSearchParams(window.location.search);
@@ -347,38 +442,68 @@ async function updateApplicationStatus(decision) {
 
     
     const isApproval = decision.toLowerCase().includes("approv");
+
+    // Reject requires a reason.
+    if (!isApproval) {
+        const reason = window.prompt("Please enter a reason for rejecting this application (required):", "");
+        if (reason === null) return;              // cancelled
+        if (!reason.trim()) {
+            showPopup("A rejection reason is required.", "error");
+            return;
+        }
+        rejectReasonCache = reason.trim();
+    } else {
+        rejectReasonCache = null;
+    }
+
     const confirmOptions = isApproval
         ? { type: "success", confirmText: "Approve Driver", cancelText: "Go Back" }
         : { type: "error", confirmText: "Reject Application", cancelText: "Go Back" };
 
     const confirmMessage = isApproval
         ? "You are about to <strong>approve</strong> this driver. They will gain access to the platform. Continue?"
-        : "You are about to <strong>reject</strong> this application. The driver will not be verified. Continue?";
+        : "You are about to <strong>decline</strong> this application. The driver will remain pending and may re-apply. Continue?";
 
     showConfirm(confirmMessage, async () => {
+        const btns = document.querySelectorAll("#actionTray .btn");
+        btns.forEach(b => { b.disabled = true; b.style.opacity = "0.6"; b.style.pointerEvents = "none"; });
+
         try {
             const response = await fetch(`/api/admin/drivers/${studentId}/status`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ status: decision })
+                body: JSON.stringify({ status: decision, reason: rejectReasonCache })
             });
 
             if (response.ok) {
-                const successMsg = isApproval
-                    ? "Driver has been approved and verified successfully!"
-                    : "Application has been rejected.";
-
-                showPopup(successMsg, isApproval ? "success" : "info", () => {
-                    window.location.href = "verify-drivers.html";
-                });
+                if (isApproval) {
+                    // Approve -> verified. Show the green banner, hide buttons.
+                    applyStatusView({
+                        applicationStatus: "Approved",
+                        decisionDate: new Date().toISOString()
+                    });
+                    showToast("Driver approved and verified successfully.", "success");
+                } else {
+                    // Reject -> driver stays PENDING (is_verified = 0). Keep the
+                    // Approve/Reject buttons; just confirm the action.
+                    applyStatusView({ applicationStatus: "Pending" });
+                    const btns = document.querySelectorAll("#actionTray .btn");
+                    btns.forEach(b => { b.disabled = false; b.style.opacity = ""; b.style.pointerEvents = ""; });
+                    showToast("Application declined. The driver remains pending and may re-apply.", "info");
+                }
             } else {
                 const errorData = await response.json().catch(() => null);
                 const msg = errorData?.message || "The server could not process this request.";
                 showPopup(msg, "error");
+                // re-enable buttons so the admin can retry (status did NOT change)
+                btns.forEach(b => { b.disabled = false; b.style.opacity = ""; b.style.pointerEvents = ""; });
             }
         } catch (err) {
             console.error("Error updating application status:", err);
             showPopup("A network error occurred. Please check your connection and try again.", "error");
+            btns.forEach(b => { b.disabled = false; b.style.opacity = ""; b.style.pointerEvents = ""; });
         }
     }, confirmOptions);
 }
+
+let rejectReasonCache = null;

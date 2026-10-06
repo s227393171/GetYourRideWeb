@@ -2,12 +2,12 @@
 const PROFILE_API_URL = '/api/admin/profile';
 let activeAdminProfile = null;
 
-function toggleDropdown(e) {
-    if (e) e.stopPropagation();
-    const globalDropdown = document.getElementById('adminGlobalDropdown');
-    if (globalDropdown) globalDropdown.classList.toggle('show');
-}
-
+window.openSupportModal = function () {
+    document.getElementById('supportModal')?.classList.add('active');
+};
+window.closeSupportModal = function () {
+    document.getElementById('supportModal')?.classList.remove('active');
+};
 
 function toggleProfileMenu(e) {
     if (e) e.stopPropagation();
@@ -21,69 +21,12 @@ function toggleProfileMenu(e) {
 
 
 window.addEventListener('click', function (e) {
-    const topDropdown = document.getElementById('adminGlobalDropdown');
-    if (topDropdown) topDropdown.classList.remove('show');
-
     const profileFooter = document.querySelector('.sidebar-profile-footer');
     if (profileFooter && !profileFooter.contains(e.target)) {
         const profileDropdown = document.getElementById('profileDropdown');
         if (profileDropdown) profileDropdown.classList.remove('show');
     }
 });
-
-
-const POPUP_ICONS = {
-    info: '<svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>',
-    success: '<svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>',
-    warning: '<svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>',
-    logout: '<svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg>'
-};
-
-let pendingConfirmAction = null;
-
-function ensureConfirmPopupMarkup() {
-    if (document.getElementById('confirmPopupModal')) return;
-
-    const wrapper = document.createElement('div');
-    wrapper.id = 'confirmPopupModal';
-    wrapper.className = 'modal-backdrop';
-    wrapper.style.cssText = 'display:none; position:fixed; inset:0; background:rgba(0,0,0,0.5); backdrop-filter:blur(4px); z-index:1000; align-items:center; justify-content:center;';
-
-    wrapper.innerHTML = `
-        <div class="modal-card cute-logout-card" style="background:#ffffff; padding:32px; border-radius:20px; width:100%; max-width:400px; text-align:center; box-shadow:0 20px 25px -5px rgba(0,0,0,0.1), 0 10px 10px -5px rgba(0,0,0,0.04); animation: scaleUp 0.25s ease-out;">
-            <div id="confirmPopupIcon" style="width:56px; height:56px; margin:0 auto 16px; border-radius:50%; background:#fef2f2; display:flex; align-items:center; justify-content:center; color:#ef4444;"></div>
-            <h3 id="confirmPopupTitle" style="margin:0 0 8px 0; color:#1e293b; font-size:20px; font-weight:700;"></h3>
-            <p id="confirmPopupMessage" style="color:#64748b; font-size:14px; margin:0 0 24px 0;"></p>
-            <div style="display:flex; gap:12px; justify-content:center;">
-                <button onclick="closeConfirmPopup()" style="flex:1; padding:12px 16px; border-radius:10px; border:1px solid #cbd5e1; background:#f8fafc; color:#334155; font-weight:600; cursor:pointer; transition:background 0.2s;">Cancel</button>
-                <button id="confirmPopupActionBtn" style="flex:1; padding:12px 16px; border-radius:10px; border:none; background:#ef4444; color:#ffffff; font-weight:600; cursor:pointer; transition:background 0.2s;">Confirm</button>
-            </div>
-        </div>
-    `;
-    document.body.appendChild(wrapper);
-}
-
-function showConfirmPopup(title, message, onConfirm, iconKey = 'warning') {
-    ensureConfirmPopupMarkup();
-    document.getElementById('confirmPopupTitle').innerText = title;
-    document.getElementById('confirmPopupMessage').innerText = message;
-    document.getElementById('confirmPopupIcon').innerHTML = POPUP_ICONS[iconKey] || POPUP_ICONS.warning;
-
-    pendingConfirmAction = onConfirm;
-    const actionBtn = document.getElementById('confirmPopupActionBtn');
-    actionBtn.onclick = () => {
-        closeConfirmPopup();
-        if (typeof pendingConfirmAction === 'function') pendingConfirmAction();
-    };
-
-    document.getElementById('confirmPopupModal').style.display = 'flex';
-}
-
-function closeConfirmPopup() {
-    const modal = document.getElementById('confirmPopupModal');
-    if (modal) modal.style.display = 'none';
-    pendingConfirmAction = null;
-}
 
 
 function handleLogout() {
@@ -101,65 +44,6 @@ function confirmLogout() {
     localStorage.clear();
     sessionStorage.clear();
     window.location.href = "/";
-}
-
-
-window.openSettingsModal = function () {
-    const modal = document.getElementById('settingsModal');
-    if (modal) {
-        modal.classList.add('active');
-
-       
-        if (localStorage.getItem('portalTheme') && document.getElementById('themeSelect')) {
-            document.getElementById('themeSelect').value = localStorage.getItem('portalTheme');
-        }
-        if (localStorage.getItem('portalRefresh') && document.getElementById('refreshSelect')) {
-            document.getElementById('refreshSelect').value = localStorage.getItem('portalRefresh');
-        }
-    }
-};
-
-window.closeSettingsModal = function () {
-    const modal = document.getElementById('settingsModal');
-    if (modal) {
-        const themeVal = document.getElementById('themeSelect')?.value || 'light';
-        const refreshVal = document.getElementById('refreshSelect')?.value || 'manual';
-
-        localStorage.setItem('portalTheme', themeVal);
-        localStorage.setItem('portalRefresh', refreshVal);
-
-        
-        if (themeVal === 'dark') {
-            document.body.classList.add('dark-mode');
-        } else {
-            document.body.classList.remove('dark-mode');
-        }
-
-        
-        modal.classList.remove('active');
-    }
-};
-
-window.openSupportModal = function () {
-    document.getElementById('supportModal')?.classList.add('active');
-};
-
-window.closeSupportModal = function () {
-    document.getElementById('supportModal')?.classList.remove('active');
-};
-
-
-function startLiveClock() {
-    setInterval(() => {
-        const clockElement = document.getElementById('liveClock');
-        if (clockElement) {
-            const now = new Date();
-            const hours = String(now.getHours()).padStart(2, '0');
-            const minutes = String(now.getMinutes()).padStart(2, '0');
-            const seconds = String(now.getSeconds()).padStart(2, '0');
-            clockElement.textContent = `${hours}:${minutes}:${seconds}`;
-        }
-    }, 1000);
 }
 
 
@@ -392,6 +276,12 @@ function setGreetingAndDate() {
     if (dateEl && dateEl.hasAttribute('data-greeting')) {
         dateEl.textContent = now.toLocaleDateString(undefined, { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
     }
+
+    // Admin dashboard hero date chip
+    const heroDate = document.getElementById('dashHeroDate');
+    if (heroDate) {
+        heroDate.textContent = now.toLocaleDateString(undefined, { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+    }
 }
 
 
@@ -408,6 +298,14 @@ async function loadDashboardStats() {
         document.getElementById('statActiveDrivers').textContent = data.activeDrivers ?? '—';
         document.getElementById('statAverageRating').textContent = data.averageRating != null ? Number(data.averageRating).toFixed(1) : '—';
         document.getElementById('statTripsToday').textContent = data.tripsToday ?? '—';
+
+        // Fill the rating progress ring based on the real average (out of 5).
+        const ring = document.getElementById('ratingRingValue');
+        if (ring && data.averageRating != null) {
+            const circumference = 2 * Math.PI * 30; // r=30 -> ~188.5
+            const pct = Math.max(0, Math.min(Number(data.averageRating) / 5, 1));
+            ring.style.strokeDashoffset = String(circumference * (1 - pct));
+        }
     } catch (error) {
         console.warn('Dashboard summary unavailable, showing placeholders:', error);
     }
@@ -431,16 +329,16 @@ function recentInitials(name) {
     return (parts[0][0] + (parts[1] ? parts[1][0] : '')).toUpperCase();
 }
 
-// Render a given list of drivers into the dashboard's recent table
+// Render a given list of drivers into the dashboard's compact recent list
 function renderRecentRows(list, footerLabel) {
-    const tableBody = document.getElementById('recentProfilesBody');
+    const listEl = document.getElementById('recentProfilesBody');
     const footerText = document.getElementById('recentFooterText');
-    if (!tableBody) return;
+    if (!listEl) return;
 
-    tableBody.innerHTML = '';
+    listEl.innerHTML = '';
 
     if (!list || list.length === 0) {
-        tableBody.innerHTML = `<tr><td colspan="5" style="text-align:center; padding:30px; color:#64748b;">No matching drivers.</td></tr>`;
+        listEl.innerHTML = `<li class="recent-list-empty">No matching drivers.</li>`;
         if (footerText) footerText.textContent = footerLabel || 'No results';
         return;
     }
@@ -452,35 +350,36 @@ function renderRecentRows(list, footerLabel) {
 
         if (status === 'approved') {
             statusLabel = 'Approved'; statusCls = 'approved';
-            actionHtml = `<span class="action-text approved">Approved</span>`;
+            actionHtml = `<a href="driver-details.html?id=${idParam}" class="recent-item-link">View</a>`;
         } else if (status === 'rejected') {
             statusLabel = 'Rejected'; statusCls = 'rejected';
-            actionHtml = `<span class="action-text rejected">Rejected</span>`;
+            actionHtml = `<a href="driver-details.html?id=${idParam}" class="recent-item-link">View</a>`;
         } else {
             statusLabel = 'Pending'; statusCls = 'pending';
-            actionHtml = `<a href="review-application.html?id=${idParam}" class="btn-review">Review</a>`;
+            actionHtml = `<a href="review-application.html?id=${idParam}" class="btn-review btn-review-sm">Review</a>`;
         }
 
         const studentNumber = driver.studentNumber || (driver.driverId != null ? `DRV-${driver.driverId}` : '&mdash;');
         const submissionDate = formatSubmissionDate(driver.joinDate);
 
-        const row = document.createElement('tr');
-        row.innerHTML = `
-            <td>
-                <div class="recent-driver-cell">
-                    <div class="recent-avatar">${recentInitials(driver.fullName)}</div>
-                    <div>
-                        <div class="recent-driver-name">${driver.fullName || 'Unknown Driver'}</div>
-                        <div class="recent-driver-email">${driver.email || ''}</div>
-                    </div>
+        const item = document.createElement('li');
+        item.className = 'recent-item';
+        item.innerHTML = `
+            <div class="recent-avatar">${recentInitials(driver.fullName)}</div>
+            <div class="recent-item-main">
+                <div class="recent-driver-name">${driver.fullName || 'Unknown Driver'}</div>
+                <div class="recent-item-meta">
+                    <span class="recent-driver-email">${driver.email || ''}</span>
+                    <span class="recent-meta-dot">&bull;</span>
+                    <span>${studentNumber}</span>
+                    <span class="recent-meta-dot">&bull;</span>
+                    <span>${submissionDate}</span>
                 </div>
-            </td>
-            <td class="recent-muted">${studentNumber}</td>
-            <td class="recent-muted">${submissionDate}</td>
-            <td><span class="status-pill ${statusCls}">${statusLabel}</span></td>
-            <td class="recent-actions">${actionHtml}</td>
+            </div>
+            <span class="status-pill ${statusCls}">${statusLabel}</span>
+            <div class="recent-item-action">${actionHtml}</div>
         `;
-        tableBody.appendChild(row);
+        listEl.appendChild(item);
     });
 
     if (footerText) footerText.textContent = footerLabel || `Showing ${list.length}`;
@@ -538,7 +437,7 @@ async function loadRecentDriverProfiles() {
         recentDriverListFull = combined;
 
         if (combined.length === 0) {
-            tableBody.innerHTML = `<tr><td colspan="5" style="text-align:center; padding:30px; color:#64748b;">No recent driver activity.</td></tr>`;
+            tableBody.innerHTML = `<li class="recent-list-empty">No recent driver activity.</li>`;
             if (footerText) footerText.textContent = 'No recent activity';
             return;
         }
@@ -552,24 +451,16 @@ async function loadRecentDriverProfiles() {
         }
     } catch (error) {
         console.warn('Recent driver profiles unavailable:', error);
-        tableBody.innerHTML = `<tr><td colspan="5" style="text-align:center; padding:30px; color:#94a3b8;">Unable to load recent drivers.</td></tr>`;
+        tableBody.innerHTML = `<li class="recent-list-empty">Unable to load recent drivers.</li>`;
         if (footerText) footerText.textContent = 'No recent activity';
     }
 }
 
 
 window.addEventListener('load', async () => {
-    
-    if (localStorage.getItem('portalTheme') === 'dark') {
-        document.body.classList.add('dark-mode');
-    }
-
     const dateInput = document.getElementById('manifestDateFilter');
     if (dateInput) dateInput.valueAsDate = new Date();
 
-    startLiveClock();
-
-    
     await Promise.all([
         loadAdminProfile(),
         loadCoordinatorSessionProfile()

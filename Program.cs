@@ -609,6 +609,15 @@ app.MapPost("/api/admin/verify-driver", async (VerifyActionRequest req, IConfigu
 });
 
 
+// Single source of truth: driver.is_verified determines the status.
+// 0 = pending (waiting for approval), 1 = approved. That's it.
+// The driverapplications.application_status field is NOT used for this decision.
+static string DeriveStatus(int isVerified, string rawStatus)
+{
+    if (isVerified == 1) return "Approved";
+    return "Pending";
+}
+
 app.MapGet("/api/admin/drivers/{driverId:int}", async (int driverId, IConfiguration config) =>
 {
     string connectionString = config.GetConnectionString("DefaultConnection");
@@ -655,7 +664,8 @@ app.MapGet("/api/admin/drivers/{driverId:int}", async (int driverId, IConfigurat
 
                da.license_image_path AS LicenseImagePath,
 da.registration_file_path AS RegistrationFilePath,
-da.application_status AS ApplicationStatus
+da.application_status AS ApplicationStatus,
+d.is_verified AS IsVerified
 
 
             FROM driver d
@@ -722,7 +732,13 @@ da.application_status AS ApplicationStatus
 
                 registrationFilePath = GetSafeString("RegistrationFilePath"),
 
-                applicationStatus = GetSafeString("ApplicationStatus")
+                // Normalized, single source of truth so the detail page agrees
+                // with the list page (which keys off driver.is_verified):
+                //   is_verified = 1                              -> approved
+                //   not verified AND application_status=Rejected -> rejected
+                //   otherwise                                    -> pending
+                applicationStatus = DeriveStatus(GetSafeInt("IsVerified"), GetSafeString("ApplicationStatus")),
+                isVerified = GetSafeInt("IsVerified") == 1
                 ,
                 totalTrips = reader["TotalTrips"] != DBNull.Value ? Convert.ToInt32(reader["TotalTrips"]) : 0,
                 averageRating = reader["AvgRating"] != DBNull.Value ? Math.Round(Convert.ToDouble(reader["AvgRating"]), 1) : 0.0
@@ -767,11 +783,15 @@ app.MapPost("/api/admin/drivers/{driverId:int}/status", async (int driverId, Dyn
         using var connection = new MySqlConnection(connectionString);
         await connection.OpenAsync();
 
-        
-        int isVerifiedValue = req.Status.Equals("Approved", StringComparison.OrdinalIgnoreCase) ||
-                              req.Status.Equals("Approve", StringComparison.OrdinalIgnoreCase) ? 1 : 0;
+        bool isApprove = req.Status.Equals("Approved", StringComparison.OrdinalIgnoreCase) ||
+                         req.Status.Equals("Approve", StringComparison.OrdinalIgnoreCase);
 
-        
+        // Model: is_verified is the source of truth. Approve -> 1 (verified).
+        // Reject -> keep is_verified = 0 (driver stays pending, may re-apply).
+        int isVerifiedValue = isApprove ? 1 : 0;
+        // Keep application_status consistent with is_verified (no "rejected" state).
+        string storedStatus = isApprove ? "Approved" : "Pending";
+
         string updateQuery = @"
           UPDATE driver dr
            LEFT JOIN users u ON dr.email = u.email
@@ -782,11 +802,32 @@ app.MapPost("/api/admin/drivers/{driverId:int}/status", async (int driverId, Dyn
 
 
         using var command = new MySqlCommand(updateQuery, connection);
-        command.Parameters.AddWithValue("@Status", req.Status);
+        command.Parameters.AddWithValue("@Status", storedStatus);
         command.Parameters.AddWithValue("@IsVerified", isVerifiedValue);
         command.Parameters.AddWithValue("@DriverId", driverId);
 
         int rowsAffected = await command.ExecuteNonQueryAsync();
+
+        // Best-effort: store the rejection reason + decision date if those columns
+        // exist. Wrapped so a missing column never breaks the status change.
+        if (!string.IsNullOrWhiteSpace(req.Reason))
+        {
+            try
+            {
+                string reasonQuery = @"UPDATE driverapplications
+                                       SET rejection_reason = @Reason
+                                       WHERE driver_id = @DriverId;";
+                using var reasonCmd = new MySqlCommand(reasonQuery, connection);
+                reasonCmd.Parameters.AddWithValue("@Reason", req.Reason);
+                reasonCmd.Parameters.AddWithValue("@DriverId", driverId);
+                await reasonCmd.ExecuteNonQueryAsync();
+            }
+            catch (Exception rex)
+            {
+                Console.WriteLine($"[Info] Could not store rejection reason (column may not exist): {rex.Message}");
+            }
+        }
+
         return rowsAffected > 0
             ? Results.Ok(new { success = true, message = $"Status updated to {req.Status}" })
             : Results.NotFound(new { success = false, message = "Driver ID not found." });
@@ -2045,7 +2086,7 @@ app.Run();
 
 public record LoginRequest(string Email, string Password);
 public record VerifyActionRequest(int DriverId);
-public record DynamicStatusUpdate(string Status);
+public record DynamicStatusUpdate(string Status, string? Reason = null);
 public record ShuttleDto(int? DriverId, string ShuttleName, string LicensePlate, int Capacity, string? Status, int? VehicleYear, string? Colour);
 public record DriverUpsertDto(string FullName, string Email, string? Phone, string? Status);
 public record ForgotPasswordRequest(string Email);

@@ -151,3 +151,42 @@
     font-weight: 600;
     font-size: 0.85rem;
 }
+
+/* Shown instead of Approve/Reject when the driver is already approved (or rejected) */
+.approved-notice {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    margin-top: 20px;
+    padding: 14px 18px;
+    border-radius: 10px;
+    font-size: 14px;
+    font-weight: 600;
+    background: var(--pill-approved-bg, #dcfce7);
+    color: var(--pill-approved-text, #166534);
+    border: 1px solid rgba(16, 185, 129, 0.3);
+}
+
+    .approved-notice.is-rejected {
+        background: var(--pill-rejected-bg, #fee2e2);
+        color: var(--pill-rejected-text, #b91c1c);
+        border-color: rgba(239, 68, 68, 0.3);
+    }
+
+    .approved-notice.is-unknown {
+        background: var(--bg-subtle, #f1f5f9);
+        color: var(--text-secondary, #475569);
+        border-color: var(--border, #cbd5e1);
+    }
+
+    .approved-notice.is-unknown a {
+        color: var(--accent, #ff7a00);
+        font-weight: 700;
+        text-decoration: underline;
+    }
+
+    .approved-notice svg {
+        width: 18px;
+        height: 18px;
+    }

@@ -164,9 +164,6 @@
         init();
     }
 
-    // Other scripts (admin-dropdown.js, driver-dashboard.js) re-add the legacy
-    // body.dark-mode class on window 'load'. Strip it again afterwards so only
-    // [data-theme] controls theming and old conflicting rules stay dormant.
     window.addEventListener('load', function () {
         if (document.body) document.body.classList.remove('dark-mode');
         applyTheme(getTheme());

@@ -1,10 +1,9 @@
 ﻿
 :root {
-    /* Harmonized theme variables for Admin + Coordinator portals */
-    --bg-sidebar: #14213D; /* navy used across portals */
+    --bg-sidebar: #14213D;
     --bg-sidebar-hover: #24356e;
     --bg-main: #f4f6fa;
-    --primary-orange: #FF7A29; /* taxi orange mark */
+    --primary-orange: #FF7A29;
     --text-main: #1e293b;
     --text-muted: #64748b;
     --border-color: #e2e8f0;
@@ -123,17 +122,6 @@ body {
     padding-top: 10px;
     margin-bottom: 20px;
 }
-
-
-.menu-item.logout-action-link {
-    color: #f87171 !important;
-    font-weight: 600;
-}
-
-    .menu-item.logout-action-link:hover {
-        background-color: #451a1a !important;
-        color: #ef4444 !important;
-    }
 
 
 .sidebar-profile-footer {
@@ -367,13 +355,6 @@ body {
     margin-top: 10px;
 }
 
-.table-card {
-    background: #ffffff;
-    border-radius: 12px;
-    border: 1px solid var(--border-color);
-    overflow: hidden;
-}
-
 table {
     width: 100%;
     border-collapse: collapse;
@@ -403,10 +384,6 @@ td {
     display: block;
 }
 
-.rating-highlight {
-    font-weight: 700;
-    color: #0f172a;
-}
 
 .star-color {
     color: #f59e0b;
@@ -431,17 +408,6 @@ td {
         border-radius: 6px;
     }
 
-    .btn-action.verify-approve {
-        background: #ecfdf5;
-        color: #10b981;
-        padding: 6px 12px;
-        border-radius: 6px;
-        font-weight: 700;
-    }
-
-        .btn-action.verify-approve:hover {
-            background: #d1fae5;
-        }
 
 .text-danger {
     color: #ef4444 !important;
@@ -463,13 +429,12 @@ td {
     right: 0 !important;
     bottom: 0 !important;
     background-color: rgba(15, 23, 42, 0.6) !important;
-    display: none; 
+    display: none;
     align-items: center !important;
     justify-content: center !important;
     z-index: 99999 !important;
 }
 
-   
     .profile-modal-overlay.active {
         display: flex !important;
     }
@@ -480,7 +445,7 @@ td {
     padding: 24px !important;
     border-radius: 12px !important;
     width: 100% !important;
-    max-width: 420px !important; 
+    max-width: 420px !important;
     box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.15), 0 10px 10px -5px rgba(0, 0, 0, 0.04) !important;
     box-sizing: border-box !important;
     display: block !important;
@@ -519,7 +484,7 @@ td {
 .close-modal-btn {
     width: 100% !important;
     padding: 12px !important;
-    background-color: #111625 !important; 
+    background-color: #111625 !important;
     color: #ffffff !important;
     border: none !important;
     border-radius: 8px !important;
@@ -534,8 +499,7 @@ td {
         background-color: #1e2538 !important;
     }
 
-/* Legacy body.dark-mode rules removed — theming is now handled centrally
-   by theme.css via [data-theme="dark"] on the <html> element. */
+/* Legacy body.dark-mode rules removed — theming is handled centrally by theme.css via [data-theme="dark"] on <html>. */
 
 .toast-banner {
     position: fixed;
@@ -649,6 +613,7 @@ td {
     .modal-close-btn:hover {
         color: #0f172a;
     }
+
 .icon-inline {
     width: 16px;
     height: 16px;
@@ -814,12 +779,6 @@ td {
         color: #0f172a;
     }
 
-/* ============================================================
-   DASHBOARD REDESIGN — search bar, stat cards, recent profiles
-   (visual-only; IDs and handlers unchanged)
-   ============================================================ */
-
-/* Navbar search bar with leading icon */
 .navbar-search {
     position: relative;
     display: flex;
@@ -855,7 +814,6 @@ td {
             background: #ffffff;
         }
 
-/* Overview title block */
 .overview-title {
     margin: 0 0 4px 0;
     font-size: 26px;
@@ -870,7 +828,6 @@ td {
     color: var(--text-muted);
 }
 
-/* Redesigned stat cards row */
 .dash-stats-grid {
     display: grid;
     grid-template-columns: repeat(4, 1fr);
@@ -917,7 +874,6 @@ td {
         height: 20px;
     }
 
-/* Decorative badge top-right of stat card */
 .dash-stat-badge {
     font-size: 11px;
     font-weight: 700;
@@ -946,7 +902,6 @@ td {
     line-height: 1;
 }
 
-/* Two small avatars top-right of the highlighted card */
 .dash-stat-avatars {
     display: flex;
     align-items: center;
@@ -974,7 +929,6 @@ td {
             height: 12px;
         }
 
-/* Dark highlighted 4th card (Average Rating) */
 .dash-stat-card.highlighted {
     background: #1b2a5c;
     border-color: #1b2a5c;
@@ -997,7 +951,6 @@ td {
             fill: #f59e0b;
         }
 
-/* Recent Driver Profiles panel */
 .recent-panel {
     background: #ffffff;
     border: 1px solid var(--border-color);
@@ -1034,70 +987,99 @@ td {
         color: var(--primary-orange);
     }
 
-.recent-table {
-    width: 100%;
-    border-collapse: collapse;
-}
-
-    .recent-table th {
-        background: #f8fafc;
-        color: var(--text-muted);
-        font-size: 11px;
-        text-transform: uppercase;
-        letter-spacing: 0.5px;
-        font-weight: 700;
-        padding: 12px 24px;
-        text-align: left;
-        border-top: 1px solid var(--border-color);
-        border-bottom: 1px solid var(--border-color);
-    }
-
-        .recent-table th.text-right {
-            text-align: right;
-        }
-
-/* Right-align the Action column header + cells on all admin tables */
 .verify-table th.text-right,
-.recent-table th.text-right,
 th.text-right {
     text-align: right;
 }
 
 .verify-table td.recent-actions,
-.recent-table td.recent-actions,
 td.recent-actions {
     text-align: right;
 }
 
-    .recent-table td {
-        padding: 16px 24px;
-        border-bottom: 1px solid #f1f5f9;
-        font-size: 15px;
-        color: var(--text-main);
-        vertical-align: middle;
-    }
+.recent-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
 
-    .recent-table tr:last-child td {
+.recent-item {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 12px 24px;
+    border-bottom: 1px solid #f1f5f9;
+    transition: background 0.12s ease;
+}
+
+    .recent-item:last-child {
         border-bottom: none;
     }
 
-/* Driver name cell w/ avatar */
-.recent-driver-cell {
+    .recent-item:hover {
+        background: #fafbfc;
+    }
+
+.recent-item-main {
+    flex: 1;
+    min-width: 0;
+}
+
+.recent-item-meta {
     display: flex;
     align-items: center;
-    gap: 12px;
+    gap: 7px;
+    flex-wrap: wrap;
+    font-size: 12.5px;
+    color: var(--text-muted);
+    margin-top: 2px;
+}
+
+.recent-meta-dot {
+    color: #cbd5e1;
+}
+
+.recent-item-action {
+    flex-shrink: 0;
+    min-width: 72px;
+    text-align: right;
+}
+
+.recent-item-link {
+    font-size: 13px;
+    font-weight: 700;
+    color: #64748b;
+    text-decoration: none;
+    transition: color 0.15s ease;
+}
+
+    .recent-item-link:hover {
+        color: var(--primary-orange);
+    }
+
+.btn-review-sm {
+    padding: 7px 16px;
+    font-size: 12.5px;
+}
+
+.recent-list-empty {
+    list-style: none;
+    text-align: center;
+    padding: 30px;
+    color: #64748b;
+    font-size: 14px;
 }
 
 .recent-avatar {
-    width: 38px;
-    height: 38px;
+    width: 40px;
+    height: 40px;
     border-radius: 50%;
     background: #eff2f7;
     color: #64748b;
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 12px;
+    font-size: 13px;
     font-weight: 700;
     flex-shrink: 0;
     text-transform: uppercase;
@@ -1106,21 +1088,14 @@ td.recent-actions {
 .recent-driver-name {
     font-weight: 700;
     color: #0f172a;
-    font-size: 15px;
+    font-size: 14.5px;
 }
 
 .recent-driver-email {
-    font-size: 13px;
+    font-size: 12.5px;
     color: var(--text-muted);
-    margin-top: 2px;
 }
 
-.recent-muted {
-    color: var(--text-muted);
-    font-size: 14px;
-}
-
-/* Status pills */
 .status-pill {
     display: inline-block;
     padding: 5px 14px;
@@ -1144,7 +1119,6 @@ td.recent-actions {
         color: #b91c1c;
     }
 
-/* Row actions */
 .recent-actions {
     text-align: right;
 }
@@ -1179,7 +1153,6 @@ td.recent-actions {
         color: var(--primary-orange);
     }
 
-/* Plain status text in the Actions column (approved / rejected) */
 .action-text {
     font-size: 13px;
     font-weight: 700;
@@ -1193,7 +1166,6 @@ td.recent-actions {
         color: #b91c1c;
     }
 
-/* Panel footer / pagination */
 .recent-panel-footer {
     display: flex;
     align-items: center;
@@ -1240,7 +1212,6 @@ td.recent-actions {
             height: 16px;
         }
 
-/* Navbar icon cluster (bell / settings / help) */
 .navbar-icon-group {
     display: flex;
     align-items: center;
@@ -1276,8 +1247,7 @@ td.recent-actions {
     margin: 0 4px;
 }
 
-/* Defensive: constrain all icons within dashboard components so an
-   inline SVG can never expand to fill its container */
+/* Defensive: constrain icons so an inline SVG can never expand to fill its container. */
 .dash-stat-icon svg,
 .dash-stat-avatars svg,
 .navbar-search svg,
@@ -1290,11 +1260,6 @@ td.recent-actions {
     flex-shrink: 0;
 }
 
-/* ============================================================
-   DRIVER VERIFICATION — visual polish (no logic changes)
-   ============================================================ */
-
-/* Section headings */
 .verify-section-head {
     margin-bottom: 14px;
 }
@@ -1312,7 +1277,6 @@ td.recent-actions {
         color: var(--text-muted);
     }
 
-/* Polished table card */
 .table-card {
     background: #ffffff;
     border: 1px solid var(--border-color);
@@ -1359,19 +1323,16 @@ td.recent-actions {
             background: #fafbfc;
         }
 
-    /* Applicant / driver name (first cell strong) */
     .table-card td strong {
         font-weight: 700;
         color: #0f172a;
     }
 
-    /* Student ID chip already inline-styled by JS; refine emails */
     .table-card td code {
         color: var(--primary-orange) !important;
         background: #fff7ed !important;
     }
 
-/* Upgrade the "Verify Profile" link into an orange button */
 .btn-action.verify-approve {
     background: var(--primary-orange) !important;
     color: #ffffff !important;
@@ -1386,7 +1347,6 @@ td.recent-actions {
         background: #e66d00 !important;
     }
 
-/* Verified status badge — pill look */
 .status-badge {
     display: inline-block;
     padding: 5px 14px !important;
@@ -1395,9 +1355,6 @@ td.recent-actions {
     font-weight: 700 !important;
 }
 
-/* Removed role-badge styles during undo */
-
-/* Show more button polish */
 #verificationShowMoreBtn,
 #verifiedShowMoreBtn {
     background: #ffffff !important;
@@ -1416,18 +1373,12 @@ td.recent-actions {
         background: #f8fafc !important;
     }
 
-/* ============================================================
-   DRIVER VERIFICATION — row styling to match dashboard
-   ============================================================ */
-
-/* Orange student number text */
 .verify-student-num {
     color: var(--text-main);
     font-weight: 600;
     font-size: 14px;
 }
 
-/* Orange "Verify Profile" button (matches dashboard Review button) */
 .btn-review-profile {
     background: var(--primary-orange);
     color: #ffffff;
@@ -1447,16 +1398,6 @@ td.recent-actions {
         color: #ffffff;
     }
 
-/* Right-align the action cell */
-.recent-actions {
-    text-align: right;
-}
-
-/* ============================================================
-   DRIVER RATINGS SCREEN
-   ============================================================ */
-
-/* Filter bar above the ratings table */
 .ratings-filter-bar {
     display: flex;
     align-items: center;
@@ -1473,7 +1414,6 @@ td.recent-actions {
     letter-spacing: 0.5px;
 }
 
-/* Pink "Review Driver" button for flagged (low-rated) drivers */
 .btn-review-driver {
     background: #fee2e2;
     color: #b91c1c;
@@ -1490,20 +1430,11 @@ td.recent-actions {
         background: #fecaca;
     }
 
-/* Star + rating number in the ratings table */
 .rating-highlight {
     font-weight: 700;
     color: #0f172a;
     margin-right: 4px;
 }
-
-.star-color {
-    color: #f59e0b;
-}
-
-/* ============================================================
-   Footer + slightly larger fonts across admin tables
-   ============================================================ */
 
 .verify-footer {
     display: flex;
@@ -1518,14 +1449,11 @@ td.recent-actions {
     color: var(--text-muted);
 }
 
-/* Table header text a touch larger */
-.recent-table th,
 .verify-table th,
 .table-card th {
     font-size: 12px;
 }
 
-/* Action buttons / pills a touch larger */
 .btn-review,
 .btn-review-profile,
 .btn-review-driver,
@@ -1538,7 +1466,6 @@ td.recent-actions {
     font-size: 13px;
 }
 
-/* Section subtitles / overview subtitle */
 .overview-subtitle {
     font-size: 15px;
 }
@@ -1547,14 +1474,9 @@ td.recent-actions {
     font-size: 14px;
 }
 
-/* Stat values a touch larger */
 .dash-stat-value {
     font-size: 34px;
 }
-
-/* ============================================================
-   Verification header row + filter tabs
-   ============================================================ */
 
 .verify-header-row {
     display: flex;
@@ -1596,17 +1518,10 @@ td.recent-actions {
         box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
     }
 
-/* === Admin UI enhancements (spacing, focus, accessibility) === */
-
-/* Note: original .content-body padding and width are retained earlier in the file.
-   Removed the max-width and side padding to preserve the original content sizing per request. */
-
-/* Slightly larger headings for better hierarchy without changing colors */
 .content-body h1, .content-body h2, .content-body h3 {
     line-height: 1.15;
 }
 
-/* Card focus and hover affordances */
 .metric-card, .dash-stat-card, .action-card, .table-card, .modal-card {
     transition: transform 0.16s ease, box-shadow 0.16s ease;
 }
@@ -1620,31 +1535,16 @@ td.recent-actions {
     outline: none;
 }
 
-/* Accessible focus ring for keyboard users (does not change color scheme) */
 :focus {
     outline: 3px solid rgba(255, 122, 0, 0.12);
     outline-offset: 3px;
 }
 
-/* Make action-card keyboard accessible look like a control */
 .action-card {
     cursor: pointer;
 }
 
-/* Small utility for visually-hidden text for screen readers */
-.sr-only {
-    position: absolute !important;
-    width: 1px !important;
-    height: 1px !important;
-    padding: 0 !important;
-    margin: -1px !important;
-    overflow: hidden !important;
-    clip: rect(0, 0, 0, 0) !important;
-    white-space: nowrap !important; /* added line */
-    border: 0 !important;
-}
 
-/* Responsive: stack metric grid on small screens */
 @media (max-width: 900px) {
     .metrics-grid {
         flex-direction: column;
@@ -1660,33 +1560,174 @@ td.recent-actions {
     }
 }
 
-/* Lightweight skeleton loader to indicate loading states where needed */
-.skeleton {
-    background: linear-gradient(90deg, rgba(0,0,0,0.03) 25%, rgba(0,0,0,0.06) 37%, rgba(0,0,0,0.03) 63%);
-    background-size: 400% 100%;
-    animation: shimmer 1.2s linear infinite;
-    border-radius: 6px;
-}
 
-@keyframes shimmer {
-    0% { background-position: 100% 0 }
-    100% { background-position: -100% 0 }
-}
-
-/* Table improvements: row hover subtle lift */
 table.data-table tbody tr:hover {
     background-color: #fbfdff;
 }
 
-/* ensure buttons remain recognizable and consistent spacing */
 .btn-action, .btn-primary, .top-logout-btn {
     border-radius: 8px;
 }
 
-/* Small utility to centralize focusable card role visuals */
-.focusable-card:focus {
-    box-shadow: 0 8px 24px rgba(15,23,42,0.12);
-    transform: translateY(-3px);
+.dash-hero {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 16px;
+    flex-wrap: wrap;
+    margin-bottom: 24px;
 }
 
-/* end admin enhancements */
+.dash-hero-date {
+    background: var(--bg-card, #fff);
+    border: 1px solid var(--border, #e2e8f0);
+    border-radius: 10px;
+    padding: 10px 16px;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text-secondary, #64748b);
+    white-space: nowrap;
+    box-shadow: 0 1px 2px rgba(15,23,42,0.04);
+}
+
+.dash-stat-card > div { position: relative; }
+
+.dash-spark {
+    width: 100%;
+    height: 26px;
+    margin-top: 8px;
+    opacity: 0.55;
+    display: block;
+}
+
+.dash-trend {
+    font-size: 12px;
+    font-weight: 700;
+    padding: 3px 9px;
+    border-radius: 999px;
+}
+
+    .dash-trend.up    { background: #dcfce7; color: #166534; }
+    .dash-trend.down  { background: #fee2e2; color: #b91c1c; }
+    .dash-trend.neutral { background: #eef2f7; color: #64748b; }
+
+[data-theme="dark"] .dash-trend.up { background: #11351f; color: #6ee7a8; }
+[data-theme="dark"] .dash-trend.neutral { background: #1b2742; color: #9fb0c9; }
+
+.rating-ring-wrap {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+}
+
+.rating-ring {
+    position: relative;
+    width: 72px;
+    height: 72px;
+    flex-shrink: 0;
+}
+
+    .rating-ring svg {
+        width: 72px;
+        height: 72px;
+        transform: rotate(-90deg);
+    }
+
+.ring-track {
+    fill: none;
+    stroke: rgba(255, 255, 255, 0.15);
+    stroke-width: 7;
+}
+
+.ring-value {
+    fill: none;
+    stroke: #fbbf24;
+    stroke-width: 7;
+    stroke-linecap: round;
+    /* circumference = 2*pi*30 ≈ 188.5; stroke-dashoffset set by JS */
+    stroke-dasharray: 188.5;
+    stroke-dashoffset: 188.5;
+    transition: stroke-dashoffset 0.9s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.rating-ring-num {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 20px;
+    font-weight: 800;
+    color: #ffffff;
+}
+
+.rating-ring-sub {
+    font-size: 12px;
+    color: #cbd5e1;
+    margin-top: 2px;
+}
+
+.verify-pagination {
+    display: flex;
+    gap: 6px;
+    align-items: center;
+}
+
+    .verify-pagination button {
+        min-width: 34px;
+        height: 34px;
+        padding: 0 8px;
+        border: 1px solid var(--border, #e2e8f0);
+        background: var(--bg-card, #ffffff);
+        border-radius: 8px;
+        font-size: 13px;
+        font-weight: 600;
+        color: var(--text-secondary, #64748b);
+        cursor: pointer;
+        transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+    }
+
+        .verify-pagination button:hover:not(:disabled) {
+            background: var(--bg-subtle, #f8fafc);
+            color: var(--text-heading, #0f172a);
+        }
+
+        .verify-pagination button.active {
+            background: var(--bg-sidebar, #1b2a5c);
+            color: #ffffff;
+            border-color: var(--bg-sidebar, #1b2a5c);
+        }
+
+        .verify-pagination button:disabled {
+            opacity: 0.4;
+            cursor: not-allowed;
+        }
+
+.verify-table tbody tr.verify-priority td {
+    background: linear-gradient(90deg, rgba(245, 158, 11, 0.10), transparent 55%);
+}
+
+.verify-table tbody tr.verify-priority td:first-child {
+    box-shadow: inset 3px 0 0 0 #f59e0b;
+}
+
+.priority-flag {
+    display: inline-block;
+    margin-left: 6px;
+    font-size: 10px;
+    font-weight: 700;
+    color: #b45309;
+    background: #fef3c7;
+    padding: 2px 7px;
+    border-radius: 999px;
+    vertical-align: middle;
+}
+
+[data-theme="dark"] .priority-flag {
+    background: #4a3410;
+    color: #fcd34d;
+}
+
+[data-theme="dark"] .verify-table tbody tr.verify-priority td {
+    background: linear-gradient(90deg, rgba(245, 158, 11, 0.14), transparent 55%);
+}

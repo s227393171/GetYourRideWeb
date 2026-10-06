@@ -198,7 +198,7 @@
 
 .form-content {
     width: 100%;
-    max-width: 440px;
+    max-width: 560px;
     animation: loginFadeUp 0.6s cubic-bezier(0.22, 1, 0.36, 1) 0.08s both;
 }
 
@@ -206,23 +206,24 @@
 .form-content form {
     background: var(--bg-card, #ffffff);
     border: 1px solid var(--border, #e6e9ef);
-    border-radius: 16px;
-    box-shadow: 0 10px 30px -12px rgba(15, 23, 42, 0.15);
-    padding: 40px;
+    border-radius: 18px;
+    box-shadow: 0 18px 50px -18px rgba(15, 23, 42, 0.22);
+    padding: 52px 56px;
     width: 100%;
     box-sizing: border-box;
 }
 
 .form-content h3 {
-    margin: 0 0 8px 0;
-    font-size: 28px;
+    margin: 0 0 10px 0;
+    font-size: 32px;
     font-weight: 800;
     letter-spacing: -0.5px;
     color: var(--text-heading, #0f172a);
 }
 
 .form-content .sub {
-    margin: 0 0 24px 0;
+    margin: 0 0 30px 0;
+    font-size: 15px;
     color: var(--text-secondary, #64748b);
     line-height: 1.5;
 }
@@ -238,16 +239,20 @@
 .form-content input[type="email"],
 .form-content input[type="password"] {
     width: 100%;
-    padding: 14px 16px;
-    border-radius: 8px;
+    padding: 15px 18px;
+    border-radius: 10px;
     border: 1px solid var(--border, #e6e9ef);
     box-sizing: border-box;
-    margin-bottom: 16px;
+    margin-bottom: 18px;
     font-size: 15px;
     background: var(--bg-card, #fbfcff);
     color: var(--text-primary, #1e293b);
     font-family: inherit;
     transition: border-color 0.18s ease, box-shadow 0.18s ease;
+}
+
+.form-content label {
+    margin-top: 2px;
 }
 
     .form-content input[type="email"]:focus,
@@ -329,11 +334,12 @@
     background: linear-gradient(135deg, #ff8c1a, var(--accent, #ff7a00));
     color: #fff;
     border: none;
-    padding: 14px;
-    border-radius: 8px;
+    padding: 16px;
+    border-radius: 10px;
     font-weight: 700;
     cursor: pointer;
     font-size: 16px;
+    margin-top: 4px;
     position: relative;
     overflow: hidden;
     box-shadow: 0 6px 16px -4px rgba(255, 122, 0, 0.5);

@@ -1,242 +1,215 @@
 ﻿const UNVERIFIED_API = '/api/admin/unverified-drivers';
 const VERIFIED_STUDENTS_API = '/api/admin/verified-student-drivers';
 const VERIFY_ACTION_API = '/api/admin/verify-driver';
-const PREVIEW_COUNT = 5;
-let cachedUnverified = [];
-let cachedVerified = [];
-let pendingExpanded = false;
-let verifiedExpanded = false;
+const VERIFY_PAGE_SIZE = 8;
 
-// Visual helper — initials for the avatar circle (display only)
+let combinedApplications = [];   // pending + approved, pending first
+let currentFilter = 'all';       // all | pending | approved | rejected
+let currentSearch = '';
+let currentPage = 0;
+
 function verifyInitials(name) {
     if (!name) return '?';
     const parts = name.trim().split(/\s+/);
     return (parts[0][0] + (parts[1] ? parts[1][0] : '')).toUpperCase();
 }
 
-async function loadVerificationQueue() {
-    try {
-        const response = await fetch(UNVERIFIED_API);
-        cachedUnverified = await response.json();
-        renderVerificationTable(cachedUnverified);
-        const pendingStat = document.getElementById('statVerifyPending');
-        if (pendingStat) pendingStat.textContent = (cachedUnverified || []).length;
-    } catch (err) {
-        console.error(err);
-        document.getElementById('verificationTableBody').innerHTML =
-            `<tr><td colspan="4" style="color:red; text-align:center; padding:20px; font-weight:600;">Failed to pull pipeline queue.</td></tr>`;
-    }
+function verifyFormatDate(value) {
+    if (!value) return '&mdash;';
+    const d = new Date(value);
+    if (isNaN(d.getTime())) return '&mdash;';
+    return d.toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
 }
 
-function renderVerificationTable(list) {
-    const tableBody = document.getElementById('verificationTableBody');
-    const wrap = document.getElementById('verificationShowMoreWrap');
-    const btn = document.getElementById('verificationShowMoreBtn');
-    tableBody.innerHTML = '';
+/* An application counts as "waiting a while" (priority) if pending and the
+   join/submission date is more than 7 days ago. Highlighted with an amber bar. */
+function isPriority(driver) {
+    if (driver.__status !== 'pending') return false;
+    if (!driver.joinDate) return false;
+    const d = new Date(driver.joinDate);
+    if (isNaN(d.getTime())) return false;
+    const days = (Date.now() - d.getTime()) / (1000 * 60 * 60 * 24);
+    return days > 7;
+}
 
-    if (list.length === 0) {
-        tableBody.innerHTML = `<tr><td colspan="4" style="text-align:center; padding:30px; color:#64748b; font-weight:500;">🎉 No pending files need verification.</td></tr>`;
-        if (wrap) wrap.style.display = 'none';
-        return;
-    }
+/* ---------- Load both lists, combine, pending first ---------- */
+async function loadVerificationData() {
+    try {
+        const [pendingRes, approvedRes] = await Promise.all([
+            fetch(UNVERIFIED_API),
+            fetch(VERIFIED_STUDENTS_API)
+        ]);
 
-    const visible = pendingExpanded ? list : list.slice(0, PREVIEW_COUNT);
+        const pending = pendingRes.ok ? await pendingRes.json() : [];
+        const approved = approvedRes.ok ? await approvedRes.json() : [];
 
-    visible.forEach(driver => {
-        const row = document.createElement('tr');
-        row.innerHTML = `
-            <td>
-                <div class="recent-driver-cell">
-                    <div class="recent-avatar">${verifyInitials(driver.fullName)}</div>
-                    <div>
-                        <div class="recent-driver-name">${driver.fullName}</div>
-                        <div class="recent-driver-email">${driver.email}</div>
-                    </div>
-                </div>
-            </td>
-            <td><span class="verify-student-num">${driver.studentNumber}</span></td>
-            <td><span class="status-pill pending">Pending</span></td>
-            <td class="recent-actions">
-                <a href="review-application.html?id=${driver.studentNumber}" class="btn-review-profile">Verify Profile</a>
-            </td>
-        `;
-        tableBody.appendChild(row);
-    });
+        const pendingList = (Array.isArray(pending) ? pending : []).map(d => ({ ...d, __status: 'pending' }));
+        const approvedList = (Array.isArray(approved) ? approved : []).map(d => ({ ...d, __status: 'approved' }));
 
-    if (wrap && btn) {
-        if (list.length > PREVIEW_COUNT) {
-            wrap.style.display = 'block';
-            btn.textContent = pendingExpanded ? 'Show less' : `Show more (${list.length - PREVIEW_COUNT} more)`;
-        } else {
-            wrap.style.display = 'none';
+        // Pending always on top; within each group, newest first by driverId.
+        pendingList.sort((a, b) => (b.driverId || 0) - (a.driverId || 0));
+        approvedList.sort((a, b) => (b.driverId || 0) - (a.driverId || 0));
+        combinedApplications = [...pendingList, ...approvedList];
+
+        // Stat cards
+        const pendingStat = document.getElementById('statVerifyPending');
+        const approvedStat = document.getElementById('statVerifyApproved');
+        if (pendingStat) pendingStat.textContent = pendingList.length;
+        if (approvedStat) approvedStat.textContent = approvedList.length;
+
+        currentPage = 0;
+        renderVerificationTable();
+    } catch (err) {
+        console.error(err);
+        const body = document.getElementById('verificationTableBody');
+        if (body) {
+            body.innerHTML = `<tr><td colspan="5" style="color:#ef4444; text-align:center; padding:24px; font-weight:600;">Failed to load driver applications.</td></tr>`;
         }
     }
 }
 
-function togglePendingList() {
-    pendingExpanded = !pendingExpanded;
-    renderVerificationTable(cachedUnverified);
+/* ---------- Filter + search ---------- */
+function getFilteredApplications() {
+    let list = combinedApplications;
+
+    if (currentFilter !== 'all') {
+        list = list.filter(d => d.__status === currentFilter);
+    }
+
+    if (currentSearch) {
+        const term = currentSearch.toUpperCase();
+        list = list.filter(d =>
+            (d.fullName && d.fullName.toUpperCase().includes(term)) ||
+            (d.studentNumber && d.studentNumber.toUpperCase().includes(term)) ||
+            (d.email && d.email.toUpperCase().includes(term))
+        );
+    }
+
+    return list;
 }
 
-// Filter tabs: show/hide the Pending and Verified sections
 function setVerifyFilter(filter, btnEl) {
+    currentFilter = filter;
+    currentPage = 0;
     document.querySelectorAll('#verifyFilterTabs .filter-tab').forEach(b => b.classList.remove('active'));
     if (btnEl) btnEl.classList.add('active');
-
-    const pendingGroup = document.getElementById('pendingGroup');
-    const verifiedGroup = document.getElementById('verifiedGroup');
-    if (!pendingGroup || !verifiedGroup) return;
-
-    if (filter === 'pending') {
-        pendingGroup.style.display = '';
-        verifiedGroup.style.display = 'none';
-    } else if (filter === 'approved') {
-        pendingGroup.style.display = 'none';
-        verifiedGroup.style.display = '';
-    } else if (filter === 'rejected') {
-        // No rejected data source — hide both tables
-        pendingGroup.style.display = 'none';
-        verifiedGroup.style.display = 'none';
-    } else {
-        // all
-        pendingGroup.style.display = '';
-        verifiedGroup.style.display = '';
-    }
-}
-
-async function loadVerifiedStudents() {
-    try {
-        const response = await fetch(VERIFIED_STUDENTS_API);
-        cachedVerified = await response.json();
-        renderVerifiedTable(cachedVerified);
-        const approvedStat = document.getElementById('statVerifyApproved');
-        if (approvedStat) approvedStat.textContent = (cachedVerified || []).length;
-    } catch (err) {
-        console.error(err);
-        document.getElementById('verifiedTableBody').innerHTML =
-            `<tr><td colspan="4" style="color:red; text-align:center; padding:20px; font-weight:600;">Failed to load verified drivers.</td></tr>`;
-    }
-}
-
-function renderVerifiedTable(list) {
-    const tableBody = document.getElementById('verifiedTableBody');
-    const wrap = document.getElementById('verifiedShowMoreWrap');
-    const btn = document.getElementById('verifiedShowMoreBtn');
-    tableBody.innerHTML = '';
-
-    if (!list || list.length === 0) {
-        tableBody.innerHTML = `<tr><td colspan="4" style="text-align:center; padding:30px; color:#64748b; font-weight:500;">No verified student drivers yet.</td></tr>`;
-        if (wrap) wrap.style.display = 'none';
-        return;
-    }
-
-    const visible = verifiedExpanded ? list : list.slice(0, PREVIEW_COUNT);
-
-    visible.forEach(driver => {
-        const row = document.createElement('tr');
-        row.innerHTML = `
-            <td>
-                <div class="recent-driver-cell">
-                    <div class="recent-avatar">${verifyInitials(driver.fullName)}</div>
-                    <div>
-                        <div class="recent-driver-name">${driver.fullName}</div>
-                        <div class="recent-driver-email">${driver.email}</div>
-                    </div>
-                </div>
-            </td>
-            <td><span class="verify-student-num">${driver.studentNumber}</span></td>
-            <td><span class="status-pill approved">Verified</span></td>
-        `;
-        tableBody.appendChild(row);
-    });
-
-    if (wrap && btn) {
-        if (list.length > PREVIEW_COUNT) {
-            wrap.style.display = 'block';
-            btn.textContent = verifiedExpanded ? 'Show less' : `Show more (${list.length - PREVIEW_COUNT} more)`;
-        } else {
-            wrap.style.display = 'none';
-        }
-    }
-}
-
-function toggleVerifiedList() {
-    verifiedExpanded = !verifiedExpanded;
-    renderVerifiedTable(cachedVerified);
-}
-
-
-async function approveDriver(userId) {
-    if (!confirm("Authorize credentials and grant driver application access privileges?")) return;
-    try {
-        const response = await fetch(VERIFY_ACTION_API, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ userId: userId })
-        });
-        if (response.ok) {
-            alert("Driver successfully authorized.");
-            loadVerificationQueue();
-        }
-    } catch (e) {
-        console.error(e);
-        alert("Execution pipeline communications failure.");
-    }
+    renderVerificationTable();
 }
 
 function searchUnverified() {
-    const term = document.getElementById('verifySearchInput').value.toUpperCase();
-    if (term.length > 0) {
-        const filtered = cachedUnverified.filter(u => u.fullName.toUpperCase().includes(term) || u.studentNumber.toUpperCase().includes(term));
-        const tableBody = document.getElementById('verificationTableBody');
-        const wrap = document.getElementById('verificationShowMoreWrap');
-        if (wrap) wrap.style.display = 'none';
-        tableBody.innerHTML = '';
-        if (filtered.length === 0) {
-            tableBody.innerHTML = `<tr><td colspan="4" style="text-align:center; padding:30px; color:#64748b;">No matches found.</td></tr>`;
-            return;
-        }
-        filtered.forEach(driver => {
-            const row = document.createElement('tr');
-            row.innerHTML = `
-                <td>
-                    <div class="recent-driver-cell">
-                        <div class="recent-avatar">${verifyInitials(driver.fullName)}</div>
-                        <div>
-                            <div class="recent-driver-name">${driver.fullName}</div>
-                            <div class="recent-driver-email">${driver.email}</div>
-                        </div>
-                    </div>
-                </td>
-                <td><span class="verify-student-num">${driver.studentNumber}</span></td>
-                <td><span class="status-pill pending">Pending</span></td>
-                <td class="recent-actions"><a href="review-application.html?id=${driver.studentNumber}" class="btn-review-profile">Verify Profile</a></td>
-            `;
-            tableBody.appendChild(row);
-        });
-    } else {
-        renderVerificationTable(cachedUnverified);
+    const input = document.getElementById('verifySearchInput');
+    currentSearch = input ? input.value.trim() : '';
+    currentPage = 0;
+    renderVerificationTable();
+}
+
+/* ---------- Render ---------- */
+function renderVerificationTable() {
+    const tableBody = document.getElementById('verificationTableBody');
+    const footerText = document.getElementById('verifyFooterText');
+    const pagination = document.getElementById('verifyPagination');
+    if (!tableBody) return;
+
+    const list = getFilteredApplications();
+    const total = list.length;
+
+    tableBody.innerHTML = '';
+
+    if (total === 0) {
+        const label = currentFilter === 'rejected'
+            ? 'No rejected applications.'
+            : (currentSearch ? 'No matching applications.' : 'No driver applications yet.');
+        tableBody.innerHTML =
+            `<tr><td colspan="5" style="text-align:center; padding:44px 20px; color:var(--text-secondary,#64748b);">` +
+            `<div style="font-size:30px; margin-bottom:8px;">🗂️</div>` +
+            `<div style="font-weight:600;">${label}</div></td></tr>`;
+        if (footerText) footerText.textContent = 'Showing 0 of 0 applications';
+        if (pagination) pagination.innerHTML = '';
+        return;
     }
+
+    const totalPages = Math.ceil(total / VERIFY_PAGE_SIZE);
+    if (currentPage > totalPages - 1) currentPage = totalPages - 1;
+    if (currentPage < 0) currentPage = 0;
+
+    const start = currentPage * VERIFY_PAGE_SIZE;
+    const end = Math.min(start + VERIFY_PAGE_SIZE, total);
+    const visible = list.slice(start, end);
+
+    visible.forEach(driver => {
+        const isPending = driver.__status === 'pending';
+        const priority = isPriority(driver);
+
+        let statusLabel, statusCls, actionHtml;
+        if (driver.__status === 'approved') {
+            statusLabel = 'Approved'; statusCls = 'approved';
+            actionHtml = `<a href="review-application.html?id=${driver.studentNumber}" class="btn-details">Details</a>`;
+        } else if (driver.__status === 'rejected') {
+            statusLabel = 'Rejected'; statusCls = 'rejected';
+            actionHtml = `<a href="review-application.html?id=${driver.studentNumber}" class="btn-details">Details</a>`;
+        } else {
+            statusLabel = 'Pending'; statusCls = 'pending';
+            actionHtml = `<a href="review-application.html?id=${driver.studentNumber}" class="btn-review-profile">Verify Profile</a>`;
+        }
+
+        const row = document.createElement('tr');
+        if (priority) row.className = 'verify-priority';
+        row.innerHTML = `
+            <td>
+                <div class="recent-driver-cell">
+                    <div class="recent-avatar">${verifyInitials(driver.fullName)}</div>
+                    <div>
+                        <div class="recent-driver-name">${driver.fullName || 'Unknown Driver'}${priority ? ' <span class="priority-flag" title="Waiting over a week">● Needs attention</span>' : ''}</div>
+                        <div class="recent-driver-email">${driver.email || ''}</div>
+                    </div>
+                </div>
+            </td>
+            <td><span class="verify-student-num">${driver.studentNumber || '&mdash;'}</span></td>
+            <td class="recent-muted">${verifyFormatDate(driver.joinDate)}</td>
+            <td><span class="status-pill ${statusCls}">${statusLabel}</span></td>
+            <td class="recent-actions">${actionHtml}</td>
+        `;
+        tableBody.appendChild(row);
+    });
+
+    if (footerText) {
+        footerText.textContent = `Showing ${start + 1} to ${end} of ${total} applications`;
+    }
+    renderVerifyPagination(totalPages);
 }
 
+function renderVerifyPagination(totalPages) {
+    const pagination = document.getElementById('verifyPagination');
+    if (!pagination) return;
+    pagination.innerHTML = '';
+    if (totalPages <= 1) return;
 
-function toggleDropdown(e) {
-    e.stopPropagation();
-    document.getElementById('adminGlobalDropdown').classList.toggle('show');
+    const prev = document.createElement('button');
+    prev.type = 'button';
+    prev.innerHTML = '&lsaquo;';
+    prev.disabled = currentPage === 0;
+    prev.onclick = () => { if (currentPage > 0) { currentPage--; renderVerificationTable(); } };
+    pagination.appendChild(prev);
+
+    for (let i = 0; i < totalPages; i++) {
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.textContent = (i + 1).toString();
+        if (i === currentPage) btn.classList.add('active');
+        btn.onclick = () => { currentPage = i; renderVerificationTable(); };
+        pagination.appendChild(btn);
+    }
+
+    const next = document.createElement('button');
+    next.type = 'button';
+    next.innerHTML = '&rsaquo;';
+    next.disabled = currentPage >= totalPages - 1;
+    next.onclick = () => { if (currentPage < totalPages - 1) { currentPage++; renderVerificationTable(); } };
+    pagination.appendChild(next);
 }
-
-function executeLogout() {
-    if (confirm("Log out of Admin Session?")) window.location.href = "../Login.html";
-}
-
-window.addEventListener('click', function () {
-    const d = document.getElementById('adminGlobalDropdown');
-    if (d) d.classList.remove('show');
-});
 
 window.onload = () => {
-    loadVerificationQueue();
-    loadVerifiedStudents();
+    loadVerificationData();
 };
 
 function handleLogout() {

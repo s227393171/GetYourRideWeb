@@ -7,15 +7,6 @@
     <script>(function(){try{var t=localStorage.getItem('portalTheme');document.documentElement.setAttribute('data-theme',t==='dark'?'dark':'light');}catch(e){}})();</script>
     <link rel="stylesheet" href="../assets/css/theme.css">
     <link rel="stylesheet" href="../assets/css/admin-dashboard.css">
-    <style>
-        .icon-inline {
-            width: 16px;
-            height: 16px;
-            vertical-align: -3px;
-            margin-right: 6px;
-            stroke: currentColor;
-        }
-    </style>
 </head>
 <body>
     <div class="sidebar" role="navigation" aria-label="Admin navigation">
@@ -57,12 +48,6 @@
                 <a href="#" class="menu-item" onclick="openSettingsModal()">
                     <svg class="icon-inline" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
                     Settings
-                </a>
-            </li>
-            <li>
-                <a href="#" class="menu-item" onclick="openSupportModal()">
-                    <svg class="icon-inline" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"></path><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>
-                    Support Help
                 </a>
             </li>
         </ul>
@@ -143,58 +128,31 @@
                 </div>
             </div>
 
-            <div id="pendingGroup">
-                <div class="verify-section-head">
-                    <h2>Verification Processing Pipeline</h2>
-                    <p>Review academic credentials and activate valid driver roles.</p>
-                </div>
-
-                <div class="table-card">
-                    <table>
-                        <thead>
-                            <tr>
-                                <th>Driver Name</th>
-                                <th>Driver ID</th>
-                                <th>Status</th>
-                                <th>Action</th>
-                            </tr>
-                        </thead>
-                        <tbody id="verificationTableBody">
-                            <tr>
-                                <td colspan="4" style="text-align: center; color: var(--text-muted); padding: 20px;">Loading pending applications...</td>
-                            </tr>
-                        </tbody>
-                    </table>
-                    <div id="verificationShowMoreWrap" style="text-align:center; padding:14px; display:none;">
-                        <button id="verificationShowMoreBtn" onclick="togglePendingList()" style="background:#f8fafc; border:1px solid #cbd5e1; color:#334155; font-weight:600; font-size:13px; padding:8px 18px; border-radius:8px; cursor:pointer;">Show more</button>
-                    </div>
-                </div>
+            <div class="verify-section-head">
+                <h2>Driver Applications</h2>
+                <p>Pending applications appear first. Review credentials and activate valid driver roles.</p>
             </div>
 
-            <div id="verifiedGroup">
-                <div class="verify-section-head" style="margin-top:32px;">
-                    <h2>Verified Student Drivers</h2>
-                    <p>Student drivers whose credentials have been approved.</p>
-                </div>
-
-                <div class="table-card">
-                    <table>
-                        <thead>
-                            <tr>
-                                <th>Driver Name</th>
-                                <th>Driver ID</th>
-                                <th>Status</th>
-                            </tr>
-                        </thead>
-                        <tbody id="verifiedTableBody">
-                            <tr>
-                                <td colspan="3" style="text-align: center; color: var(--text-muted); padding: 20px;">Loading verified drivers...</td>
-                            </tr>
-                        </tbody>
-                    </table>
-                    <div id="verifiedShowMoreWrap" style="text-align:center; padding:14px; display:none;">
-                        <button id="verifiedShowMoreBtn" onclick="toggleVerifiedList()" style="background:#f8fafc; border:1px solid #cbd5e1; color:#334155; font-weight:600; font-size:13px; padding:8px 18px; border-radius:8px; cursor:pointer;">Show more</button>
-                    </div>
+            <div class="table-card">
+                <table class="verify-table">
+                    <thead>
+                        <tr>
+                            <th>Driver Name</th>
+                            <th>Driver ID</th>
+                            <th>Submitted</th>
+                            <th>Status</th>
+                            <th class="text-right">Action</th>
+                        </tr>
+                    </thead>
+                    <tbody id="verificationTableBody">
+                        <tr>
+                            <td colspan="5" style="text-align: center; color: var(--text-muted); padding: 30px;">Loading driver applications...</td>
+                        </tr>
+                    </tbody>
+                </table>
+                <div class="verify-footer">
+                    <span class="verify-footer-text" id="verifyFooterText">Loading...</span>
+                    <div class="verify-pagination" id="verifyPagination"></div>
                 </div>
             </div>
         </div>
@@ -213,55 +171,6 @@
         </div>
     </div>
 
-    <div class="profile-modal-overlay" id="settingsModal">
-        <div class="profile-modal-card">
-            <h3>
-                <svg class="icon-inline" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
-                Portal Settings
-            </h3>
-            <div class="modal-body-content">
-                <label style="display:block; margin: 10px 0 5px; font-weight:600; font-size:13px;">Dashboard Theme</label>
-                <select id="themeSelect" style="width:100%; padding:8px; border-radius:6px; border:1px solid #cbd5e1; outline:none;">
-                    <option value="light">Default Light Mode</option>
-                    <option value="dark">High Contrast Dark Mode</option>
-                </select>
-                <label style="display:block; margin: 15px 0 5px; font-weight:600; font-size:13px;">Refresh Frequency</label>
-                <select id="refreshSelect" style="width:100%; padding:8px; border-radius:6px; border:1px solid #cbd5e1; outline:none;">
-                    <option value="30000">Every 30 Seconds</option>
-                    <option value="60000">Every Minute</option>
-                    <option value="manual">Manual Refresh</option>
-                </select>
-            </div>
-            <button class="close-modal-btn" onclick="closeSettingsModal()">Save & Close</button>
-        </div>
-    </div>
-
-    <div class="profile-modal-overlay" id="supportModal">
-        <div class="profile-modal-card">
-            <h3>
-                <svg class="icon-inline" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"></path><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>
-                Dispatch Support Help
-            </h3>
-            <div class="modal-body-content">
-                <p style="font-size:13px; color:#64748b;">Need immediate assistance with a transit route layout or emergency check-in failure?</p>
-                <div style="background:#f8fafc; padding:12px; border-radius:6px; border-left:4px solid #ff7a00; margin:10px 0;">
-                    <strong>
-                        <svg class="icon-inline" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.127.96.362 1.903.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.907.338 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"></path></svg>
-                        Transit Control Line:
-                    </strong><br>+27 (0) 41 504 1111
-                </div>
-                <div style="background:#f8fafc; padding:12px; border-radius:6px; border-left:4px solid #10b981; margin:10px 0;">
-                    <strong>
-                        <svg class="icon-inline" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path><polyline points="22,6 12,13 2,6"></polyline></svg>
-                        Emergency Support:
-                    </strong><br>support@getyourride.com
-                </div>
-            </div>
-            <button class="close-modal-btn" onclick="closeSupportModal()">Close Help Desk</button>
-        </div>
-    </div>
-
-    
     <div id="logoutModal" class="modal-backdrop" style="display: none; position: fixed; inset: 0; background: rgba(0, 0, 0, 0.5); backdrop-filter: blur(4px); z-index: 1000; align-items: center; justify-content: center;">
         <div class="modal-card cute-logout-card" style="background: #ffffff; padding: 32px; border-radius: 20px; width: 100%; max-width: 400px; text-align: center; box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04); animation: scaleUp 0.25s ease-out;">
             <div style="width:56px; height:56px; margin:0 auto 16px; border-radius:50%; background:#fef2f2; display:flex; align-items:center; justify-content:center; color:#ef4444;">

@@ -14,20 +14,6 @@ body {
 }
 
 
-.sidebar {
-    width: 260px;
-    background: var(--bg-sidebar, #1b2a5c);
-    color: #ffffff;
-    display: flex;
-    flex-direction: column;
-    padding: 24px 0 24px 0;
-    position: fixed;
-    height: 100vh;
-    left: 0;
-    top: 0;
-    z-index: 100;
-}
-
 .brand {
     padding: 0 24px 18px 24px;
     margin-bottom: 22px;
@@ -109,16 +95,8 @@ body {
     flex: 1;
 }
 
-.sidebar-footer {
-    border-top: 1px solid var(--bg-sidebar-hover, #24356e);
-    padding-top: 16px;
-}
-
 
 .main-content {
-    /* Coordinator now shares Admin layout where sidebar and main are flex children.
-       Remove the old left margin (used when sidebar was fixed) so content doesn't double-offset.
-    */
     flex: 1;
     display: flex;
     flex-direction: column;
@@ -137,32 +115,10 @@ body {
     border-bottom: 1px solid #e2e8f0;
 }
 
-.nav-breadcrumb {
-    font-size: 0.85rem;
-    color: #64748b;
-}
-
-    .nav-breadcrumb strong {
-        color: #0f172a;
-    }
-
 .top-navbar-right {
     display: flex;
     align-items: center;
     gap: 20px;
-}
-
-.icon-btn {
-    background: none;
-    border: none;
-    font-size: 1.2rem;
-    cursor: pointer;
-    color: #64748b;
-}
-
-.profile-trigger {
-    position: relative;
-    cursor: pointer;
 }
 
 .avatar-circle {
@@ -177,38 +133,6 @@ body {
     font-weight: 700;
     font-size: 0.85rem;
 }
-
-
-.dropdown-menu {
-    position: absolute;
-    top: 48px;
-    right: 0;
-    background: #ffffff;
-    border: 1px solid #e2e8f0;
-    border-radius: 8px;
-    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
-    width: 180px;
-    display: none;
-    flex-direction: column;
-    padding: 4px;
-    z-index: 200;
-}
-
-    .dropdown-menu.show {
-        display: flex;
-    }
-
-    .dropdown-menu a {
-        padding: 10px 12px;
-        font-size: 0.85rem;
-        color: #334155;
-        text-decoration: none;
-        border-radius: 6px;
-    }
-
-        .dropdown-menu a:hover {
-            background: #f1f5f9;
-        }
 
 
 .content-body {
@@ -281,37 +205,6 @@ body {
     align-items: center;
     justify-content: center;
     flex-shrink: 0;
-}
-
-    /* Colored variants for stat card icons, matching the reference design.
-   Add one of these alongside "card-icon" on each <span> in the metrics grid,
-   e.g. <span class="card-icon icon-blue">...</span> */
-    .card-icon.icon-blue {
-        background: #e0f2fe;
-        color: #0284c7;
-    }
-
-    .card-icon.icon-green {
-        background: #dcfce7;
-        color: #16a34a;
-    }
-
-    .card-icon.icon-orange {
-        background: #ffedd5;
-        color: #ea580c;
-    }
-
-    .card-icon.icon-gray {
-        background: #f1f5f9;
-        color: #475569;
-    }
-
-.metric-trend {
-    font-size: 0.7rem;
-    font-weight: 700;
-    color: #16a34a;
-    margin-bottom: 4px;
-    display: block;
 }
 
 
@@ -440,35 +333,6 @@ body {
     margin-top: 24px;
 }
 
-.modal-overlay {
-    position: fixed;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background: rgba(15, 23, 42, 0.5);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    opacity: 0;
-    pointer-events: none;
-    transition: opacity 0.2s ease-in-out;
-    z-index: 999;
-}
-
-    .modal-overlay.show {
-        opacity: 1;
-        pointer-events: auto;
-    }
-
-.modal-card {
-    background: #ffffff;
-    padding: 32px;
-    border-radius: 12px;
-    width: 440px;
-    box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1);
-}
-
 .data-table {
     width: 100%;
     border-collapse: collapse;
@@ -481,6 +345,10 @@ body {
         border-bottom: 2px solid #e2e8f0;
         color: #64748b;
         font-weight: 600;
+        background-color: #f8fafc;
+        border-top: 1px solid #e2e8f0;
+        font-size: 0.72rem;
+        letter-spacing: 0.4px;
     }
 
     .data-table td {
@@ -492,14 +360,14 @@ body {
             text-align: center;
         }
 
+    .data-table tbody tr:hover {
+        background-color: #f8fafc;
+    }
+
 
 .driver-name-cell {
     font-weight: 600;
     color: #0f172a;
-}
-
-.driver-email-cell {
-    color: #64748b;
 }
 
 .action-icon-btn {
@@ -508,7 +376,12 @@ body {
     cursor: pointer;
     font-size: 1.1rem;
     margin: 0 4px;
+    color: #64748b;
 }
+
+    .action-icon-btn:hover {
+        color: #0f172a;
+    }
 
 
 .badge {
@@ -518,81 +391,6 @@ body {
     border-radius: 12px;
 }
 
-/* Status pills restyled as toggle switches, matching the reference design.
-   Structure expected inside the cell:
-   <span class="status-toggle is-on">Available</span>
-   <span class="status-toggle is-off">Unavailable</span>
-   <span class="status-toggle is-maintenance">Maintenance</span>
-   The colored "track" is drawn by ::before; the text sits next to it. */
-.status-toggle {
-    position: relative;
-    display: inline-flex;
-    align-items: center;
-    font-size: 0.85rem;
-    font-weight: 600;
-    /* reserve space for the 34px track + 8px gap before the label text */
-    padding-left: 42px;
-    min-height: 18px;
-}
-
-    .status-toggle::before {
-        content: "";
-        position: absolute;
-        left: 0;
-        top: 50%;
-        transform: translateY(-50%);
-        width: 34px;
-        height: 18px;
-        border-radius: 999px;
-        background: #cbd5e1;
-        transition: background 0.2s ease;
-    }
-
-    .status-toggle::after {
-        content: "";
-        position: absolute;
-        left: 2px;
-        top: 50%;
-        width: 14px;
-        height: 14px;
-        border-radius: 50%;
-        background: #ffffff;
-        transform: translateY(-50%) translateX(0);
-        transition: transform 0.2s ease;
-        box-shadow: 0 1px 2px rgba(0,0,0,0.2);
-    }
-
-    .status-toggle.is-on {
-        color: #ea580c;
-    }
-
-        .status-toggle.is-on::before {
-            background: #f97316;
-        }
-
-        .status-toggle.is-on::after {
-            transform: translateY(-50%) translateX(16px);
-        }
-
-    .status-toggle.is-off {
-        color: #94a3b8;
-    }
-
-    .status-toggle.is-maintenance {
-        color: #b45309;
-    }
-
-        .status-toggle.is-maintenance::before {
-            background: #f59e0b;
-        }
-
-        .status-toggle.is-maintenance::after {
-            transform: translateY(-50%) translateX(8px);
-        }
-
-/* Legacy badge classes kept for any markup still using them, but restyled
-   as pill labels rather than plain colored text so they don't look out of
-   place next to the new toggles. */
 .badge-active {
     background: #dcfce7;
     color: #166534;
@@ -603,74 +401,17 @@ body {
     color: #991b1b;
 }
 
-.badge-maintenance {
-    background: #ffedd5;
-    color: #b45309;
-}
-
 
 #modalDriverFormTitle {
     margin-bottom: 20px;
     color: #0f172a;
 }
 
-.form-group {
-    margin-bottom: 16px;
-}
-
-    .form-group label {
-        display: block;
-        font-size: 0.8rem;
-        font-weight: 600;
-        margin-bottom: 6px;
-    }
-
-    .form-group input {
-        width: 100%;
-        padding: 10px;
-        border: 1px solid #cbd5e1;
-        border-radius: 6px;
-    }
-
 .form-actions {
     display: flex;
     justify-content: flex-end;
     gap: 12px;
 }
-
-.btn-secondary {
-    padding: 10px 16px;
-    border: 1px solid #cbd5e1;
-    background: none;
-    border-radius: 6px;
-    cursor: pointer;
-}
-
-.btn-primary {
-    padding: 10px 16px;
-    background: #f97316;
-    color: white;
-    border: none;
-    border-radius: 6px;
-    cursor: pointer;
-    font-weight: 600;
-}
-
-
-.btn-primary-orange {
-    background-color: #e05e00;
-    color: white;
-    padding: 10px 20px;
-    border: none;
-    border-radius: 6px;
-    font-weight: 600;
-    cursor: pointer;
-    transition: background 0.2s;
-}
-
-    .btn-primary-orange:hover {
-        background-color: #c44f00;
-    }
 
 
 .metric-icon-box {
@@ -713,140 +454,6 @@ body {
     padding: 2px 6px;
     border-radius: 4px;
     margin-left: 8px;
-}
-
-.notification-bell {
-    font-size: 1.2rem;
-    cursor: pointer;
-    margin-right: 15px;
-}
-
-.user-profile-link {
-    font-size: 0.85rem;
-    color: #2563eb;
-    cursor: pointer;
-    text-decoration: underline;
-    margin-left: 8px;
-}
-
-.data-table th {
-    background-color: #f8fafc;
-    border-top: 1px solid #e2e8f0;
-    font-size: 0.72rem;
-    letter-spacing: 0.4px;
-}
-
-.data-table tbody tr:hover {
-    background-color: #f8fafc;
-}
-
-.action-icon-btn {
-    color: #64748b;
-}
-
-    .action-icon-btn:hover {
-        color: #0f172a;
-    }
-
-.table-pagination {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding-top: 16px;
-    margin-top: 4px;
-    border-top: 1px solid #f1f5f9;
-    font-size: 0.8rem;
-    color: #64748b;
-}
-
-.pagination-controls {
-    display: flex;
-    gap: 6px;
-}
-
-.page-btn {
-    background: #ffffff;
-    border: 1px solid #e2e8f0;
-    color: #334155;
-    padding: 6px 12px;
-    border-radius: 6px;
-    font-size: 0.8rem;
-    cursor: pointer;
-}
-
-    .page-btn:hover {
-        background: #f8fafc;
-    }
-
-    .page-btn.active {
-        background: #1b2a5c;
-        color: #ffffff;
-        border-color: #1b2a5c;
-        font-weight: 600;
-    }
-
-.nav-profile-section {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    margin-left: auto;
-}
-
-.notification-bell {
-    cursor: pointer;
-    font-size: 1.1rem;
-}
-
-.user-avatar {
-    background: #e2e8f0;
-    padding: 6px 10px;
-    border-radius: 50%;
-    font-weight: bold;
-    font-size: 0.85rem;
-    color: #1e293b;
-}
-
-.view-profile-link {
-    color: #2563eb;
-    text-decoration: none;
-    font-size: 0.9rem;
-    font-weight: 500;
-}
-
-    .view-profile-link:hover {
-        text-decoration: underline;
-    }
-
-
-.sidebar {
-    position: relative;
-}
-
-.sidebar-footer {
-    position: absolute;
-    bottom: 20px;
-    left: 24px;
-    display: flex;
-    flex-direction: column;
-    gap: 14px;
-}
-
-.footer-link {
-    color: #94a3b8;
-    text-decoration: none;
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    font-size: 0.95rem;
-    transition: color 0.2s;
-}
-
-    .footer-link:hover {
-        color: #f1f5f9;
-    }
-
-.footer-icon {
-    font-size: 1.1rem;
 }
 
 
@@ -924,12 +531,6 @@ body {
     box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
 }
 
-.modal-divider {
-    border: 0;
-    border-top: 1px solid #e2e8f0;
-    margin: 12px 0 20px 0;
-}
-
 
 .form-group {
     margin-bottom: 14px;
@@ -984,9 +585,6 @@ body {
         background: #c2410c;
     }
 
-/* Sidebar profile footer + dropdown (ported from driver-dashboard.css so the
-   coordinator page no longer needs to load that stylesheet, which was locking
-   the page height with body { height:100vh; overflow:hidden } and blocking scroll). */
 .sidebar-profile-footer {
     padding: 16px;
     border-top: 1px solid #1e293b;
@@ -1072,11 +670,6 @@ body {
     font-weight: 600;
 }
 
-/* Modal + navbar styles ported from driver-dashboard.css.
-   The coordinator pages use these classes (profile-modal-overlay/-card,
-   close-modal-btn, portal-badge, top-logout-btn, avatar-placeholder) but no
-   longer load driver-dashboard.css. Without these rules the modals lost their
-   display:none default and rendered inline on the page. */
 .profile-modal-overlay {
     position: fixed;
     top: 0;
@@ -1132,33 +725,6 @@ body {
         background-color: #1e2538;
     }
 
-.portal-badge {
-    font-weight: 600;
-    font-size: 14px;
-    color: #334155;
-}
-
-.top-logout-btn {
-    background-color: #fee2e2;
-    color: #b91c1c;
-    border: 1px solid #fca5a5;
-    padding: 8px 16px;
-    border-radius: 6px;
-    font-size: 13px;
-    font-weight: 600;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    transition: all 0.2s ease;
-}
-
-    .top-logout-btn:hover {
-        background-color: #fca5a5;
-        color: #991b1b;
-        box-shadow: 0 2px 4px rgba(239, 68, 68, 0.1);
-    }
-
 .avatar-placeholder {
     width: 32px;
     height: 32px;
@@ -1167,16 +733,6 @@ body {
     flex-shrink: 0;
 }
 
-/* ============================================================
-   RESPONSIVE LAYER
-   The coordinator layout used fixed widths (260px sidebar,
-   4/3-column grids, fixed padding) and had no media queries,
-   so it only fit when the browser was zoomed out. These
-   breakpoints let it adapt to normal laptop, tablet and phone
-   widths.
-   ============================================================ */
-
-/* Large laptops / smaller desktops: tighten padding, drop grids a column */
 @media (max-width: 1200px) {
     .content-body {
         padding: 28px 28px;
@@ -1191,7 +747,6 @@ body {
     }
 }
 
-/* Tablets: collapse the sidebar to a slim icon rail so content gets room */
 @media (max-width: 992px) {
     .sidebar {
         width: 74px;
@@ -1222,14 +777,13 @@ body {
     .menu-item {
         justify-content: center;
         padding: 12px 0;
-        font-size: 0; /* hide label text, keep the icon */
+        font-size: 0;
     }
 
         .menu-item i {
             font-size: 1.1rem;
         }
 
-    /* profile footer + dropdown don't fit in a 74px rail; hide on this width */
     .sidebar-profile-footer {
         display: none;
     }
@@ -1243,7 +797,6 @@ body {
     }
 }
 
-/* Phones / very narrow: single column, full-width content, wrap navbar */
 @media (max-width: 768px) {
     .content-body {
         padding: 20px 16px;
@@ -1272,7 +825,6 @@ body {
         gap: 12px;
     }
 
-    /* let tables scroll sideways instead of overflowing the screen */
     .table-card {
         overflow-x: auto;
     }
@@ -1283,11 +835,6 @@ body {
     }
 }
 
-/* ============================================================
-   Coordinator Dashboard — "Today at a glance" summary box
-   Uses only shared theme variables so it works in light + dark.
-   Fits inside the existing card (~200px desktop), no overflow.
-   ============================================================ */
 .glance {
     padding: 18px 20px;
     box-sizing: border-box;
@@ -1312,7 +859,6 @@ body {
     color: var(--text-secondary, #64748b);
 }
 
-/* Row of five stats with thin vertical dividers */
 .glance-stats {
     display: flex;
     align-items: stretch;
@@ -1363,7 +909,6 @@ body {
     flex: 0 0 auto;
 }
 
-/* Status bar */
 .glance-status {
     margin-top: 14px;
     display: flex;
@@ -1393,7 +938,6 @@ body {
         white-space: nowrap;
     }
 
-/* Error state */
 .glance-error {
     padding: 24px 20px;
     text-align: center;
@@ -1406,7 +950,6 @@ body {
         font-weight: 700;
     }
 
-/* Skeleton loading bars (reuse the stat slots, same height) */
 .glance-skel {
     background: linear-gradient(90deg,
         var(--border, #e2e8f0) 25%,
@@ -1423,8 +966,6 @@ body {
     100% { background-position: 0 0; }
 }
 
-/* Narrow screens: wrap the five stats into two rows (the only case
-   where the box may grow taller). Hide the vertical dividers. */
 @media (max-width: 640px) {
     .glance-stats {
         flex-wrap: wrap;
@@ -1440,12 +981,6 @@ body {
     }
 }
 
-/* ============================================================
-   Sidebar sync — make the Coordinator sidebar match the Admin
-   sidebar exactly (colour, logo, menu item + icon alignment).
-   This block is intentionally last so it wins over the older
-   coordinator sidebar rules above. Uses shared theme variables.
-   ============================================================ */
 .sidebar {
     width: 260px;
     background-color: var(--bg-sidebar, #1b2a5c);
@@ -1457,7 +992,6 @@ body {
     height: 100vh;
 }
 
-/* Brand / logo */
 .sidebar .brand {
     padding: 0 24px;
     margin: 0 0 35px 0;
@@ -1510,7 +1044,6 @@ body {
         font-weight: 600;
     }
 
-/* Menu items + icon alignment */
 .sidebar .menu-list {
     list-style: none;
     padding: 0;
@@ -1530,8 +1063,6 @@ body {
     transition: all 0.2s;
 }
 
-    /* Fixed-width icon slot so every label starts at the same x,
-       whether the icon is FontAwesome <i> or an inline SVG. */
     .sidebar .menu-item i,
     .sidebar .menu-item svg {
         width: 20px;
@@ -1555,14 +1086,12 @@ body {
         box-shadow: 0 4px 12px -2px rgba(255, 122, 0, 0.4);
     }
 
-/* Bottom menu divider */
 .sidebar .bottom-menu {
     border-top: 1px solid var(--bg-sidebar-hover, #24356e);
     padding-top: 10px;
     margin-bottom: 20px;
 }
 
-/* Footer profile + avatar (match admin) */
 .sidebar .sidebar-profile-footer {
     padding: 16px 24px;
     border-top: 1px solid var(--bg-sidebar-hover, #24356e);
