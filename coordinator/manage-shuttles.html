@@ -61,10 +61,11 @@
 
     <div class="main-content">
         <div class="top-navbar">
+
             <div class="search-box-wrapper">
                 <div class="navbar-search">
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
-                    <input type="text" placeholder="Search shuttles, drivers, or schedules..." aria-label="Search" oninput="gyrFilterTable('shuttleTableBody', this.value)">
+                    <input type="text" placeholder="Search shuttles..." aria-label="Search" oninput="gyrFilterTable('shuttleTableBody', this.value)">
                 </div>
             </div>
 
@@ -98,7 +99,7 @@
                 <div class="metric-card">
                     <span class="card-icon" style="color: #f59e0b;"><i class="fa-solid fa-wrench"></i></span>
                     <div>
-                        <label>IN MAINTENANCE</label>
+                        <label>INACTIVE</label>
                         <h3 id="txtMaintenanceFleet">0</h3>
                     </div>
                 </div>
@@ -171,18 +172,12 @@
                     <label for="formColour" style="display:block; margin-bottom:5px; font-weight:600; font-size:13px;">Colour</label>
                     <input type="text" id="formColour" placeholder="e.g. White" style="width:100%; padding:8px; border-radius:6px; border:1px solid #cbd5e1; box-sizing:border-box;">
                 </div>
-                <div class="form-group" style="margin-bottom: 15px;">
-                    <label for="formDriver" style="display:block; margin-bottom:5px; font-weight:600; font-size:13px;">Assigned Driver</label>
-                    <select id="formDriver" required style="width:100%; padding:8px; border-radius:6px; border:1px solid #cbd5e1; outline:none; box-sizing:border-box;">
-                        <option value="">Select a driver...</option>
-                    </select>
-                </div>
+                <!-- Assigned Driver removed: driver assignment is handled on driver management and scheduling pages -->
                 <div class="form-group" style="margin-bottom: 20px;">
                     <label for="formStatus" style="display:block; margin-bottom:5px; font-weight:600; font-size:13px;">Availability Status</label>
                     <select id="formStatus" style="width:100%; padding:8px; border-radius:6px; border:1px solid #cbd5e1; outline:none; box-sizing:border-box;">
                         <option value="Active">Available</option>
                         <option value="Maintenance">Maintenance</option>
-                        <option value="Inactive">Unavailable</option>
                     </select>
                 </div>
                 <div class="modal-actions">

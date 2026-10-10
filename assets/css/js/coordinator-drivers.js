@@ -377,6 +377,9 @@ async function handleDriverFormSubmit(e) {
             }
 
             loadDriversTable();
+            try { if (!isEditing && typeof window.logActivity === 'function') {
+                window.logActivity('driver_added', `${payload.fullName} was added as a shuttle driver`);
+            } } catch(e) { /* ignore */ }
         } else {
             await showAlertModal("Error processing transaction request.", { title: "Request Failed", tone: "error" });
         }

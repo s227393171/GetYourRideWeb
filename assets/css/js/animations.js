@@ -23,7 +23,7 @@
         '#statAverageRating', '#statTripsToday',
         '#statVerifyPending', '#statVerifyApproved',
         '#metricActiveDrivers', '#metricAverageRating',
-        '#metricTotalTrips', '#metricPoorFlags',
+        '#metricTotalTrips',
         '#glShuttles', '#glDrivers', '#glTrips', '#glUnassigned'
     ].join(',');
 

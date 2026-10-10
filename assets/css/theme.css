@@ -45,6 +45,21 @@
     --shadow-card: 0 1px 3px rgba(15, 23, 42, 0.04);
 }
 
+/* ------------------------------------------------------------
+   Accessibility: increase base font-size for the whole site
+   Setting a larger base on html makes rem-based sizing scale up
+   so text is easier to read for all users.
+   ------------------------------------------------------------ */
+html {
+    font-size: 18px; /* increased from browser default 16px */
+    -webkit-text-size-adjust: 100%;
+}
+
+body {
+    font-size: 1rem; /* equals 18px now */
+    line-height: 1.45;
+}
+
 /* ---------- DARK ---------- */
 [data-theme="dark"] {
     --bg-page: #0d1526;

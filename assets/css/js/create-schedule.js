@@ -9,11 +9,65 @@
      if (dateInputEl) {
     dateInputEl.min = new Date().toISOString().split("T")[0];
     }
-    const timeInputEl = document.getElementById("txtDepartureTime");
-    if (timeInputEl) {
-        timeInputEl.min = "06:00";
-        timeInputEl.max = "22:00";
+    // Replace free time input with a dropdown select populated from server time slots
+    const timeSelect = document.getElementById("txtDepartureTime");
+    // we'll reuse the same element id but it will be a <select> in the DOM; if it's an <input> keep fallback behavior
+    async function loadTimeSlots() {
+        if (!timeSelect) return;
+        try {
+            const res = await fetch('/api/coordinator/time-slots');
+            if (!res.ok) throw new Error('Failed to load time slots');
+            const body = await res.json();
+            // API returns { success: true, data: [...] }
+            const slots = (body && body.success && Array.isArray(body.data)) ? body.data : [];
+            if (!slots || slots.length === 0) {
+                timeSelect.innerHTML = '<option value="">No departure times available</option>';
+                return;
+            }
+
+            // Group by period
+            const morning = slots.filter(s => (s.period||'').toLowerCase() === 'morning');
+            const afternoon = slots.filter(s => (s.period||'').toLowerCase() === 'afternoon');
+
+            let html = '<option value="">-- Select Departure Time --</option>';
+            if (morning.length) {
+                html += '<optgroup label="Morning">' + morning.map(s => `<option value="${s.slotId}">${(s.departs||'').substring(0,5)}</option>`).join('') + '</optgroup>';
+            }
+            if (afternoon.length) {
+                html += '<optgroup label="Afternoon">' + afternoon.map(s => `<option value="${s.slotId}">${(s.departs||'').substring(0,5)}</option>`).join('') + '</optgroup>';
+            }
+
+            timeSelect.innerHTML = html;
+
+            // If today selected, disable past slots
+            const dateEl = document.getElementById('txtScheduleDate');
+            function refreshDisabled() {
+                const selected = dateEl?.value;
+                const today = new Date().toISOString().split('T')[0];
+                const now = new Date();
+                const opts = timeSelect.querySelectorAll('option');
+                opts.forEach(opt => opt.disabled = false);
+                if (selected === today) {
+                    // disable options whose time is earlier than now
+                    slots.forEach(s => {
+                        const t = (s.departs||'').substring(0,5);
+                        const [hh, mm] = t.split(':').map(x=>parseInt(x,10));
+                        const slotDate = new Date(); slotDate.setHours(hh, mm, 0, 0);
+                        if (slotDate <= now) {
+                            const opt = timeSelect.querySelector(`option[value=\"${s.slotId}\"]`);
+                            if (opt) opt.disabled = true;
+                        }
+                    });
+                }
+            }
+            dateEl?.addEventListener('change', refreshDisabled);
+            refreshDisabled();
+        } catch (err) {
+            console.error('Time slots loading error:', err);
+            timeSelect.innerHTML = '<option value="">No departure times available</option>';
+        }
     }
+    loadTimeSlots();
 
     const urlParams = new URLSearchParams(window.location.search);
     const editScheduleId = urlParams.get("id");

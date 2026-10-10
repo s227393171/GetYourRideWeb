@@ -1,8 +1,6 @@
 ﻿const SHUTTLES_API_URL = '/api/coordinator/shuttles';
-const DRIVERS_API_URL = '/api/coordinator/drivers';
-
 let shuttleCache = [];
-let driverCache = [];
+
 
 
 function ensurePopupRoot() {
@@ -79,7 +77,6 @@ function showConfirm(message, onConfirm) {
 
 document.addEventListener("DOMContentLoaded", () => {
     loadShuttleFleet();
-    loadDriverOptions();
 
     safeBindListener("shuttleSearchInput", "keyup", searchShuttles);
     safeBindListener("btnOpenAddModal", "click", openAddModal);
@@ -92,37 +89,7 @@ function safeBindListener(elementId, eventType, callback) {
     if (element) element.addEventListener(eventType, callback);
 }
 
-// Populates the "Assigned Driver" dropdown in the Add/Edit Shuttle modal
-async function loadDriverOptions() {
-    const select = document.getElementById("formDriver");
-    if (!select) return;
-
-    try {
-        const response = await fetch(DRIVERS_API_URL);
-        if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
-
-        const rawDrivers = await response.json();
-        driverCache = (rawDrivers || []).filter(d => {
-            const role = (d.role || "").toUpperCase();
-            const email = (d.email || "").toLowerCase();
-            if (role === "STUDENT_DRIVER" || role === "STUDENT") return false;
-            if (/^s\d+@/i.test(email) || email.endsWith("@mandela.ac.za")) return false;
-            return true;
-        });
-
-        select.innerHTML = '<option value="">Select a driver...</option>';
-        driverCache.forEach(driver => {
-            const option = document.createElement("option");
-            option.value = driver.driverId ?? driver.id;
-            option.textContent = driver.fullName || driver.name || "Unknown Driver";
-            select.appendChild(option);
-        });
-    } catch (err) {
-        console.error("Error loading driver list:", err);
-        select.innerHTML = '<option value="">Unable to load drivers</option>';
-        showToast("Failed to load driver list from the server.", "error");
-    }
-}
+// Driver assignment removed from Manage Shuttles page. Driver lists are handled on driver management and scheduling pages.
 
 async function loadShuttleFleet() {
     try {
@@ -158,18 +125,20 @@ function renderShuttleTable(shuttles) {
         const name = s.shuttleName || "Unnamed Shuttle";
         const plate = s.licensePlate || "N/A";
         const capacity = s.capacity ?? 0;
-        const status = s.status || "Active";
-        const driverName = s.driverName || "Unassigned";
+        // Normalize status values: treat 'inactive' or 'unavailable' as 'Maintenance'
+        let status = s.status || "Active";
+        const st = (status || "").toLowerCase();
+        if (st === "inactive" || st === "unavailable" || st === "maintenance") status = "Maintenance";
+        else status = "Active";
         const year = s.vehicleYear || "—";
         const colour = s.colour || "—";
 
         let badgeClass = "badge-active";
         if (status.toLowerCase() === "maintenance") badgeClass = "badge-break";
-        else if (status.toLowerCase() === "inactive") badgeClass = "badge-inactive";
 
         const row = document.createElement("tr");
         row.innerHTML = `
-            <td><strong>${name}</strong><br><small style="color:#64748b;">${driverName}</small></td>
+            <td><strong>${name}</strong></td>
             <td><code style="background:#f1f5f9; padding:4px 8px; border-radius:4px; font-weight:600;">${plate}</code></td>
             <td>${year} &middot; ${colour}</td>
             <td>${capacity} seats</td>
@@ -189,8 +158,16 @@ function renderShuttleTable(shuttles) {
 
 function updateFleetMetrics(shuttles) {
     const total = shuttles.length;
-    const active = shuttles.filter(s => (s.status || "").toLowerCase() === "active").length;
-    const maintenance = shuttles.filter(s => (s.status || "").toLowerCase() === "maintenance").length;
+    // Normalize legacy 'inactive' or 'unavailable' values to maintenance for display and counting
+    const normalized = shuttles.map(s => {
+        const raw = (s.status || "").toLowerCase();
+        if (raw === "inactive" || raw === "unavailable") return { ...s, status: 'Maintenance' };
+        if (raw === "maintenance") return { ...s, status: 'Maintenance' };
+        return { ...s, status: 'Active' };
+    });
+
+    const active = normalized.filter(s => (s.status || "").toLowerCase() === "active").length;
+    const maintenance = normalized.filter(s => (s.status || "").toLowerCase() === "maintenance").length;
     const totalCapacity = shuttles.reduce((sum, s) => sum + (s.capacity ?? 0), 0);
 
     const totalEl = document.getElementById("txtTotalFleet");
@@ -240,8 +217,13 @@ function openEditModal(id) {
     if (document.getElementById("formCapacity")) document.getElementById("formCapacity").value = shuttle.capacity ?? "";
     if (document.getElementById("formYear")) document.getElementById("formYear").value = shuttle.vehicleYear ?? "";
     if (document.getElementById("formColour")) document.getElementById("formColour").value = shuttle.colour ?? "";
-    if (document.getElementById("formDriver")) document.getElementById("formDriver").value = shuttle.driverId ?? "";
-    if (document.getElementById("formStatus")) document.getElementById("formStatus").value = shuttle.status || "Active";
+    if (document.getElementById("formStatus")) {
+        // Map legacy values to page-allowed values
+        const raw = (shuttle.status || "").toLowerCase();
+        if (raw === "inactive" || raw === "unavailable") document.getElementById("formStatus").value = "Maintenance";
+        else if (raw === "maintenance") document.getElementById("formStatus").value = "Maintenance";
+        else document.getElementById("formStatus").value = "Active";
+    }
 
     const title = document.getElementById("modalTitle");
     if (title) title.textContent = "Edit Shuttle";
@@ -259,13 +241,10 @@ async function saveShuttleForm(e) {
     e.preventDefault();
     const id = document.getElementById("formShuttleId").value;
 
-    const driverVal = document.getElementById("formDriver").value;
-
     const yearVal = document.getElementById("formYear")?.value;
     const colourVal = document.getElementById("formColour")?.value;
 
     const payload = {
-        DriverId: driverVal ? parseInt(driverVal) : null,
         ShuttleName: document.getElementById("formName").value,
         LicensePlate: document.getElementById("formPlate").value,
         Capacity: parseInt(document.getElementById("formCapacity").value),
@@ -284,14 +263,30 @@ async function saveShuttleForm(e) {
             body: JSON.stringify(payload)
         });
 
-        if (response.ok) {
+            if (response.ok) {
             closeModal();
             showToast(id ? "Shuttle updated successfully." : "Shuttle added successfully.", "success");
             loadShuttleFleet();
+            try { if (typeof window.logActivity === 'function') {
+                const name = payload.ShuttleName || payload.LicensePlate || 'Unnamed shuttle';
+                window.logActivity('shuttle_added', `${name} was added to the fleet`);
+            } } catch(e) { /* ignore */ }
         } else {
-            const errorText = await response.text();
-            console.error("Save failed:", errorText);
-            showToast(errorText || "Action dropped due to data verification issues.", "error");
+            let msg = "Action dropped due to data verification issues.";
+            try {
+                const ct = response.headers.get('Content-Type') || '';
+                if (ct.indexOf('application/json') !== -1) {
+                    const j = await response.json();
+                    if (j && j.message) msg = j.message;
+                    else msg = JSON.stringify(j);
+                } else {
+                    msg = await response.text();
+                }
+            } catch (e) {
+                console.error('Error reading error payload', e);
+            }
+            console.error("Save failed:", msg);
+            showToast(msg || "Action dropped due to data verification issues.", "error");
         }
     } catch (err) {
         console.error("Error saving shuttle form:", err);
@@ -300,7 +295,7 @@ async function saveShuttleForm(e) {
 }
 
 async function deleteShuttle(id) {
-    showConfirm("Permanently strip this vehicle asset record from core fleet logs?", async () => {
+    showConfirm("Are you sure you want to permanently remove this vehicle asset from fleet logs?", async () => {
         try {
             const response = await fetch(`${SHUTTLES_API_URL}/${id}`, { method: "DELETE" });
 
@@ -308,8 +303,19 @@ async function deleteShuttle(id) {
                 showToast("Shuttle removed successfully.", "success");
                 loadShuttleFleet();
             } else {
-                const errorText = await response.text();
-                showToast(`Server refused deletion: ${errorText || response.statusText}`, "error");
+                let msg = response.statusText;
+                try {
+                    const ct = response.headers.get('Content-Type') || '';
+                    if (ct.indexOf('application/json') !== -1) {
+                        const j = await response.json();
+                        if (j && j.message) msg = j.message;
+                        else msg = JSON.stringify(j);
+                    } else {
+                        msg = await response.text();
+                    }
+                } catch(e) { /* ignore */ }
+                // Show the server-provided message in a popup/toast so the user sees why deletion was refused
+                showToast(msg || "Server refused deletion.", "error");
             }
         } catch (err) {
             console.error("Error deleting shuttle:", err);

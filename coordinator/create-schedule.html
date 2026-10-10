@@ -30,8 +30,15 @@
                 </div>
 
                 <div class="form-group" style="margin-bottom: 18px;">
-                    <label style="display:block; margin-bottom:6px; font-weight:600; font-size:13px;">Departure Clock Timestamp</label>
-                    <input type="time" id="txtDepartureTime" required style="width:100%; padding:10px; border-radius:6px; border:1px solid #cbd5e1; box-sizing:border-box;">
+                    <label style="display:block; margin-bottom:6px; font-weight:600; font-size:13px;">Departure Time</label>
+                    <select id="txtDepartureTime" required style="width:100%; padding:10px; border-radius:6px; border:1px solid #cbd5e1; box-sizing:border-box;">
+                        <option value="" disabled selected>Select time slot</option>
+                        <option value="06:00">06:00</option>
+                        <option value="07:00">07:00</option>
+                        <option value="08:00">08:00</option>
+                        <option value="09:00">09:00</option>
+                        <option value="10:00">10:00</option>
+                    </select>
                 </div>
 
                 <div class="form-group" style="margin-bottom: 18px;">

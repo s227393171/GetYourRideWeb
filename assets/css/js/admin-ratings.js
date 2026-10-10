@@ -106,11 +106,10 @@ function calculateSummaryMetrics(drivers) {
     const activeEl = document.getElementById('metricActiveDrivers');
     const avgRatingEl = document.getElementById('metricAverageRating');
     const tripsEl = document.getElementById('metricTotalTrips');
-    const flagsEl = document.getElementById('metricPoorFlags');
 
     if (activeEl) activeEl.innerText = drivers.length;
 
-    let totalTrips = 0, sumRatings = 0, ratedDriverCount = 0, poorFlags = 0;
+    let totalTrips = 0, sumRatings = 0, ratedDriverCount = 0;
 
     drivers.forEach(d => {
         const avg = parseFloat(d.averageRating ?? d.avgRating ?? 0);
@@ -120,7 +119,7 @@ function calculateSummaryMetrics(drivers) {
         if (avg > 0) {
             sumRatings += avg;
             ratedDriverCount++;
-            if (avg < 3.0) poorFlags++;
+            // low-rated drivers are noted in the table rows as needed; summary flag removed
         }
     });
 
@@ -128,7 +127,6 @@ function calculateSummaryMetrics(drivers) {
 
     if (avgRatingEl) avgRatingEl.innerText = averageScore.toFixed(2);
     if (tripsEl) tripsEl.innerText = totalTrips.toLocaleString();
-    if (flagsEl) flagsEl.innerText = String(poorFlags).padStart(2, '0');
 }
 
 

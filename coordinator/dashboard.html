@@ -391,6 +391,7 @@
 
     <div class="main-content">
         <div class="top-navbar">
+
             <div class="search-box-wrapper"></div>
 
             <div class="top-navbar-right" id="topbar-actions"></div>
@@ -449,12 +450,24 @@
             </div>
 
             <div class="table-card" id="glanceCard">
-                <!-- Default empty state (kept for the "no data at all" case) -->
-                <div class="table-header" id="glanceEmptyHeader">
-                    <h3>Nothing to show yet</h3>
+                <!-- Recent Activity card (replaces previous empty placeholder) -->
+                <div class="table-header" id="recentHeader">
+                    <h3>Recent Activity</h3>
+                    <div style="margin-left:auto; display:flex; align-items:center; gap:12px;">
+                        <a id="viewAllActivity" href="#" style="color:var(--accent); font-weight:600; text-decoration:none; display:none;">View all</a>
+                        <a id="clearActivityLink" href="#" style="color:var(--text-muted); font-weight:600; text-decoration:none;">Clear</a>
+                    </div>
                 </div>
-                <div class="dashboard-status-placeholder" id="glanceEmptyState">
-                    <p>Pick a card above — shuttles, drivers, or the schedule — and it'll show up here.</p>
+
+                <div id="recentActivityContainer">
+                    <ul id="recentActivityList" style="list-style:none; margin:12px 0 0 0; padding:0; display:flex; flex-direction:column; gap:12px;">
+                        <!-- items inserted here by activity renderer -->
+                    </ul>
+
+                    <div class="dashboard-status-placeholder" id="recentEmptyState" style="margin-top:8px;">
+                        <p>No recent activity yet. Actions like assigning drivers or scheduling shuttles will appear here.</p>
+                        <p style="margin-top:8px;"><a href="schedule-shuttles.html" class="btn btn-primary" style="background:var(--accent); color:var(--text-on-accent); padding:8px 12px; border-radius:8px; text-decoration:none;">Schedule shuttles</a></p>
+                    </div>
                 </div>
 
                 <!-- "Today at a glance" summary (shown once data loads) -->
@@ -598,10 +611,118 @@
 
     <script src="../assets/css/js/coordinator-schedules.js?v=4"></script>
     <script src="../assets/css/js/coordinator-dashboard.js?v=4"></script>
+    <script src="../assets/css/js/activity-log.js"></script>
     <script src="../assets/css/js/admin-dropdown.js?v=4"></script>
     <script src="../assets/css/js/theme.js?v=4"></script>
     <script src="../assets/css/js/topbar.js?v=4"></script>
     <script src="../assets/css/js/animations.js?v=4"></script>
+
+    <script>
+        // Render recent activity into the dashboard list
+        (function(){
+            function timeAgo(ts) {
+                const then = new Date(ts);
+                const diff = Date.now() - then.getTime();
+                const mins = Math.floor(diff / 60000);
+                if (mins < 1) return 'Just now';
+                if (mins < 60) return `${mins} min ago`;
+                const hours = Math.floor(mins / 60);
+                if (hours < 24) return `Today, ${then.getHours().toString().padStart(2,'0')}:${then.getMinutes().toString().padStart(2,'0')}`;
+                const yesterday = new Date(); yesterday.setDate(yesterday.getDate()-1);
+                if (then.toDateString() === yesterday.toDateString()) return 'Yesterday';
+                return then.toLocaleDateString();
+            }
+
+            function iconHtml(type) {
+                const map = {
+                    assigned: { color: '#10b981', icon: '<i class="fa-solid fa-user-check"></i>' },
+                    scheduled: { color: 'var(--accent)', icon: '<i class="fa-solid fa-calendar-plus"></i>' },
+                    maintenance: { color: '#ef4444', icon: '<i class="fa-solid fa-wrench"></i>' },
+                    update: { color: '#3b82f6', icon: '<i class="fa-solid fa-info-circle"></i>' },
+                    driver_added: { color: '#10b981', icon: '<i class="fa-solid fa-user-plus"></i>' },
+                    shuttle_added: { color: 'var(--accent)', icon: '<i class="fa-solid fa-bus-simple"></i>' }
+                };
+                return map[type] || map.update;
+            }
+
+            function render() {
+                const list = (window.getRecentActivity && window.getRecentActivity(8)) || [];
+                const ul = document.getElementById('recentActivityList');
+                const empty = document.getElementById('recentEmptyState');
+                const viewAll = document.getElementById('viewAllActivity');
+                const clearLink = document.getElementById('clearActivityLink');
+                if (!ul || !empty) return;
+                ul.innerHTML = '';
+                if (!list || list.length === 0) {
+                    empty.style.display = 'block';
+                    viewAll.style.display = 'none';
+                    return;
+                }
+                empty.style.display = 'none';
+                viewAll.style.display = 'inline-block';
+
+                list.forEach(item => {
+                    const meta = iconHtml(item.type || 'update');
+                    const li = document.createElement('li');
+                    li.style.display = 'flex';
+                    li.style.alignItems = 'center';
+                    li.style.gap = '12px';
+                    li.style.padding = '10px';
+                    li.style.background = 'var(--bg-card)';
+                    li.style.borderRadius = '10px';
+                    li.style.boxShadow = 'var(--shadow-card)';
+
+                    const icWrap = document.createElement('div');
+                    icWrap.style.width = '36px';
+                    icWrap.style.height = '36px';
+                    icWrap.style.borderRadius = '999px';
+                    icWrap.style.display = 'flex';
+                    icWrap.style.alignItems = 'center';
+                    icWrap.style.justifyContent = 'center';
+                    icWrap.style.flex = '0 0 auto';
+                    icWrap.style.background = meta.color + '20';
+                    icWrap.style.color = meta.color;
+                    icWrap.innerHTML = meta.icon;
+
+                    const textWrap = document.createElement('div');
+                    textWrap.style.flex = '1 1 auto';
+                    textWrap.style.minWidth = '0';
+                    textWrap.innerHTML = `<div style="font-weight:600; color:var(--text-heading);">${item.message}</div>`;
+
+                    const timeWrap = document.createElement('div');
+                    timeWrap.style.flex = '0 0 auto';
+                    timeWrap.style.color = 'var(--text-secondary)';
+                    timeWrap.style.fontSize = '13px';
+                    timeWrap.style.whiteSpace = 'nowrap';
+                    timeWrap.style.marginLeft = '12px';
+                    timeWrap.textContent = timeAgo(item.ts);
+
+                    li.appendChild(icWrap);
+                    li.appendChild(textWrap);
+                    li.appendChild(timeWrap);
+                    ul.appendChild(li);
+                });
+            }
+
+            document.addEventListener('DOMContentLoaded', function(){ render(); });
+            // also refresh when storage changes in other tabs
+            window.addEventListener('storage', function(e){ if (e.key === 'gyrActivityLog') render(); });
+            // also refresh when activities are logged in the same tab
+            window.addEventListener('gyrActivityChanged', function(){ render(); });
+
+            // clear link
+            document.addEventListener('click', function(e){
+                if (e.target && e.target.id === 'clearActivityLink') {
+                    e.preventDefault();
+                    if (window.clearActivityLog) {
+                        window.clearActivityLog();
+                        render();
+                    }
+                }
+            });
+
+        })();
+    </script>
 
     <script>
         (function () {
