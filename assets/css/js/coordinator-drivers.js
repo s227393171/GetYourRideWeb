@@ -1,5 +1,9 @@
 ﻿const DRIVER_API_URL = "/api/coordinator/drivers";
 
+// Rules for driver contact details
+const PHONE_REGEX = /^0\d{9}$/;                                   // starts with 0, exactly 10 digits
+const EMAIL_REGEX = /^[A-Za-z0-9._%+\-]+@[A-Za-z0-9.\-]+\.com$/i; // valid email ending in .com
+
 function openProfileModal() {
     const profileModal = document.getElementById("profileModal");
     if (profileModal) profileModal.style.setProperty("display", "flex", "important");
@@ -175,12 +179,19 @@ function showConfirmModal(message, { title = "Please confirm", tone = "warn" } =
 
 
 document.addEventListener("DOMContentLoaded", () => {
-    
+
     loadDriversTable();
 
     const modal = document.getElementById("driverFormModal");
 
-   
+    // Phone box: digits only, maximum 10 characters
+    const phoneBox = document.getElementById("txtDriverPhone");
+    if (phoneBox) {
+        phoneBox.addEventListener("input", () => {
+            phoneBox.value = phoneBox.value.replace(/\D/g, "").slice(0, 10);
+        });
+    }
+
     const addBtn = document.getElementById("btnOpenAddDriverModal");
     if (addBtn && modal) {
         addBtn.addEventListener("click", () => {
@@ -193,7 +204,7 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     }
 
-  
+
     const cancelBtn = document.getElementById("btnCancelDriverModal");
     if (cancelBtn && modal) {
         cancelBtn.addEventListener("click", () => {
@@ -201,13 +212,13 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     }
 
- 
+
     const driverForm = document.getElementById("frmDriverAsset");
     if (driverForm) {
         driverForm.addEventListener("submit", handleDriverFormSubmit);
     }
 
-    
+
     const viewProfileLink = document.getElementById("btnDropdownProfile");
     if (viewProfileLink) {
         viewProfileLink.addEventListener("click", (e) => {
@@ -237,19 +248,19 @@ async function loadDriversTable() {
 
         tbody.innerHTML = "";
 
-        
+
         const shuttleDrivers = (allDrivers || []).filter(d => {
             const role = (d.role || "").toUpperCase();
             const email = (d.email || "").toLowerCase();
             const studentNum = d.studentNumber;
 
-            
+
             if (role === "STUDENT_DRIVER" || role === "STUDENT") return false;
 
-           
+
             if (/^s\d+@/i.test(email)) return false;
 
-           
+
             if (email.endsWith("@mandela.ac.za")) return false;
 
             return true;
@@ -310,7 +321,7 @@ async function loadDriversTable() {
             applyDriverFilters();
         });
 
-        
+
         const totalCard = document.getElementById("txtTotalDrivers");
         const activeCard = document.getElementById("txtActiveDrivers");
         const breakCard = document.getElementById("txtBreakDrivers");
@@ -335,12 +346,29 @@ async function handleDriverFormSubmit(e) {
     e.preventDefault();
     const id = document.getElementById("txtDriverId").value;
     const payload = {
-        studentNumber: document.getElementById("txtStudentNumber")?.value || "",
-        fullName: document.getElementById("txtDriverName")?.value || "",
-        email: document.getElementById("txtDriverEmail")?.value || "",
-        phone: document.getElementById("txtDriverPhone")?.value || "",
+        studentNumber: (document.getElementById("txtStudentNumber")?.value || "").trim(),
+        fullName: (document.getElementById("txtDriverName")?.value || "").trim(),
+        email: (document.getElementById("txtDriverEmail")?.value || "").trim(),
+        phone: (document.getElementById("txtDriverPhone")?.value || "").trim(),
         status: document.getElementById("txtDriverStatus")?.value || "Active"
     };
+
+    // Check the phone number and email before sending anything to the server
+    if (!PHONE_REGEX.test(payload.phone)) {
+        await showAlertModal(
+            "The phone number must <strong>start with 0</strong> and have <strong>exactly 10 digits</strong>, for example 0821234567.",
+            { title: "Invalid Phone Number", tone: "warn" }
+        );
+        return;
+    }
+
+    if (!EMAIL_REGEX.test(payload.email)) {
+        await showAlertModal(
+            "Please enter a valid email address that ends in <strong>.com</strong>, for example name@university.com.",
+            { title: "Invalid Email Address", tone: "warn" }
+        );
+        return;
+    }
 
     const isEditing = id !== "";
     const method = isEditing ? "PUT" : "POST";
@@ -377,11 +405,19 @@ async function handleDriverFormSubmit(e) {
             }
 
             loadDriversTable();
-            try { if (!isEditing && typeof window.logActivity === 'function') {
-                window.logActivity('driver_added', `${payload.fullName} was added as a shuttle driver`);
-            } } catch(e) { /* ignore */ }
+            try {
+                if (!isEditing && typeof window.logActivity === 'function') {
+                    window.logActivity('driver_added', `${payload.fullName} was added as a shuttle driver`);
+                }
+            } catch (e) { /* ignore */ }
         } else {
-            await showAlertModal("Error processing transaction request.", { title: "Request Failed", tone: "error" });
+            // Show the real reason from the server (for example a duplicate email or invalid phone)
+            let serverMessage = "Error processing transaction request.";
+            try {
+                const errBody = await response.json();
+                if (errBody && errBody.message) serverMessage = errBody.message;
+            } catch (_) { /* no JSON body */ }
+            await showAlertModal(serverMessage, { title: "Request Failed", tone: "error" });
         }
     } catch (err) {
         await showAlertModal("Server communication fault error.", { title: "Connection Error", tone: "error" });
@@ -395,7 +431,9 @@ function openDriverEditModal(id, name, studentNum, email, phone, status) {
     if (document.getElementById("txtStudentNumber")) document.getElementById("txtStudentNumber").value = studentNum;
     document.getElementById("txtDriverEmail").value = email;
     if (document.getElementById("txtDriverPhone")) {
-        document.getElementById("txtDriverPhone").value = (phone === "N/A" || !phone) ? "" : phone;
+        // Keep only digits (max 10) so the field follows the phone rule
+        const cleanPhone = (phone === "N/A" || !phone) ? "" : String(phone).replace(/\D/g, "").slice(0, 10);
+        document.getElementById("txtDriverPhone").value = cleanPhone;
     }
     if (document.getElementById("txtDriverStatus")) {
         document.getElementById("txtDriverStatus").value = status || "Active";

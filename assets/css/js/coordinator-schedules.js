@@ -271,13 +271,10 @@ async function populateFormDropdowns() {
                 ddl.innerHTML =
                     `<option value="">-- Select Vehicle Asset --</option>` +
                     shuttles.map(s => {
-            const id = s.shuttleId ?? s.shuttleID ?? s.vehicleId ?? s.id;
-            const name = s.shuttleName || s.vehicleName || "Shuttle";
-            const plate = s.licensePlate || s.registrationNumber || "";
-            // Only list available shuttles
-            const st = (s.status || "").toLowerCase();
-            if (st === "maintenance" || st === "inactive" || st === "unavailable") return '';
-            return `<option value="${id}">${name} (${plate})</option>`;
+                        const id = s.shuttleId ?? s.shuttleID ?? s.vehicleId ?? s.id;
+                        const name = s.shuttleName || s.vehicleName || "Shuttle";
+                        const plate = s.licensePlate || s.registrationNumber || "";
+                        return `<option value="${id}">${name} (${plate})</option>`;
                     }).join('');
                 shuttlesLoaded = true;
             }
@@ -295,33 +292,20 @@ async function populateFormDropdowns() {
         if (res.ok) {
             let drivers = await res.json();
 
-            // Reuse the old Manage Shuttles driver-selection logic:
-            // - exclude roles STUDENT_DRIVER or STUDENT
-            // - exclude student email patterns like s12345@... or institutional test addresses
-            // - prefer drivers marked as shuttle drivers
-            const driverFilter = (d) => {
-                const role = (d.role || '').toString().toUpperCase();
-                const email = (d.email || '').toString().toLowerCase();
-                if (role === 'STUDENT_DRIVER' || role === 'STUDENT') return false;
-                if (/^s\d+@/i.test(email) || email.endsWith('@mandela.ac.za')) return false;
-                return true;
-            };
-
-            drivers = (drivers || []).filter(driverFilter);
+            if (drivers.length > 0 && drivers[0].role) {
+                drivers = drivers.filter(d => d.role === "SHUTTLE_DRIVER");
+            }
 
             const ddl = document.getElementById("ddlDriverAsset");
             if (ddl) {
-                if (!drivers || drivers.length === 0) {
-                    ddl.innerHTML = `<option value="">No verified drivers available</option>`;
-                } else {
-                    ddl.innerHTML = `<option value="">-- Select Driver --</option>` +
-                        drivers.map(d => {
-                            const id = d.driverId ?? d.driverID ?? d.id;
-                            const name = d.fullName || `${d.firstName || ''} ${d.lastName || ''}`.trim();
-                            return `<option value="${id}">${name}</option>`;
-                        }).join('');
-                    driversLoaded = true;
-                }
+                ddl.innerHTML =
+                    `<option value="">-- Select Roster Operator --</option>` +
+                    drivers.map(d => {
+                        const id = d.driverId ?? d.driverID ?? d.id;
+                        const name = d.fullName || `${d.firstName || ''} ${d.lastName || ''}`.trim();
+                        return `<option value="${id}">${name}</option>`;
+                    }).join('');
+                driversLoaded = true;
             }
         } else {
             showToast("Could not load driver options from server.", "warning");
@@ -340,7 +324,6 @@ async function populateFormDropdowns() {
 
 window.handleScheduleFormSubmit = async function (e) {
     e.preventDefault();
-    // noop edit to sync patch tool - no behavioral change
 
     const routeSelect = document.getElementById("ddlRouteAsset");
     const shuttleSelect = document.getElementById("ddlShuttleAsset");
@@ -398,92 +381,30 @@ window.handleScheduleFormSubmit = async function (e) {
         : "/api/coordinator/schedules";
     const method = isEdit ? "PUT" : "POST";
 
-    // Client-side conflict check (informational only; server validation remains authoritative)
-    const conflicts = (window.__loadedSchedules || []).filter(s => {
-        const sameDate = (s.scheduleDate || '') === payload.ScheduleDate;
-        const sameTime = (s.departureTime || '') === payload.DepartureTime;
-        if (!sameDate || !sameTime) return false;
-        const sDriver = s.driverId ?? s.driverID ?? s.DriverID ?? s.DriverID ?? s.DriverId ?? s.DriverId ?? null;
-        const sShuttle = s.shuttleId ?? s.shuttleID ?? s.ShuttleID ?? s.vehicleId ?? s.id ?? null;
-        // compare as strings to avoid type mismatch
-        const drvConflict = sDriver !== null && String(sDriver) === String(driverId);
-        const shlConflict = sShuttle !== null && String(sShuttle) === String(shuttleId);
-        return drvConflict || shlConflict;
-    });
-
-    async function submitToServer() {
-        try {
-            const response = await fetch(url, {
-                method,
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify(payload)
-            });
-
-            if (response.ok) {
-                closeScheduleModalContainer();
-                loadSchedulesTable();
-                showToast(
-                    isEdit ? "Schedule updated successfully!" : "New schedule created successfully!",
-                    "success"
-                );
-                try {
-                    if (typeof window.logActivity === 'function') {
-                        const when = payload.DepartureTime || payload.ScheduleDate || '';
-                        const route = payload.FromStop + (payload.ToStop ? ` → ${payload.ToStop}` : '');
-                        window.logActivity('scheduled', `${route} scheduled for ${when}`);
-
-                        // Also add an assignment activity so Recent Activity reflects driver/shuttle assignment
-                        try {
-                            const driverName = driverSelect.options[driverSelect.selectedIndex]?.text || '';
-                            const shuttleName = shuttleSelect.options[shuttleSelect.selectedIndex]?.text || '';
-                            if (driverName && shuttleName) {
-                                window.logActivity('assigned', `${driverName} assigned to ${shuttleName} (${when})`);
-                            }
-                        } catch (e) { /* ignore */ }
-                    }
-                } catch (e) { /* ignore */ }
-            } else {
-                // Try to show any server-provided message (JSON or plain text)
-                let serverMessage = "Unknown server error.";
-                try {
-                    const text = await response.text();
-                    try {
-                        const json = text ? JSON.parse(text) : {};
-                        serverMessage = json.message || json.error || text || serverMessage;
-                    } catch (parseErr) {
-                        serverMessage = text || serverMessage;
-                    }
-                } catch (err) {
-                    // fallback to default
-                }
-                showPopup(
-                    `Could not save the schedule:<br><strong>${serverMessage}</strong>`,
-                    "error"
-                );
-            }
-        } catch (err) {
-            console.error("Network write fault:", err);
-            showPopup("A network error occurred while saving. Please check your connection and try again.", "error");
-        }
-    }
-
-    if (conflicts && conflicts.length > 0) {
-        // Build a helpful HTML message listing conflicts
-        const msgs = conflicts.map(c => {
-            const parts = [];
-            const sDriver = c.driverId ?? c.driverID ?? c.DriverID ?? null;
-            const sShuttle = c.shuttleId ?? c.shuttleID ?? c.ShuttleID ?? c.vehicleId ?? c.id ?? null;
-            if (sDriver !== null && String(sDriver) === String(driverId)) parts.push('Driver already booked');
-            if (sShuttle !== null && String(sShuttle) === String(shuttleId)) parts.push('Shuttle already booked');
-            return `${c.scheduleDate || ''} ${c.departureTime || ''}: ${parts.join(' & ')}`;
+    try {
+        const response = await fetch(url, {
+            method,
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(payload)
         });
-        showConfirm(
-            `A scheduling conflict was detected:<br>${msgs.join('<br>')}<br><br>Do you want to continue and force this assignment?`,
-            submitToServer,
-            { type: "warning", confirmText: "Force Assign", cancelText: "Cancel" }
-        );
-    } else {
-        await submitToServer();
+
+        if (response.ok) {
+            closeScheduleModalContainer();
+            loadSchedulesTable();
+            showToast(
+                isEdit ? "Schedule updated successfully!" : "New schedule created successfully!",
+                "success"
+            );
+        } else {
+            const data = await response.json().catch(() => ({}));
+            showPopup(
+                `Could not save the schedule:<br><strong>${data.message || "Unknown server error."}</strong>`,
+                "error"
+            );
+        }
+    } catch (err) {
+        console.error("Network write fault:", err);
+        showPopup("A network error occurred while saving. Please check your connection and try again.", "error");
     }
 };
 

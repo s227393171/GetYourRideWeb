@@ -139,7 +139,7 @@
                     </thead>
                     <tbody id="driverTableBody">
                         <tr>
-                            <td colspan="5" style="text-align: center; color: var(--text-muted); padding: 20px;">Streaming verified operator profiles...</td>
+                            <td colspan="6" style="text-align: center; color: var(--text-muted); padding: 20px;">Streaming verified operator profiles...</td>
                         </tr>
                     </tbody>
                 </table>
@@ -166,12 +166,18 @@
 
                 <div class="form-group" style="margin-bottom: 20px;">
                     <label style="display:block; margin-bottom:5px; font-weight:600; font-size:13px;">Email Address</label>
-                    <input type="email" id="txtDriverEmail" required placeholder="e.g. m.dorsey@university.edu" style="width:100%; padding:8px; border-radius:6px; border:1px solid #cbd5e1; box-sizing:border-box;">
+                    <input type="email" id="txtDriverEmail" required
+                           pattern="[A-Za-z0-9._%+\-]+@[A-Za-z0-9.\-]+\.[Cc][Oo][Mm]"
+                           title="Enter a valid email address ending in .com, for example name@university.com"
+                           placeholder="e.g. m.dorsey@university.com" style="width:100%; padding:8px; border-radius:6px; border:1px solid #cbd5e1; box-sizing:border-box;">
                 </div>
 
                 <div class="form-group" style="margin-bottom: 15px;">
                     <label style="display:block; margin-bottom:5px; font-weight:600; font-size:13px;">Phone Number</label>
-                    <input type="text" id="txtDriverPhone" placeholder="e.g. 0821234567" style="width:100%; padding:8px; border-radius:6px; border:1px solid #cbd5e1; box-sizing:border-box;">
+                    <input type="tel" id="txtDriverPhone" required inputmode="numeric" maxlength="10"
+                           pattern="0[0-9]{9}"
+                           title="Phone number must start with 0 and have exactly 10 digits"
+                           placeholder="e.g. 0821234567" style="width:100%; padding:8px; border-radius:6px; border:1px solid #cbd5e1; box-sizing:border-box;">
                 </div>
                 <div class="form-group" style="margin-bottom: 15px;">
                     <label style="display:block; margin-bottom:5px; font-weight:600; font-size:13px;">Status</label>
@@ -247,7 +253,7 @@
         </div>
     </div>
 
-    
+
     <div id="logoutModal" class="modal-backdrop" style="display: none; position: fixed; inset: 0; background: rgba(0, 0, 0, 0.5); backdrop-filter: blur(4px); z-index: 1000; align-items: center; justify-content: center;">
         <div class="modal-card cute-logout-card" style="background: #ffffff; padding: 32px; border-radius: 20px; width: 100%; max-width: 400px; text-align: center; box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04); animation: scaleUp 0.25s ease-out;">
             <div style="width: 64px; height: 64px; border-radius: 50%; background: #fee2e2; color: #ef4444; display: flex; align-items: center; justify-content: center; font-size: 26px; margin: 0 auto 16px auto;">
@@ -267,6 +273,17 @@
         </div>
     </div>
 
+    <script>
+                // Phone box: digits only, maximum 10 characters
+                (function () {
+                    var phone = document.getElementById("txtDriverPhone");
+                    if (phone) {
+                        phone.addEventListener("input", function () {
+                            phone.value = phone.value.replace(/\D/g, "").slice(0, 10);
+                        });
+                    }
+                })();
+    </script>
 
     <script src="../assets/css/js/coordinator-drivers.js"></script>
     <script src="../assets/css/js/admin-dropdown.js"></script>

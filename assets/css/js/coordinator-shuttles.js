@@ -125,11 +125,10 @@ function renderShuttleTable(shuttles) {
         const name = s.shuttleName || "Unnamed Shuttle";
         const plate = s.licensePlate || "N/A";
         const capacity = s.capacity ?? 0;
-        // Normalize status values: treat 'inactive' or 'unavailable' as 'Maintenance'
+        // Keep statuses as stored; normalize legacy values for display
         let status = s.status || "Active";
         const st = (status || "").toLowerCase();
-        if (st === "inactive" || st === "unavailable" || st === "maintenance") status = "Maintenance";
-        else status = "Active";
+        if (st === "inactive" || st === "unavailable") status = "Maintenance";
         const year = s.vehicleYear || "—";
         const colour = s.colour || "—";
 
@@ -142,7 +141,12 @@ function renderShuttleTable(shuttles) {
             <td><code style="background:#f1f5f9; padding:4px 8px; border-radius:4px; font-weight:600;">${plate}</code></td>
             <td>${year} &middot; ${colour}</td>
             <td>${capacity} seats</td>
-            <td><span class="badge ${badgeClass}">${status}</span></td>
+            <td>
+                <select data-id="${id}" class="status-select" style="padding:6px 8px; border-radius:6px; border:1px solid #cbd5e1;">
+                    <option value="Active" ${status === 'Active' ? 'selected' : ''}>Available</option>
+                    <option value="Maintenance" ${status === 'Maintenance' ? 'selected' : ''}>Maintenance</option>
+                </select>
+            </td>
             <td class="actions-cell">
                 <button class="action-icon-btn" title="Edit"><i class="fa-solid fa-pen"></i></button>
                 <button class="action-icon-btn" title="Delete"><i class="fa-solid fa-trash"></i></button>
@@ -151,6 +155,39 @@ function renderShuttleTable(shuttles) {
 
         row.querySelector('[title="Edit"]').addEventListener("click", () => openEditModal(id));
         row.querySelector('[title="Delete"]').addEventListener("click", () => deleteShuttle(id));
+
+        // Wire status change handler
+        const sel = row.querySelector('.status-select');
+        if (sel) {
+            sel.addEventListener('change', async (e) => {
+                const newStatus = e.target.value;
+                try {
+                    const res = await fetch(`${SHUTTLES_API_URL}/${id}`, {
+                        method: 'PUT',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ Status: newStatus })
+                    });
+                    if (res.ok) {
+                        showToast('Status updated', 'success');
+                        loadShuttleFleet();
+                    } else {
+                        let msg = response.statusText || 'Failed to update status';
+                        try {
+                            const ct = res.headers.get('Content-Type') || '';
+                            if (ct.indexOf('application/json') !== -1) {
+                                const j = await res.json(); if (j && j.message) msg = j.message;
+                            } else {
+                                msg = await res.text();
+                            }
+                        } catch (e) { /* ignore */ }
+                        showToast(msg || 'Failed to update status', 'error');
+                    }
+                } catch (err) {
+                    console.error('Status update failed', err);
+                    showToast('Network error updating status', 'error');
+                }
+            });
+        }
 
         tableBody.appendChild(row);
     });

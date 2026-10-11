@@ -6,68 +6,16 @@
     const driverSelect = document.getElementById("ddlDriverAsset");
     const scheduleForm = document.getElementById("frmCreateSchedule");
     const dateInputEl = document.getElementById("txtScheduleDate");
-     if (dateInputEl) {
-    dateInputEl.min = new Date().toISOString().split("T")[0];
+
+    // Today's date in local time (toISOString uses UTC and can give yesterday's date)
+    function getTodayLocal() {
+        const n = new Date();
+        return `${n.getFullYear()}-${String(n.getMonth() + 1).padStart(2, "0")}-${String(n.getDate()).padStart(2, "0")}`;
     }
-    // Replace free time input with a dropdown select populated from server time slots
-    const timeSelect = document.getElementById("txtDepartureTime");
-    // we'll reuse the same element id but it will be a <select> in the DOM; if it's an <input> keep fallback behavior
-    async function loadTimeSlots() {
-        if (!timeSelect) return;
-        try {
-            const res = await fetch('/api/coordinator/time-slots');
-            if (!res.ok) throw new Error('Failed to load time slots');
-            const body = await res.json();
-            // API returns { success: true, data: [...] }
-            const slots = (body && body.success && Array.isArray(body.data)) ? body.data : [];
-            if (!slots || slots.length === 0) {
-                timeSelect.innerHTML = '<option value="">No departure times available</option>';
-                return;
-            }
 
-            // Group by period
-            const morning = slots.filter(s => (s.period||'').toLowerCase() === 'morning');
-            const afternoon = slots.filter(s => (s.period||'').toLowerCase() === 'afternoon');
-
-            let html = '<option value="">-- Select Departure Time --</option>';
-            if (morning.length) {
-                html += '<optgroup label="Morning">' + morning.map(s => `<option value="${s.slotId}">${(s.departs||'').substring(0,5)}</option>`).join('') + '</optgroup>';
-            }
-            if (afternoon.length) {
-                html += '<optgroup label="Afternoon">' + afternoon.map(s => `<option value="${s.slotId}">${(s.departs||'').substring(0,5)}</option>`).join('') + '</optgroup>';
-            }
-
-            timeSelect.innerHTML = html;
-
-            // If today selected, disable past slots
-            const dateEl = document.getElementById('txtScheduleDate');
-            function refreshDisabled() {
-                const selected = dateEl?.value;
-                const today = new Date().toISOString().split('T')[0];
-                const now = new Date();
-                const opts = timeSelect.querySelectorAll('option');
-                opts.forEach(opt => opt.disabled = false);
-                if (selected === today) {
-                    // disable options whose time is earlier than now
-                    slots.forEach(s => {
-                        const t = (s.departs||'').substring(0,5);
-                        const [hh, mm] = t.split(':').map(x=>parseInt(x,10));
-                        const slotDate = new Date(); slotDate.setHours(hh, mm, 0, 0);
-                        if (slotDate <= now) {
-                            const opt = timeSelect.querySelector(`option[value=\"${s.slotId}\"]`);
-                            if (opt) opt.disabled = true;
-                        }
-                    });
-                }
-            }
-            dateEl?.addEventListener('change', refreshDisabled);
-            refreshDisabled();
-        } catch (err) {
-            console.error('Time slots loading error:', err);
-            timeSelect.innerHTML = '<option value="">No departure times available</option>';
-        }
+    if (dateInputEl) {
+        dateInputEl.min = getTodayLocal();
     }
-    loadTimeSlots();
 
     const urlParams = new URLSearchParams(window.location.search);
     const editScheduleId = urlParams.get("id");
@@ -81,7 +29,7 @@
         question: '<svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"></path><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>'
     };
 
-   
+
     const style = document.createElement("style");
     style.textContent = `
         @keyframes popupSlideIn {
@@ -206,11 +154,45 @@
         });
     }
 
-    
+
     await populateDropdowns();
+    await loadTimeSlots();
 
     if (editScheduleId) {
         await loadScheduleIntoForm(editScheduleId);
+    }
+
+    // Fills the Departure Time dropdown with the "departs" times from the shuttle_time_slot table.
+    // The option value is the time itself (for example 06:45).
+    async function loadTimeSlots() {
+        const timeSelect = document.getElementById("txtDepartureTime");
+        if (!timeSelect) return;
+        try {
+            const res = await fetch(`${apiBaseUrl}/time-slots`);
+            if (!res.ok) throw new Error("Failed to load time slots");
+            const body = await res.json();
+            const slots = (body && body.success && Array.isArray(body.data)) ? body.data : [];
+
+            if (slots.length === 0) {
+                timeSelect.innerHTML = '<option value="">No departure times available</option>';
+                return;
+            }
+
+            const group = (label, list) => list.length
+                ? `<optgroup label="${label}">` +
+                list.map(s => `<option value="${s.departs}">${s.departs}</option>`).join("") +
+                `</optgroup>`
+                : "";
+
+            const morning = slots.filter(s => (s.period || "").toLowerCase() === "morning");
+            const afternoon = slots.filter(s => (s.period || "").toLowerCase() === "afternoon");
+
+            timeSelect.innerHTML = '<option value="">-- Select Departure Time --</option>' +
+                group("Morning", morning) + group("Afternoon", afternoon);
+        } catch (err) {
+            console.error("Time slots loading error:", err);
+            timeSelect.innerHTML = '<option value="">No departure times available</option>';
+        }
     }
 
     async function populateDropdowns() {
@@ -224,7 +206,7 @@
             const [routesResult, shuttlesResult, driversResult] = results;
 
 
-            
+
             if (routesResult.status === "fulfilled" && routesResult.value.ok) {
                 const routes = await routesResult.value.json();
                 if (routeSelect && Array.isArray(routes)) {
@@ -237,7 +219,7 @@
             }
 
 
-            
+
             if (shuttlesResult.status === "fulfilled" && shuttlesResult.value.ok) {
                 const shuttles = await shuttlesResult.value.json();
                 if (shuttleSelect && Array.isArray(shuttles)) {
@@ -251,7 +233,7 @@
                 showToast("Could not load shuttle options.", "warning");
             }
 
-            
+
             if (driversResult.status === "fulfilled" && driversResult.value.ok) {
                 const drivers = await driversResult.value.json();
                 if (driverSelect && Array.isArray(drivers)) {
@@ -311,7 +293,7 @@
                 driverSelect.value = driverId;
             }
 
-            // Set date and time
+            // Set date and time (the time dropdown values are HH:mm, so the saved time pre-selects)
             const dateInput = document.getElementById("txtScheduleDate") || document.getElementById("runDate");
             const timeInput = document.getElementById("txtDepartureTime") || document.getElementById("clockTime");
             if (dateInput) dateInput.value = schedule.scheduleDate || schedule.assignmentDate || "";
@@ -331,7 +313,7 @@
             showPopup("Failed to load schedule details. Please try again.", "error");
         }
     }
-    
+
     if (scheduleForm) {
         scheduleForm.addEventListener("submit", async (event) => {
             event.preventDefault();
@@ -343,7 +325,7 @@
             const dateInput = document.getElementById("txtScheduleDate") || document.getElementById("runDate");
             const timeInput = document.getElementById("txtDepartureTime") || document.getElementById("clockTime");
 
-       
+
             if (!routeSelect?.value || routeSelect.value === "") {
                 showPopup("Please select a <strong>route</strong> before saving.", "warning");
                 return;
@@ -364,14 +346,14 @@
                 return;
             }
 
-            const todayStr = new Date().toISOString().split("T")[0];
+            const todayStr = getTodayLocal();
             if (dateInput.value < todayStr) {
                 showPopup("You cannot schedule a shuttle for a <strong>past date</strong>. Please choose today or a later date.", "warning");
                 return;
             }
 
             if (!timeInput?.value) {
-                showPopup("Please set a <strong>departure time</strong> before saving.", "warning");
+                showPopup("Please select a <strong>departure time</strong> before saving.", "warning");
                 return;
             }
 
@@ -388,7 +370,7 @@
                 : `${apiBaseUrl}/schedules`;
             const method = editScheduleId ? "PUT" : "POST";
 
-            
+
             const submitBtn = document.querySelector('button[type="submit"]');
             if (submitBtn) {
                 submitBtn.disabled = true;
