@@ -72,7 +72,7 @@
             <div class="view-header">
                 <div>
                     <h2>Manage Shuttle Drivers</h2>
-                    <p class="subtitle">Configure driver assignments, monitor status, and manage the campus operator roster.</p>
+                    <p class="subtitle">Configure driver assignments and manage the campus operator roster.</p>
                 </div>
                 <button class="btn btn-primary" id="btnOpenAddDriverModal" style="background: #f97316; border: none; font-weight: 600; padding: 10px 20px; border-radius: 8px; color: white; cursor: pointer;"><i class="fa-solid fa-plus"></i> Add Driver</button>
             </div>
@@ -86,24 +86,24 @@
                     </div>
                 </div>
                 <div class="metric-card">
-                    <div class="metric-icon-box green-bg"><i class="fa-solid fa-circle-dot"></i></div>
+                    <div class="metric-icon-box green-bg"><i class="fa-solid fa-bus"></i></div>
                     <div>
-                        <label>ACTIVE NOW</label>
-                        <h3 id="txtActiveDrivers">0</h3>
+                        <label>WITH A SHUTTLE</label>
+                        <h3 id="txtWithShuttle">0</h3>
                     </div>
                 </div>
                 <div class="metric-card">
-                    <div class="metric-icon-box orange-bg"><i class="fa-solid fa-mug-saucer"></i></div>
+                    <div class="metric-icon-box orange-bg"><i class="fa-solid fa-circle-question"></i></div>
                     <div>
-                        <label>ON BREAK</label>
-                        <h3 id="txtBreakDrivers">0</h3>
+                        <label>NEED A SHUTTLE</label>
+                        <h3 id="txtNeedShuttle">0</h3>
                     </div>
                 </div>
                 <div class="metric-card">
-                    <div class="metric-icon-box gray-bg"><i class="fa-solid fa-moon"></i></div>
+                    <div class="metric-icon-box gray-bg"><i class="fa-solid fa-bus-simple"></i></div>
                     <div>
-                        <label>OFF DUTY</label>
-                        <h3 id="txtOffDutyDrivers">0</h3>
+                        <label>SHUTTLES COVERED</label>
+                        <h3 id="txtShuttlesCovered">0</h3>
                     </div>
                 </div>
             </div>
@@ -115,14 +115,6 @@
                         <input type="text" id="driverSearchBox" placeholder="Search drivers..."
                                style="padding:8px 12px; border-radius:6px; border:1px solid #cbd5e1; font-size:13px;"
                                onkeyup="applyDriverFilters()">
-                        <select id="statusFilterSelect"
-                                style="padding:8px 12px; border-radius:6px; border:1px solid #cbd5e1; font-size:13px;"
-                                onchange="applyDriverFilters()">
-                            <option value="">All Statuses</option>
-                            <option value="Active">Active</option>
-                            <option value="On Break">On Break</option>
-                            <option value="Off Duty">Off Duty</option>
-                        </select>
                     </div>
                 </div>
 
@@ -133,13 +125,12 @@
                             <th>EMPLOYEE ID</th>
                             <th>PHONE NUMBER</th>
                             <th>ASSIGNED SHUTTLE</th>
-                            <th>STATUS</th>
                             <th>ACTIONS</th>
                         </tr>
                     </thead>
                     <tbody id="driverTableBody">
                         <tr>
-                            <td colspan="6" style="text-align: center; color: var(--text-muted); padding: 20px;">Streaming verified operator profiles...</td>
+                            <td colspan="5" style="text-align: center; color: var(--text-muted); padding: 20px;">Streaming verified operator profiles...</td>
                         </tr>
                     </tbody>
                 </table>
@@ -178,14 +169,6 @@
                            pattern="0[0-9]{9}"
                            title="Phone number must start with 0 and have exactly 10 digits"
                            placeholder="e.g. 0821234567" style="width:100%; padding:8px; border-radius:6px; border:1px solid #cbd5e1; box-sizing:border-box;">
-                </div>
-                <div class="form-group" style="margin-bottom: 15px;">
-                    <label style="display:block; margin-bottom:5px; font-weight:600; font-size:13px;">Status</label>
-                    <select id="txtDriverStatus" style="width:100%; padding:8px; border-radius:6px; border:1px solid #cbd5e1; box-sizing:border-box;">
-                        <option value="Active">Active</option>
-                        <option value="On Break">On Break</option>
-                        <option value="Off Duty">Off Duty</option>
-                    </select>
                 </div>
                 <div class="modal-actions" style="display:flex; gap:10px; justify-content:flex-end;">
                     <button type="button" id="btnCancelDriverModal" class="close-modal-btn" style="margin:0; background:#64748b; width:auto; padding:8px 16px;">Cancel</button>

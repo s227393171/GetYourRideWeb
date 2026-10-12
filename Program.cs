@@ -1306,15 +1306,17 @@ app.MapGet("/api/coordinator/drivers", async (IConfiguration config) => {
            d.email, 
            d.phone,
            d.role,
-           d.status,
            s.student_number,
-           COALESCE(GROUP_CONCAT(v.model SEPARATOR ', '), 'Unassigned') AS ShuttleName
+        
+COALESCE(GROUP_CONCAT(v.model SEPARATOR ', '), 'Unassigned') AS ShuttleName,
+COALESCE(GROUP_CONCAT(DISTINCT v.registration_number SEPARATOR ', '), '') AS ShuttlePlates
+
     FROM driver d
     LEFT JOIN student s ON d.email = s.email
     LEFT JOIN vehicle v ON d.driver_id = v.driver_id
     WHERE d.is_verified = 1 
       AND (d.role = 'SHUTTLE_DRIVER' OR d.role IS NULL OR d.role != 'STUDENT_DRIVER')
-    GROUP BY d.driver_id, d.first_name, d.last_name, d.email, d.phone, d.role, d.status, s.student_number;";
+    GROUP BY d.driver_id, d.first_name, d.last_name, d.email, d.phone, d.role, s.student_number;";
 
         using var command = new MySqlCommand(query, connection);
         using var reader = await command.ExecuteReaderAsync();
@@ -1331,8 +1333,8 @@ app.MapGet("/api/coordinator/drivers", async (IConfiguration config) => {
                 employeeId = $"DRV-{reader["driver_id"]}",
                 studentNumber = reader["student_number"] != DBNull.Value ? SafeStr(reader["student_number"]) : "N/A",
                 assignedShuttle = reader["ShuttleName"] != DBNull.Value ? SafeStr(reader["ShuttleName"]) : "Unassigned",
+                assignedShuttlePlates = reader["ShuttlePlates"] != DBNull.Value ? SafeStr(reader["ShuttlePlates"]) : "",
                 contactNumber = reader["phone"] != DBNull.Value ? SafeStr(reader["phone"]) : "N/A",
-                status = reader["status"] != DBNull.Value ? SafeStr(reader["status"]) : "Active",
             });
         }
     }
@@ -1388,8 +1390,7 @@ app.MapGet("/api/coordinator/drivers/{id:int}", async (int id, IConfiguration co
                 employeeId = $"DRV-{reader["driver_id"]}",
                 studentNumber = reader["student_number"] != DBNull.Value ? SafeStr(reader["student_number"]) : "N/A",
                 assignedShuttle = reader["ShuttleName"] != DBNull.Value ? SafeStr(reader["ShuttleName"]) : "Unassigned",
-                contactNumber = reader["phone"] != DBNull.Value ? SafeStr(reader["phone"]) : "N/A",
-                status = "Active"
+                contactNumber = reader["phone"] != DBNull.Value ? SafeStr(reader["phone"]) : "N/A"
             });
         }
 
@@ -1458,7 +1459,7 @@ app.MapPut("/api/coordinator/drivers/{id:int}", async (int id, DriverUpsertDto r
         if (nameParts.Length > 1) { firstName = nameParts[0]; lastName = nameParts[1]; }
 
         string query = @"UPDATE driver 
-                         SET first_name = @First, last_name = @Last, email = @Email, status = @Status, phone = @Phone 
+                         SET first_name = @First, last_name = @Last, email = @Email, phone = @Phone 
                          WHERE driver_id = @Id;";
 
         using var command = new MySqlCommand(query, connection);
@@ -1467,7 +1468,6 @@ app.MapPut("/api/coordinator/drivers/{id:int}", async (int id, DriverUpsertDto r
         command.Parameters.AddWithValue("@Last", lastName);
         command.Parameters.AddWithValue("@Email", req.Email);
         command.Parameters.AddWithValue("@Phone", string.IsNullOrEmpty(req.Phone) ? (object)DBNull.Value : req.Phone);
-        command.Parameters.AddWithValue("@Status", string.IsNullOrEmpty(req.Status) ? "Active" : req.Status);
 
         int rowsAffected = await command.ExecuteNonQueryAsync();
         return rowsAffected > 0 ? Results.Ok(new { success = true }) : Results.NotFound();
@@ -1499,7 +1499,7 @@ app.MapPost("/api/coordinator/drivers", async (DriverUpsertDto req, IConfigurati
 
         string insertQuery = @"
             INSERT INTO driver (first_name, last_name, email, phone, role, is_verified, join_date, password, total_trips, status)
-            VALUES (@First, @Last, @Email, @Phone, 'SHUTTLE_DRIVER', 1, CURDATE(), @Password, 0, @Status);";
+            VALUES (@First, @Last, @Email, @Phone, 'SHUTTLE_DRIVER', 1, CURDATE(), @Password, 0, 'Active');";
 
         using var command = new MySqlCommand(insertQuery, connection);
         command.Parameters.AddWithValue("@First", firstName);
@@ -1507,7 +1507,6 @@ app.MapPost("/api/coordinator/drivers", async (DriverUpsertDto req, IConfigurati
         command.Parameters.AddWithValue("@Email", req.Email);
         command.Parameters.AddWithValue("@Phone", string.IsNullOrEmpty(req.Phone) ? (object)DBNull.Value : req.Phone);
         command.Parameters.AddWithValue("@Password", generatedPassword);
-        command.Parameters.AddWithValue("@Status", string.IsNullOrEmpty(req.Status) ? "Active" : req.Status);
 
         await command.ExecuteNonQueryAsync();
         return Results.Ok(new { success = true, message = "Driver added successfully.", generatedPassword = generatedPassword });
@@ -2305,7 +2304,51 @@ app.MapPost("/api/admin/drivers/upsert", async (DriverUpsertDto req, IConfigurat
 app.MapGet("/Forgot.html", () => Results.File(Path.Combine(Directory.GetCurrentDirectory(), "Forgot.html"), "text/html"));
 
 
+// COORDINATOR: RECENT ACTIVITY LOG
+app.MapGet("/api/coordinator/activity", async (IConfiguration config) => {
+    string connectionString = config.GetConnectionString("DefaultConnection");
+    var activities = new List<object>();
 
+    try
+    {
+        using var connection = new MySqlConnection(connectionString);
+        await connection.OpenAsync();
+
+        // Pulls recent trips or bookings from your database to display as activity
+        string query = @"
+            SELECT tb.booking_id AS id,
+                   CONCAT('Trip booked by ', s.first_name, ' ', s.last_name) AS title,
+                   CONCAT('From ', t.departure_stop, ' to ', t.destination_stop) AS description,
+                   tb.booking_date AS timestamp,
+                   'scheduled' AS type
+            FROM trip_booking tb
+            JOIN student s ON tb.student_id = s.student_id
+            JOIN trip t ON tb.trip_id = t.trip_id
+            ORDER BY tb.booking_date DESC
+            LIMIT 8;";
+
+        using var command = new MySqlCommand(query, connection);
+        using var reader = await command.ExecuteReaderAsync();
+
+        while (await reader.ReadAsync())
+        {
+            activities.Add(new
+            {
+                id = reader["id"],
+                message = SafeStr(reader["title"]) + " - " + SafeStr(reader["description"]),
+                type = SafeStr(reader["type"]),
+                ts = reader["timestamp"] != DBNull.Value ? Convert.ToDateTime(reader["timestamp"]) : DateTime.Now
+            });
+        }
+    }
+    catch (Exception ex)
+    {
+        Console.WriteLine($"[API Error] Recent activity lookup failed: {ex.Message}");
+        return Results.Json(new { error = ex.Message }, statusCode: 500);
+    }
+
+    return Results.Ok(activities);
+});
 app.MapGet("/api/admin/dashboard/summary", async (IConfiguration config) => {
     string connectionString = config.GetConnectionString("DefaultConnection");
 
@@ -2446,7 +2489,7 @@ public record LoginRequest(string Email, string Password);
 public record VerifyActionRequest(int DriverId);
 public record DynamicStatusUpdate(string Status, string? Reason = null);
 public record ShuttleDto(int? DriverId, string ShuttleName, string LicensePlate, int Capacity, string? Status, int? VehicleYear, string? Colour);
-public record DriverUpsertDto(string FullName, string Email, string? Phone, string? Status);
+public record DriverUpsertDto(string FullName, string Email, string? Phone);
 public record ForgotPasswordRequest(string Email);
 public record ResetPasswordRequest(string Token, string NewPassword);
 

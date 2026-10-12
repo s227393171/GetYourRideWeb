@@ -240,7 +240,7 @@ async function loadDriversTable() {
         const response = await fetch(DRIVER_API_URL);
 
         if (!response.ok) {
-            tbody.innerHTML = `<tr><td colspan="6" style="text-align:center; padding:30px; color:#ef4444;"><i class="fa-solid fa-triangle-exclamation"></i> Backend API returned status error ${response.status}.</td></tr>`;
+            tbody.innerHTML = `<tr><td colspan="5" style="text-align:center; padding:30px; color:#ef4444;"><i class="fa-solid fa-triangle-exclamation"></i> Backend API returned status error ${response.status}.</td></tr>`;
             return;
         }
 
@@ -267,34 +267,43 @@ async function loadDriversTable() {
         });
 
         if (shuttleDrivers.length === 0) {
-            tbody.innerHTML = `<tr><td colspan="6" style="text-align:center; padding:30px; color:#94a3b8;">No registered shuttle drivers found in your database.</td></tr>`;
+            tbody.innerHTML = `<tr><td colspan="5" style="text-align:center; padding:30px; color:#94a3b8;">No registered shuttle drivers found in your database.</td></tr>`;
             return;
         }
 
-        let activeCount = 0;
-        let breakCount = 0;
-        let offDutyCount = 0;
+        let withShuttleCount = 0;
+        let needShuttleCount = 0;
+        const coveredShuttles = new Set();
+
+        // A driver "has a shuttle" when assignedShuttle is set and not the
+        // backend's "Unassigned" placeholder.
+        const hasShuttle = (d) => {
+            const s = (d.assignedShuttle || "").trim();
+            return s !== "" && s.toLowerCase() !== "unassigned";
+        };
 
         shuttleDrivers.forEach(d => {
-            let statusText = d.status || "Active";
-            let badgeClass = "badge-active";
-
-            if (statusText.toLowerCase() === "active") {
-                activeCount++;
-                badgeClass = "badge-active";
-            } else if (statusText.toLowerCase() === "on break") {
-                breakCount++;
-                badgeClass = "badge-break";
-            } else {
-                offDutyCount++;
-                badgeClass = "badge-inactive";
-            }
-
             let displayEmpId = d.employeeId || `DRV-${d.id || d.driverId}`;
             let displayPhone = d.contactNumber || d.phone || "N/A";
-            let displayShuttle = d.assignedShuttle || "Unassigned";
             let currentId = d.id || d.driverId;
             let displayStudentNum = d.studentNumber || "";
+
+            let displayShuttle;
+            if (hasShuttle(d)) {
+                withShuttleCount++;
+                displayShuttle = d.assignedShuttle;
+                // Count distinct shuttles by registration plate (a shuttle can be
+                // assigned to more than one driver, so dedupe across the whole list).
+                const plateSource = (d.assignedShuttlePlates || "").trim() || d.assignedShuttle;
+                plateSource.split(",").forEach(plate => {
+                    const p = plate.trim();
+                    if (p) coveredShuttles.add(p.toLowerCase());
+                });
+            }
+else {
+                needShuttleCount++;
+                displayShuttle = "Not assigned yet";
+            }
 
             const tr = document.createElement("tr");
             tr.innerHTML = `
@@ -310,10 +319,9 @@ async function loadDriversTable() {
                 <td><strong>${displayEmpId}</strong></td>
                 <td>${displayPhone}</td>
                 <td><span style="color:#475569;"><i class="fa-solid fa-bus"></i> ${displayShuttle}</span></td>
-                <td><span class="badge ${badgeClass}">${statusText}</span></td>
                 <td class="actions-cell">
                     <button class="action-icon-btn" onclick="viewDriverPassword(${currentId})" title="View Password"><i class="fa-solid fa-key"></i></button>
-                <button class="action-icon-btn" onclick="openDriverEditModal(${currentId}, '${d.fullName}', '${displayStudentNum}', '${d.email}', '${displayPhone}', '${statusText}')" title="Edit Profile"><i class="fa-solid fa-pen"></i></button>
+                <button class="action-icon-btn" onclick="openDriverEditModal(${currentId}, '${d.fullName}', '${displayStudentNum}', '${d.email}', '${displayPhone}')" title="Edit Profile"><i class="fa-solid fa-pen"></i></button>
                     <button class="action-icon-btn" onclick="deleteDriverProfile(${currentId})" title="Delete Profile"><i class="fa-solid fa-trash"></i></button>
                 </td>
             `;
@@ -323,20 +331,20 @@ async function loadDriversTable() {
 
 
         const totalCard = document.getElementById("txtTotalDrivers");
-        const activeCard = document.getElementById("txtActiveDrivers");
-        const breakCard = document.getElementById("txtBreakDrivers");
-        const offDutyCard = document.getElementById("txtOffDutyDrivers");
+        const withShuttleCard = document.getElementById("txtWithShuttle");
+        const needShuttleCard = document.getElementById("txtNeedShuttle");
+        const shuttlesCoveredCard = document.getElementById("txtShuttlesCovered");
 
         if (totalCard) totalCard.innerText = shuttleDrivers.length;
-        if (activeCard) activeCard.innerText = activeCount;
-        if (breakCard) breakCard.innerText = breakCount;
-        if (offDutyCard) offDutyCard.innerText = offDutyCount;
+        if (withShuttleCard) withShuttleCard.innerText = withShuttleCount;
+        if (needShuttleCard) needShuttleCard.innerText = needShuttleCount;
+        if (shuttlesCoveredCard) shuttlesCoveredCard.innerText = coveredShuttles.size;
 
     } catch (err) {
         console.error("Critical rendering failure:", err);
         const tbody = document.getElementById("driverTableBody");
         if (tbody) {
-            tbody.innerHTML = `<tr><td colspan="6" style="text-align:center; padding:30px; color:#ef4444;"><i class="fa-solid fa-triangle-exclamation"></i> Connection failed. Is your C# backend server running?</td></tr>`;
+            tbody.innerHTML = `<tr><td colspan="5" style="text-align:center; padding:30px; color:#ef4444;"><i class="fa-solid fa-triangle-exclamation"></i> Connection failed. Is your C# backend server running?</td></tr>`;
         }
     }
 }
@@ -349,8 +357,7 @@ async function handleDriverFormSubmit(e) {
         studentNumber: (document.getElementById("txtStudentNumber")?.value || "").trim(),
         fullName: (document.getElementById("txtDriverName")?.value || "").trim(),
         email: (document.getElementById("txtDriverEmail")?.value || "").trim(),
-        phone: (document.getElementById("txtDriverPhone")?.value || "").trim(),
-        status: document.getElementById("txtDriverStatus")?.value || "Active"
+        phone: (document.getElementById("txtDriverPhone")?.value || "").trim()
     };
 
     // Check the phone number and email before sending anything to the server
@@ -425,7 +432,7 @@ async function handleDriverFormSubmit(e) {
 }
 
 // Added 'phone' parameter to signature
-function openDriverEditModal(id, name, studentNum, email, phone, status) {
+function openDriverEditModal(id, name, studentNum, email, phone) {
     document.getElementById("txtDriverId").value = id;
     document.getElementById("txtDriverName").value = name;
     if (document.getElementById("txtStudentNumber")) document.getElementById("txtStudentNumber").value = studentNum;
@@ -434,9 +441,6 @@ function openDriverEditModal(id, name, studentNum, email, phone, status) {
         // Keep only digits (max 10) so the field follows the phone rule
         const cleanPhone = (phone === "N/A" || !phone) ? "" : String(phone).replace(/\D/g, "").slice(0, 10);
         document.getElementById("txtDriverPhone").value = cleanPhone;
-    }
-    if (document.getElementById("txtDriverStatus")) {
-        document.getElementById("txtDriverStatus").value = status || "Active";
     }
     document.getElementById("modalDriverFormTitle").innerText = "Edit Driver Profile Details";
     document.getElementById("driverFormModal").style.display = "flex";
@@ -492,22 +496,17 @@ async function deleteDriverProfile(id) {
 }
 function applyDriverFilters() {
     const searchValue = (document.getElementById("driverSearchBox")?.value || "").toLowerCase();
-    const statusValue = document.getElementById("statusFilterSelect")?.value || "";
 
     const rows = document.querySelectorAll("#driverTableBody tr");
 
     rows.forEach(row => {
         const nameCell = row.querySelector(".driver-name-cell");
-        const statusBadge = row.querySelector(".badge");
 
-        if (!nameCell || !statusBadge) return; // skip loading/empty-state rows
+        if (!nameCell) return; // skip loading/empty-state rows
 
         const nameText = nameCell.textContent.toLowerCase();
-        const statusText = statusBadge.textContent.trim();
-
         const matchesSearch = !searchValue || nameText.includes(searchValue);
-        const matchesStatus = !statusValue || statusText === statusValue;
 
-        row.style.display = (matchesSearch && matchesStatus) ? "" : "none";
+        row.style.display = matchesSearch ? "" : "none";
     });
 }

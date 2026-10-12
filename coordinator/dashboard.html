@@ -13,7 +13,6 @@
     <link rel="stylesheet" href="../assets/css/admin-dashboard.css">
     <link rel="stylesheet" href="../assets/css/coordinator.css">
 
-    
     <style>
         :root {
             --gyr-orange: #ff7a00;
@@ -35,7 +34,6 @@
             font-family: 'Inter', sans-serif;
         }
 
-       
         .gyr-welcome-banner {
             position: relative;
             overflow: hidden;
@@ -88,7 +86,6 @@
                 font-size: 0.75rem;
             }
 
-       
         .gyr-route {
             position: relative;
             width: 190px;
@@ -168,7 +165,6 @@
             }
         }
 
-     
         .uc-card {
             transition: transform 0.22s ease, box-shadow 0.22s ease;
             opacity: 0;
@@ -209,7 +205,6 @@
             color: var(--gyr-orange);
         }
 
-        
         .uc-badge {
             position: relative;
             display: inline-flex;
@@ -273,28 +268,10 @@
                 content: "Involved";
             }
 
-       
         .table-card {
             animation: gyrFadeUp 0.5s ease-out 0.3s both;
         }
 
-        .dashboard-status-placeholder {
-            text-align: center;
-            padding: 30px 20px;
-            color: var(--gyr-muted);
-        }
-
-            .dashboard-status-placeholder::before {
-                content: "\f5fd";
-                font-family: "Font Awesome 6 Free";
-                font-weight: 900;
-                display: block;
-                font-size: 1.6rem;
-                color: #cbd5e1;
-                margin-bottom: 8px;
-            }
-
-      
         .menu-item {
             transition: background 0.18s ease, padding-left 0.18s ease, color 0.18s ease;
             border-radius: 8px;
@@ -327,6 +304,197 @@
             .top-logout-btn:active, .close-modal-btn:active {
                 transform: scale(0.97);
             }
+
+        /* ===== Operations Overview (replaces Recent Activity) ===== */
+        .ov-head {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-bottom: 16px;
+        }
+
+            .ov-head h3 {
+                margin: 0;
+            }
+
+        .ov-sub {
+            font-size: .8rem;
+            color: var(--text-secondary, #64748b);
+        }
+
+            .ov-sub a {
+                color: var(--accent, #ff7a00);
+                font-weight: 600;
+                text-decoration: none;
+            }
+
+        .ov-stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 12px;
+            margin-bottom: 16px;
+        }
+
+        .ov-stat {
+            border: 1px solid var(--border, #e2e8f0);
+            border-radius: 12px;
+            padding: 12px 14px;
+        }
+
+            .ov-stat .l {
+                font-size: .7rem;
+                font-weight: 600;
+                text-transform: uppercase;
+                letter-spacing: .03em;
+                color: var(--text-secondary, #64748b);
+            }
+
+            .ov-stat .n {
+                font-family: 'Poppins', sans-serif;
+                font-size: 1.5rem;
+                font-weight: 700;
+                margin-top: 4px;
+                color: var(--text-heading, #1e293b);
+            }
+
+            .ov-stat.warn {
+                border-color: #f59e0b66;
+                background: #f59e0b12;
+            }
+
+                .ov-stat.warn .n {
+                    color: #f59e0b;
+                }
+
+        .ov-cols {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 14px;
+            margin-bottom: 16px;
+        }
+
+        .ov-box {
+            border: 1px solid var(--border, #e2e8f0);
+            border-radius: 12px;
+            padding: 14px;
+        }
+
+            .ov-box h4 {
+                margin: 0 0 10px;
+                font-size: .88rem;
+                color: var(--text-heading, #1e293b);
+            }
+
+        .ov-bar {
+            display: flex;
+            height: 11px;
+            border-radius: 99px;
+            overflow: hidden;
+            background: #e2e8f0;
+        }
+
+        .ov-leg {
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+            margin-top: 8px;
+            font-size: .76rem;
+            color: var(--text-secondary, #64748b);
+        }
+
+            .ov-leg i {
+                display: inline-block;
+                width: 8px;
+                height: 8px;
+                border-radius: 50%;
+                margin-right: 5px;
+            }
+
+        .ov-attn {
+            list-style: none;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+            .ov-attn li {
+                display: flex;
+                align-items: center;
+                gap: 10px;
+                font-size: .84rem;
+                padding: 9px 10px;
+                border-radius: 10px;
+                background: #94a3b814;
+                color: var(--text-heading, #1e293b);
+            }
+
+                .ov-attn li span {
+                    flex: 1;
+                }
+
+            .ov-attn a {
+                color: var(--accent, #ff7a00);
+                font-weight: 600;
+                text-decoration: none;
+                font-size: .8rem;
+                white-space: nowrap;
+            }
+
+        .ov-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            flex: none;
+            display: inline-block;
+        }
+
+        .ov-tbl {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: .84rem;
+            color: var(--text-heading, #1e293b);
+        }
+
+            .ov-tbl th {
+                text-align: left;
+                font-size: .7rem;
+                text-transform: uppercase;
+                color: var(--text-secondary, #64748b);
+                padding: 0 10px 8px;
+            }
+
+            .ov-tbl td {
+                padding: 10px;
+                border-top: 1px solid var(--border, #e2e8f0);
+                white-space: nowrap;
+            }
+
+        .ov-chip {
+            font-size: .68rem;
+            font-weight: 700;
+            padding: 3px 9px;
+            border-radius: 99px;
+        }
+
+        .ov-ok {
+            background: #0ea5e922;
+            color: #0ea5e9;
+        }
+
+        .ov-bad {
+            background: #f59e0b22;
+            color: #f59e0b;
+        }
+
+        @media (max-width: 800px) {
+            .ov-cols {
+                grid-template-columns: 1fr;
+            }
+        }
 
         @media (max-width: 720px) {
             .gyr-welcome-banner {
@@ -391,15 +559,12 @@
 
     <div class="main-content">
         <div class="top-navbar">
-
             <div class="search-box-wrapper"></div>
-
             <div class="top-navbar-right" id="topbar-actions"></div>
         </div>
 
         <div class="content-body">
 
-           
             <div class="gyr-welcome-banner">
                 <div class="gyr-welcome-text">
                     <h2 id="gyrGreeting">Welcome back, Coordinator <span class="gyr-wave">👋</span></h2>
@@ -415,7 +580,6 @@
                     <i class="fa-solid fa-shuttle-van gyr-bus"></i>
                 </div>
             </div>
-            
 
             <div class="view-header">
                 <div>
@@ -449,82 +613,55 @@
                 </div>
             </div>
 
+            <!-- ===== OPERATIONS OVERVIEW (replaces Recent Activity) ===== -->
             <div class="table-card" id="glanceCard">
-                <!-- Recent Activity card (replaces previous empty placeholder) -->
-                <div class="table-header" id="recentHeader">
-                    <h3>Recent Activity</h3>
-                    <div style="margin-left:auto; display:flex; align-items:center; gap:12px;">
-                        <a id="viewAllActivity" href="#" style="color:var(--accent); font-weight:600; text-decoration:none; display:none;">View all</a>
-                        <a id="clearActivityLink" href="#" style="color:var(--text-muted); font-weight:600; text-decoration:none;">Clear</a>
+                <div class="ov-head">
+                    <h3>Operations Overview</h3>
+                    <span class="ov-sub"><span id="ovUpdated">Loading…</span> · <a href="#" id="ovRefresh">Refresh</a></span>
+                </div>
+
+                <div class="ov-stats">
+                    <div class="ov-stat"><div class="l">Shuttles available</div><div class="n" id="ovAvail">—</div></div>
+                    <div class="ov-stat"><div class="l">Drivers on shift</div><div class="n" id="ovDrivers">—</div></div>
+                    <div class="ov-stat"><div class="l">Trips today</div><div class="n" id="ovTrips">—</div></div>
+                    <div class="ov-stat"><div class="l">Next departure</div><div class="n" id="ovNext">—</div></div>
+                    <div class="ov-stat" id="ovUnBox"><div class="l">Unassigned trips</div><div class="n" id="ovUn">—</div></div>
+                </div>
+
+                <div class="ov-cols">
+                    <div class="ov-box">
+                        <h4>Fleet readiness</h4>
+                        <div class="ov-bar" id="ovFleetBar"></div>
+                        <div class="ov-leg" id="ovFleetLeg"></div>
+                        <h4 style="margin-top:16px">Today's trips</h4>
+                        <div class="ov-bar" id="ovTripBar"></div>
+                        <div class="ov-leg" id="ovTripLeg"></div>
+                    </div>
+                    <div class="ov-box">
+                        <h4>Needs your attention</h4>
+                        <ul class="ov-attn" id="ovAttn"></ul>
                     </div>
                 </div>
 
-                <div id="recentActivityContainer">
-                    <ul id="recentActivityList" style="list-style:none; margin:12px 0 0 0; padding:0; display:flex; flex-direction:column; gap:12px;">
-                        <!-- items inserted here by activity renderer -->
-                    </ul>
-
-                    <div class="dashboard-status-placeholder" id="recentEmptyState" style="margin-top:8px;">
-                        <p>No recent activity yet. Actions like assigning drivers or scheduling shuttles will appear here.</p>
-                        <p style="margin-top:8px;"><a href="schedule-shuttles.html" class="btn btn-primary" style="background:var(--accent); color:var(--text-on-accent); padding:8px 12px; border-radius:8px; text-decoration:none;">Schedule shuttles</a></p>
+                <div class="ov-box">
+                    <h4>Upcoming departures</h4>
+                    <div style="overflow-x:auto">
+                        <table class="ov-tbl">
+                            <thead><tr><th>Time</th><th>Route</th><th>Shuttle</th><th>Driver</th><th>Status</th></tr></thead>
+                            <tbody id="ovDeps"><tr><td colspan="5">Loading…</td></tr></tbody>
+                        </table>
                     </div>
                 </div>
 
-                <!-- "Today at a glance" summary (shown once data loads) -->
-                <section class="glance" id="glanceSummary" hidden aria-label="Today at a glance">
-                    <header class="glance-head">
-                        <h3>Today at a glance</h3>
+                <!-- Old summary elements kept hidden so coordinator-dashboard.js doesn't error on missing IDs -->
+                <div style="display:none !important" aria-hidden="true">
+                    <section class="glance" id="glanceSummary" hidden>
                         <span class="glance-updated" id="glanceUpdated"></span>
-                    </header>
-
-                    <div class="glance-stats" id="glanceStats">
-                        <div class="glance-stat">
-                            <span class="glance-ic" aria-label="Shuttles available">
-                                <i class="fa-solid fa-van-shuttle" aria-hidden="true"></i>
-                            </span>
-                            <span class="glance-label">Shuttles available</span>
-                            <span class="glance-num" id="glShuttles">—</span>
-                        </div>
-                        <div class="glance-divider" aria-hidden="true"></div>
-                        <div class="glance-stat">
-                            <span class="glance-ic" aria-label="Drivers on shift">
-                                <i class="fa-solid fa-user-clock" aria-hidden="true"></i>
-                            </span>
-                            <span class="glance-label">Drivers on shift</span>
-                            <span class="glance-num" id="glDrivers">—</span>
-                        </div>
-                        <div class="glance-divider" aria-hidden="true"></div>
-                        <div class="glance-stat">
-                            <span class="glance-ic" aria-label="Trips today">
-                                <i class="fa-solid fa-route" aria-hidden="true"></i>
-                            </span>
-                            <span class="glance-label">Trips today</span>
-                            <span class="glance-num" id="glTrips">—</span>
-                        </div>
-                        <div class="glance-divider" aria-hidden="true"></div>
-                        <div class="glance-stat">
-                            <span class="glance-ic" aria-label="Next departure">
-                                <i class="fa-solid fa-clock" aria-hidden="true"></i>
-                            </span>
-                            <span class="glance-label">Next departure</span>
-                            <span class="glance-num" id="glNext">—</span>
-                        </div>
-                        <div class="glance-divider" aria-hidden="true"></div>
-                        <div class="glance-stat">
-                            <span class="glance-ic" aria-label="Unassigned trips">
-                                <i class="fa-solid fa-user-slash" aria-hidden="true"></i>
-                            </span>
-                            <span class="glance-label">Unassigned</span>
-                            <span class="glance-num" id="glUnassigned">—</span>
-                        </div>
-                    </div>
-
-                    <div class="glance-status" id="glanceStatus" aria-live="polite"></div>
-                </section>
-
-                <!-- Error state -->
-                <div class="glance-error" id="glanceError" hidden>
-                    <p>Couldn't load today's summary. <a href="#" id="glanceRetry">Try again</a></p>
+                        <span id="glShuttles"></span><span id="glDrivers"></span><span id="glTrips"></span><span id="glNext"></span><span id="glUnassigned"></span>
+                        <div id="glanceStats"></div>
+                        <div class="glance-status" id="glanceStatus"></div>
+                    </section>
+                    <div class="glance-error" id="glanceError" hidden><a href="#" id="glanceRetry">Try again</a></div>
                 </div>
             </div>
         </div>
@@ -573,6 +710,7 @@
             <button class="close-modal-btn" onclick="closeSettingsModal()">Save & Close</button>
         </div>
     </div>
+
     <div class="profile-modal-overlay" id="supportModal">
         <div class="profile-modal-card">
             <h3><i class="fa-solid fa-circle-question"></i> Dispatch Support Help</h3>
@@ -589,7 +727,6 @@
         </div>
     </div>
 
-   
     <div id="logoutModal" class="modal-backdrop" style="display: none; position: fixed; inset: 0; background: rgba(0, 0, 0, 0.5); backdrop-filter: blur(4px); z-index: 1000; align-items: center; justify-content: center;">
         <div class="modal-card cute-logout-card" style="background: #ffffff; padding: 32px; border-radius: 20px; width: 100%; max-width: 400px; text-align: center; box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04); animation: scaleUp 0.25s ease-out;">
             <div style="width: 64px; height: 64px; border-radius: 50%; background: #fee2e2; color: #ef4444; display: flex; align-items: center; justify-content: center; font-size: 26px; margin: 0 auto 16px auto;">
@@ -611,129 +748,88 @@
 
     <script src="../assets/css/js/coordinator-schedules.js?v=4"></script>
     <script src="../assets/css/js/coordinator-dashboard.js?v=4"></script>
-    <script src="../assets/css/js/activity-log.js"></script>
     <script src="../assets/css/js/admin-dropdown.js?v=4"></script>
     <script src="../assets/css/js/theme.js?v=4"></script>
     <script src="../assets/css/js/topbar.js?v=4"></script>
     <script src="../assets/css/js/animations.js?v=4"></script>
 
     <script>
-        // Render recent activity into the dashboard list
-        (function(){
-            function timeAgo(ts) {
-                const then = new Date(ts);
-                const diff = Date.now() - then.getTime();
-                const mins = Math.floor(diff / 60000);
-                if (mins < 1) return 'Just now';
-                if (mins < 60) return `${mins} min ago`;
-                const hours = Math.floor(mins / 60);
-                if (hours < 24) return `Today, ${then.getHours().toString().padStart(2,'0')}:${then.getMinutes().toString().padStart(2,'0')}`;
-                const yesterday = new Date(); yesterday.setDate(yesterday.getDate()-1);
-                if (then.toDateString() === yesterday.toDateString()) return 'Yesterday';
-                return then.toLocaleDateString();
-            }
-
-            function iconHtml(type) {
-                const map = {
-                    assigned: { color: '#10b981', icon: '<i class="fa-solid fa-user-check"></i>' },
-                    scheduled: { color: 'var(--accent)', icon: '<i class="fa-solid fa-calendar-plus"></i>' },
-                    maintenance: { color: '#ef4444', icon: '<i class="fa-solid fa-wrench"></i>' },
-                    update: { color: '#3b82f6', icon: '<i class="fa-solid fa-info-circle"></i>' },
-                    driver_added: { color: '#10b981', icon: '<i class="fa-solid fa-user-plus"></i>' },
-                    shuttle_added: { color: 'var(--accent)', icon: '<i class="fa-solid fa-bus-simple"></i>' }
-                };
-                return map[type] || map.update;
-            }
-
-            function render() {
-                const list = (window.getRecentActivity && window.getRecentActivity(8)) || [];
-                const ul = document.getElementById('recentActivityList');
-                const empty = document.getElementById('recentEmptyState');
-                const viewAll = document.getElementById('viewAllActivity');
-                const clearLink = document.getElementById('clearActivityLink');
-                if (!ul || !empty) return;
-                ul.innerHTML = '';
-                if (!list || list.length === 0) {
-                    empty.style.display = 'block';
-                    viewAll.style.display = 'none';
-                    return;
-                }
-                empty.style.display = 'none';
-                viewAll.style.display = 'inline-block';
-
-                list.forEach(item => {
-                    const meta = iconHtml(item.type || 'update');
-                    const li = document.createElement('li');
-                    li.style.display = 'flex';
-                    li.style.alignItems = 'center';
-                    li.style.gap = '12px';
-                    li.style.padding = '10px';
-                    li.style.background = 'var(--bg-card)';
-                    li.style.borderRadius = '10px';
-                    li.style.boxShadow = 'var(--shadow-card)';
-
-                    const icWrap = document.createElement('div');
-                    icWrap.style.width = '36px';
-                    icWrap.style.height = '36px';
-                    icWrap.style.borderRadius = '999px';
-                    icWrap.style.display = 'flex';
-                    icWrap.style.alignItems = 'center';
-                    icWrap.style.justifyContent = 'center';
-                    icWrap.style.flex = '0 0 auto';
-                    icWrap.style.background = meta.color + '20';
-                    icWrap.style.color = meta.color;
-                    icWrap.innerHTML = meta.icon;
-
-                    const textWrap = document.createElement('div');
-                    textWrap.style.flex = '1 1 auto';
-                    textWrap.style.minWidth = '0';
-                    textWrap.innerHTML = `<div style="font-weight:600; color:var(--text-heading);">${item.message}</div>`;
-
-                    const timeWrap = document.createElement('div');
-                    timeWrap.style.flex = '0 0 auto';
-                    timeWrap.style.color = 'var(--text-secondary)';
-                    timeWrap.style.fontSize = '13px';
-                    timeWrap.style.whiteSpace = 'nowrap';
-                    timeWrap.style.marginLeft = '12px';
-                    timeWrap.textContent = timeAgo(item.ts);
-
-                    li.appendChild(icWrap);
-                    li.appendChild(textWrap);
-                    li.appendChild(timeWrap);
-                    ul.appendChild(li);
-                });
-            }
-
-            document.addEventListener('DOMContentLoaded', function(){ render(); });
-            // also refresh when storage changes in other tabs
-            window.addEventListener('storage', function(e){ if (e.key === 'gyrActivityLog') render(); });
-            // also refresh when activities are logged in the same tab
-            window.addEventListener('gyrActivityChanged', function(){ render(); });
-
-            // clear link
-            document.addEventListener('click', function(e){
-                if (e.target && e.target.id === 'clearActivityLink') {
-                    e.preventDefault();
-                    if (window.clearActivityLog) {
-                        window.clearActivityLog();
-                        render();
-                    }
-                }
-            });
-
-        })();
+                (function () {
+                    const greetingEl = document.getElementById("gyrGreeting");
+                    if (!greetingEl) return;
+                    const hour = new Date().getHours();
+                    let greeting = "Good evening";
+                    if (hour < 12) greeting = "Good morning";
+                    else if (hour < 18) greeting = "Good afternoon";
+                    greetingEl.innerHTML = `${greeting}, Coordinator <span class="gyr-wave">👋</span>`;
+                })();
     </script>
 
     <script>
-        (function () {
-            const greetingEl = document.getElementById("gyrGreeting");
-            if (!greetingEl) return;
-            const hour = new Date().getHours();
-            let greeting = "Good evening";
-            if (hour < 12) greeting = "Good morning";
-            else if (hour < 18) greeting = "Good afternoon";
-            greetingEl.innerHTML = `${greeting}, Coordinator <span class="gyr-wave">👋</span>`;
-        })();
+                // Operations Overview: loads live data from the coordinator API
+                (function () {
+                    const $ = id => document.getElementById(id);
+                    const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+                    const seg = (w, c) => w > 0 ? `<span style="width:${w}%;background:${c}"></span>` : '';
+                    const leg = a => a.map(x => `<span><i style="background:${x[1]}"></i>${x[0]}</span>`).join('');
+                    const pad = n => String(n).padStart(2, '0');
+
+                    async function load() {
+                        try {
+                            const [a, b] = await Promise.all([fetch('/api/coordinator/summary'), fetch('/api/coordinator/schedules')]);
+                            if (!a.ok || !b.ok) throw new Error('bad response');
+                            const s = await a.json(), all = await b.json();
+
+                            const now = new Date();
+                            const today = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}`;
+                            const hhmm = `${pad(now.getHours())}:${pad(now.getMinutes())}`;
+                            const trips = all.filter(t => t.scheduleDate === today).sort((x, y) => x.departureTime.localeCompare(y.departureTime));
+
+                            $('ovAvail').textContent = `${s.shuttlesAvailable} / ${s.shuttlesTotal}`;
+                            $('ovDrivers').textContent = s.driversOnShift;
+                            $('ovTrips').textContent = s.tripsToday;
+                            $('ovNext').textContent = s.nextDeparture || '—';
+                            $('ovUn').textContent = s.unassignedTrips;
+                            $('ovUnBox').classList.toggle('warn', s.unassignedTrips > 0);
+
+                            const maint = Math.max(0, s.shuttlesTotal - s.shuttlesAvailable), ft = s.shuttlesTotal || 1;
+                            $('ovFleetBar').innerHTML = seg(s.shuttlesAvailable / ft * 100, '#10b981') + seg(maint / ft * 100, '#ef4444');
+                            $('ovFleetLeg').innerHTML = leg([[`${s.shuttlesAvailable} Available`, '#10b981'], [`${maint} In maintenance`, '#ef4444']]);
+
+                            const un = trips.filter(t => !t.driverId).length;
+                            const dep = trips.filter(t => t.driverId && t.departureTime < hhmm).length;
+                            const up = trips.length - un - dep, tt = trips.length || 1;
+                            $('ovTripBar').innerHTML = seg(dep / tt * 100, '#ff7a00') + seg(up / tt * 100, '#0ea5e9') + seg(un / tt * 100, '#f59e0b');
+                            $('ovTripLeg').innerHTML = trips.length
+                                ? leg([[`${dep} Departed`, '#ff7a00'], [`${up} Upcoming`, '#0ea5e9'], [`${un} Need a driver`, '#f59e0b']])
+                                : '<span>No trips scheduled today</span>';
+
+                            const items = [];
+                            if (s.unassignedTrips > 0) items.push(['#f59e0b', `${s.unassignedTrips} trip(s) today have no driver`, 'schedule-shuttles.html', 'Assign →']);
+                            if (maint > 0) items.push(['#ef4444', `${maint} shuttle(s) in maintenance`, 'manage-shuttles.html', 'Review →']);
+                            if (s.tripsToday === 0) items.push(['#0ea5e9', 'Nothing scheduled today', 'schedule-shuttles.html', 'Schedule →']);
+                            $('ovAttn').innerHTML = items.length
+                                ? items.map(i => `<li><span class="ov-dot" style="background:${i[0]};flex:none"></span><span>${esc(i[1])}</span><a href="${i[2]}">${i[3]}</a></li>`).join('')
+                                : '<li><span>All clear – nothing needs attention 🎉</span></li>';
+
+                            const next = trips.filter(t => t.departureTime >= hhmm).slice(0, 5);
+                            $('ovDeps').innerHTML = next.length
+                                ? next.map(t => `<tr><td><b>${esc(t.departureTime)}</b></td><td>${esc(t.routeName)}</td><td>${esc(t.shuttleName)}</td><td>${esc(t.driverName)}</td><td><span class="ov-chip ${t.driverId ? 'ov-ok' : 'ov-bad'}">${t.driverId ? 'Scheduled' : 'Needs driver'}</span></td></tr>`).join('')
+                                : '<tr><td colspan="5">No more departures today.</td></tr>';
+
+                            $('ovUpdated').textContent = 'Updated ' + hhmm;
+                        } catch (e) {
+                            console.error('Overview failed:', e);
+                            $('ovUpdated').textContent = "Couldn't load";
+                        }
+                    }
+
+                    document.addEventListener('DOMContentLoaded', function () {
+                        load();
+                        setInterval(load, 60000);
+                        $('ovRefresh').addEventListener('click', function (e) { e.preventDefault(); load(); });
+                    });
+                })();
     </script>
 </body>
 </html>
