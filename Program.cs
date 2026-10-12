@@ -1290,9 +1290,6 @@ app.MapDelete("/api/coordinator/shuttles/{id:int}", async (int id, IConfiguratio
 
 app.MapGet("/api/coordinator/drivers", async (IConfiguration config) => {
     string connectionString = config.GetConnectionString("DefaultConnection");
-    var contactError = ValidateDriverContact(req.Email, req.Phone);
-    if (contactError != null)
-        return Results.BadRequest(new { success = false, message = contactError });
     var drivers = new List<object>();
 
     try
@@ -1350,10 +1347,6 @@ COALESCE(GROUP_CONCAT(DISTINCT v.registration_number SEPARATOR ', '), '') AS Shu
 
 app.MapGet("/api/coordinator/drivers/{id:int}", async (int id, IConfiguration config) => {
     string connectionString = config.GetConnectionString("DefaultConnection");
-    var contactError = ValidateDriverContact(req.Email, req.Phone);
-    if (contactError != null)
-        return Results.BadRequest(new { success = false, message = contactError });
-
     try
     {
         using var connection = new MySqlConnection(connectionString);
@@ -1447,7 +1440,9 @@ app.MapGet("/api/coordinator/drivers/{id:int}/password", async (int id, IConfigu
 
 app.MapPut("/api/coordinator/drivers/{id:int}", async (int id, DriverUpsertDto req, IConfiguration config) => {
     string connectionString = config.GetConnectionString("DefaultConnection");
-
+        var contactError = ValidateDriverContact(req.Email, req.Phone);
+    if (contactError != null)
+        return Results.BadRequest(new { success = false, message = contactError });
     try
     {
         using var connection = new MySqlConnection(connectionString);
@@ -1482,7 +1477,9 @@ app.MapPut("/api/coordinator/drivers/{id:int}", async (int id, DriverUpsertDto r
 
 app.MapPost("/api/coordinator/drivers", async (DriverUpsertDto req, IConfiguration config) => {
     string connectionString = config.GetConnectionString("DefaultConnection");
-
+        var contactError = ValidateDriverContact(req.Email, req.Phone);
+    if (contactError != null)
+        return Results.BadRequest(new { success = false, message = contactError });
     try
     {
         using var connection = new MySqlConnection(connectionString);
