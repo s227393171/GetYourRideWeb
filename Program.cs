@@ -70,6 +70,9 @@ app.UseStaticFiles(new StaticFileOptions
 
 app.MapGet("/", () => Results.File(Path.Combine(Directory.GetCurrentDirectory(), "Login.html"), "text/html"));
 
+// Quick check of which version of this file is running: open /api/version in the browser.
+app.MapGet("/api/version", () => Results.Ok(new { version = "2026-10-14 manual-email, paths-only approve check" }));
+
 app.MapPost("/api/login", async (LoginRequest request, IConfiguration config) => {
     string connectionString = config.GetConnectionString("DefaultConnection");
 
@@ -724,7 +727,13 @@ static string? ResolveDocumentFile(string? relativePath)
     if (string.IsNullOrWhiteSpace(relativePath)) return null;
     try
     {
-        string cleaned = relativePath.Trim().TrimStart('/', '\\');
+        string raw = relativePath.Trim();
+        // If a full URL was stored, keep only the /uploads/... part
+        if (Uri.TryCreate(raw, UriKind.Absolute, out var parsedUri) &&
+            (parsedUri.Scheme == Uri.UriSchemeHttp || parsedUri.Scheme == Uri.UriSchemeHttps))
+            raw = parsedUri.AbsolutePath;
+        raw = Uri.UnescapeDataString(raw.Split('?')[0]);
+        string cleaned = raw.TrimStart('/', '\\');
         string contentRoot = Path.GetFullPath(Directory.GetCurrentDirectory());
         foreach (var candidate in new[] { contentRoot, Path.Combine(contentRoot, "wwwroot") })
         {
@@ -789,8 +798,8 @@ static async Task<List<string>> GetMissingDocumentsAsync(string connectionString
     }
 
     var missing = new List<string>();
-    if (!DocumentFileExists(licencePath)) missing.Add("Driver's licence");
-    if (!DocumentFileExists(registrationPath)) missing.Add("Vehicle registration document");
+    if (string.IsNullOrWhiteSpace(licencePath)) missing.Add("Driver's licence");
+    if (string.IsNullOrWhiteSpace(registrationPath)) missing.Add("Vehicle registration document");
     return missing;
 }
 
@@ -853,7 +862,7 @@ d.is_verified AS IsVerified
                 ON d.email = u.email
 
             LEFT JOIN driverapplications da 
-     ON d.driver_id = da.driver_id
+     ON da.ApplicationID = (SELECT MAX(x.ApplicationID) FROM driverapplications x WHERE x.driver_id = d.driver_id)
 
 
             LEFT JOIN vehicle v 
