@@ -1,9 +1,10 @@
 ﻿const UNVERIFIED_API = '/api/admin/unverified-drivers';
 const VERIFIED_STUDENTS_API = '/api/admin/verified-student-drivers';
+const REJECTED_API = '/api/admin/rejected-drivers';
 const VERIFY_ACTION_API = '/api/admin/verify-driver';
 const VERIFY_PAGE_SIZE = 8;
 
-let combinedApplications = [];   // pending + approved, pending first
+let combinedApplications = [];   // pending first, then rejected, then approved
 let currentFilter = 'all';       // all | pending | approved | rejected
 let currentSearch = '';
 let currentPage = 0;
@@ -21,6 +22,23 @@ function verifyFormatDate(value) {
     return d.toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
 }
 
+/* Escape text coming from the database before putting it into HTML */
+function esc(value) {
+    return String(value == null ? '' : value)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+}
+
+/* Link to the review page using the real driver id (DRV-10 style), which is what
+   the review page and its reject/approve buttons expect. */
+function reviewLink(driver) {
+    const id = driver.driverId ? `DRV-${driver.driverId}` : driver.studentNumber;
+    return `review-application.html?id=${encodeURIComponent(id)}`;
+}
+
 /* An application counts as "waiting a while" (priority) if pending and the
    join/submission date is more than 7 days ago. Highlighted with an amber bar. */
 function isPriority(driver) {
@@ -32,30 +50,48 @@ function isPriority(driver) {
     return days > 7;
 }
 
-/* ---------- Load both lists, combine, pending first ---------- */
+/* Read a list from the server; a missing or failing list should not break the page */
+async function fetchList(url) {
+    try {
+        const res = await fetch(url);
+        if (!res.ok) return [];
+        const data = await res.json();
+        return Array.isArray(data) ? data : [];
+    } catch (e) {
+        console.warn('Could not load', url, e);
+        return [];
+    }
+}
+
+/* ---------- Load the three lists, combine ---------- */
 async function loadVerificationData() {
     try {
-        const [pendingRes, approvedRes] = await Promise.all([
-            fetch(UNVERIFIED_API),
-            fetch(VERIFIED_STUDENTS_API)
+        const [pending, approved, rejected] = await Promise.all([
+            fetchList(UNVERIFIED_API),
+            fetchList(VERIFIED_STUDENTS_API),
+            fetchList(REJECTED_API)
         ]);
 
-        const pending = pendingRes.ok ? await pendingRes.json() : [];
-        const approved = approvedRes.ok ? await approvedRes.json() : [];
+        const pendingList = pending.map(d => ({ ...d, __status: 'pending' }));
+        const approvedList = approved.map(d => ({ ...d, __status: 'approved' }));
+        const rejectedList = rejected.map(d => ({ ...d, __status: 'rejected' }));
 
-        const pendingList = (Array.isArray(pending) ? pending : []).map(d => ({ ...d, __status: 'pending' }));
-        const approvedList = (Array.isArray(approved) ? approved : []).map(d => ({ ...d, __status: 'approved' }));
-
-        // Pending always on top; within each group, newest first by driverId.
+        // Pending newest first; rejected most recently reviewed first; approved newest first.
         pendingList.sort((a, b) => (b.driverId || 0) - (a.driverId || 0));
         approvedList.sort((a, b) => (b.driverId || 0) - (a.driverId || 0));
-        combinedApplications = [...pendingList, ...approvedList];
+        // Rejected drivers who uploaded new documents first, then most recently reviewed
+        rejectedList.sort((a, b) =>
+            (b.documentsUpdated ? 1 : 0) - (a.documentsUpdated ? 1 : 0) ||
+            String(b.reviewedAt || '').localeCompare(String(a.reviewedAt || '')));
+        combinedApplications = [...pendingList, ...rejectedList, ...approvedList];
 
         // Stat cards
         const pendingStat = document.getElementById('statVerifyPending');
         const approvedStat = document.getElementById('statVerifyApproved');
+        const rejectedStat = document.getElementById('statVerifyRejected');
         if (pendingStat) pendingStat.textContent = pendingList.length;
         if (approvedStat) approvedStat.textContent = approvedList.length;
+        if (rejectedStat) rejectedStat.textContent = rejectedList.length;
 
         currentPage = 0;
         renderVerificationTable();
@@ -137,19 +173,27 @@ function renderVerificationTable() {
     const visible = list.slice(start, end);
 
     visible.forEach(driver => {
-        const isPending = driver.__status === 'pending';
         const priority = isPriority(driver);
+        const link = reviewLink(driver);
 
-        let statusLabel, statusCls, actionHtml;
+        let statusLabel, statusCls, statusStyle = '', actionHtml, extraLine = '';
         if (driver.__status === 'approved') {
             statusLabel = 'Approved'; statusCls = 'approved';
-            actionHtml = `<a href="review-application.html?id=${driver.studentNumber}" class="btn-details">Details</a>`;
+            actionHtml = `<a href="${link}" class="btn-details">Details</a>`;
         } else if (driver.__status === 'rejected') {
             statusLabel = 'Rejected'; statusCls = 'rejected';
-            actionHtml = `<a href="review-application.html?id=${driver.studentNumber}" class="btn-details">Details</a>`;
+            statusStyle = ' style="background:#fee2e2; color:#b91c1c;"';
+            actionHtml = `<a href="${link}" class="btn-review-profile">Re-review</a>`;
+            const when = driver.reviewedAt ? ` (${verifyFormatDate(driver.reviewedAt)})` : '';
+            if (driver.rejectionReason) {
+                extraLine = `<div style="font-size:12px; color:#b91c1c; margin-top:2px; max-width:380px;">Reason: ${esc(driver.rejectionReason)}${when}</div>`;
+            }
+            if (driver.documentsUpdated) {
+                extraLine += `<div style="font-size:12px; color:#047857; font-weight:700; margin-top:2px;">&#9679; Documents updated since rejection. Review again.</div>`;
+            }
         } else {
             statusLabel = 'Pending'; statusCls = 'pending';
-            actionHtml = `<a href="review-application.html?id=${driver.studentNumber}" class="btn-review-profile">Verify Profile</a>`;
+            actionHtml = `<a href="${link}" class="btn-review-profile">Verify Profile</a>`;
         }
 
         const row = document.createElement('tr');
@@ -159,14 +203,15 @@ function renderVerificationTable() {
                 <div class="recent-driver-cell">
                     <div class="recent-avatar">${verifyInitials(driver.fullName)}</div>
                     <div>
-                        <div class="recent-driver-name">${driver.fullName || 'Unknown Driver'}${priority ? ' <span class="priority-flag" title="Waiting over a week">● Needs attention</span>' : ''}</div>
-                        <div class="recent-driver-email">${driver.email || ''}</div>
+                        <div class="recent-driver-name">${esc(driver.fullName) || 'Unknown Driver'}${priority ? ' <span class="priority-flag" title="Waiting over a week">● Needs attention</span>' : ''}</div>
+                        <div class="recent-driver-email">${esc(driver.email)}</div>
+                        ${extraLine}
                     </div>
                 </div>
             </td>
-            <td><span class="verify-student-num">${driver.studentNumber || '&mdash;'}</span></td>
+            <td><span class="verify-student-num">${esc(driver.studentNumber) || '&mdash;'}</span></td>
             <td class="recent-muted">${verifyFormatDate(driver.joinDate)}</td>
-            <td><span class="status-pill ${statusCls}">${statusLabel}</span></td>
+            <td><span class="status-pill ${statusCls}"${statusStyle}>${statusLabel}</span></td>
             <td class="recent-actions">${actionHtml}</td>
         `;
         tableBody.appendChild(row);

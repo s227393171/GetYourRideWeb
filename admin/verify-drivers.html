@@ -93,7 +93,7 @@
             <div class="verify-header-row">
                 <div>
                     <h1 class="overview-title">Driver Verification</h1>
-                    <p class="overview-subtitle">Review and manage student driver applications for the campus shuttle service.</p>
+                    <p class="overview-subtitle">Review and manage student driver applications for the campus carpool service.</p>
                 </div>
                 <div class="filter-tabs" id="verifyFilterTabs">
                     <button type="button" class="filter-tab active" data-filter="all" onclick="setVerifyFilter('all', this)">All</button>
@@ -103,7 +103,7 @@
                 </div>
             </div>
 
-            <div class="dash-stats-grid" style="grid-template-columns: repeat(2, 1fr); max-width: 640px;">
+            <div class="dash-stats-grid" style="grid-template-columns: repeat(3, 1fr); max-width: 960px;">
                 <div class="dash-stat-card">
                     <div class="dash-stat-top">
                         <div class="dash-stat-icon" style="background:#fff7ed; color:#ff7a00;">
@@ -126,11 +126,22 @@
                         <div class="dash-stat-value" id="statVerifyApproved">—</div>
                     </div>
                 </div>
+                <div class="dash-stat-card" style="border-top:3px solid #ef4444;">
+                    <div class="dash-stat-top">
+                        <div class="dash-stat-icon" style="background:#fef2f2; color:#ef4444;">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="15" y1="9" x2="9" y2="15"></line><line x1="9" y1="9" x2="15" y2="15"></line></svg>
+                        </div>
+                    </div>
+                    <div>
+                        <div class="dash-stat-label">Rejected</div>
+                        <div class="dash-stat-value" id="statVerifyRejected">—</div>
+                    </div>
+                </div>
             </div>
 
             <div class="verify-section-head">
                 <h2>Driver Applications</h2>
-                <p>Pending applications appear first. Review credentials and activate valid driver roles.</p>
+                <p>Pending applications are listed first. Review application and approve qualified drivers.</p>
             </div>
 
             <div class="table-card">

@@ -238,7 +238,7 @@ function setScheduleModalMode(mode) {
 async function populateFormDropdowns() {
     let routesLoaded = false, shuttlesLoaded = false, driversLoaded = false;
 
-    
+
     try {
         const res = await fetch("/api/coordinator/routes");
         if (res.ok) {
@@ -261,7 +261,7 @@ async function populateFormDropdowns() {
         showToast("Network error loading routes.", "error");
     }
 
-    
+
     try {
         const res = await fetch("/api/coordinator/shuttles");
         if (res.ok) {
@@ -286,7 +286,7 @@ async function populateFormDropdowns() {
         showToast("Network error loading shuttles.", "error");
     }
 
-    
+
     try {
         const res = await fetch("/api/coordinator/drivers");
         if (res.ok) {
@@ -315,7 +315,7 @@ async function populateFormDropdowns() {
         showToast("Network error loading drivers.", "error");
     }
 
-    
+
     if (routesLoaded && shuttlesLoaded && driversLoaded) {
         showToast("Form options loaded successfully.", "success");
     }
@@ -331,7 +331,7 @@ window.handleScheduleFormSubmit = async function (e) {
     const rawDate = document.getElementById("txtScheduleDate").value;
     const rawTime = document.getElementById("txtDepartureTime").value;
 
-    
+
     if (!routeSelect.value) {
         showPopup("Please select a <strong>route corridor</strong> before saving.", "warning");
         return;
@@ -361,7 +361,7 @@ window.handleScheduleFormSubmit = async function (e) {
         return;
     }
 
-   
+
     const routeParts = routeSelect.value.split("->").map(s => s.trim());
     const fromStop = routeParts[0] || routeSelect.value;
     const toStop = routeParts[1] || "";
@@ -488,8 +488,8 @@ async function loadSchedulesTable() {
                     <td style="padding:14px;"><span style="color:#0284c7; font-weight:500;"><i class="fa-solid fa-bus" style="margin-right:6px;"></i>${s.shuttleName || 'Unassigned'}</span></td>
                     <td style="padding:14px; color:#475569;"><i class="fa-solid fa-user-tie" style="margin-right:6px;"></i>${s.driverName || 'Unassigned'}</td>
                     <td style="padding:14px; text-align:center;">
-                        <button type="button" class="action-icon-btn" title="Edit schedule" onclick="editSchedule(window.__loadedSchedules[${index}])"><i class="fa-solid fa-pen" style="color:#f97316;"></i></button>
-                        <button type="button" class="action-icon-btn" title="Delete schedule" onclick="deleteSchedule('${scheduleId}', '${routeDisplay.replace(/'/g, "\\'")}')"><i class="fa-solid fa-trash" style="color:#ef4444;"></i></button>
+                        <button type="button" class="action-icon-btn" title="Edit schedule" onclick="editSchedule(window.__loadedSchedules[${index}])"><i class="fa-solid fa-pen" style="color:#64748b;"></i></button>
+                        <button type="button" class="action-icon-btn" title="Delete schedule" onclick="deleteSchedule('${scheduleId}', '${routeDisplay.replace(/'/g, "\\'")}')"><i class="fa-solid fa-trash" style="color:#64748b;"></i></button>
                     </td>
                 </tr>`;
         });

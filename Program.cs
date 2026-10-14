@@ -26,6 +26,8 @@ static string? ValidateDriverContact(string? email, string? phone)
 
 var builder = WebApplication.CreateBuilder(args);
 
+// Rejection emails are NOT sent by the server. After rejecting, the admin portal opens the
+// admin's own Gmail / Outlook with the message pre-filled and the admin sends it manually.
 
 builder.Services.AddCors(options => {
     options.AddDefaultPolicy(policy =>
@@ -269,6 +271,7 @@ app.MapGet("/api/admin/unverified-drivers", async (IConfiguration config) => {
         using var connection = new MySqlConnection(connectionString);
         await connection.OpenAsync();
 
+        // Pending = not verified AND the latest application has not been rejected.
         string query = @"
             SELECT d.driver_id, 
                    CONCAT(d.first_name, ' ', d.last_name) AS FullName, 
@@ -278,7 +281,10 @@ app.MapGet("/api/admin/unverified-drivers", async (IConfiguration config) => {
                    COALESCE(NULLIF(s.student_number, 'undefined'), CONCAT('DRV-', d.driver_id)) AS display_id
             FROM driver d
             LEFT JOIN student s ON d.email = s.email
-            WHERE d.is_verified = 0;";
+            WHERE d.is_verified = 0
+              AND COALESCE((SELECT x.application_status FROM driverapplications x
+                            WHERE x.driver_id = d.driver_id
+                            ORDER BY x.ApplicationID DESC LIMIT 1), 'Pending') <> 'Rejected';";
 
         using var command = new MySqlCommand(query, connection);
         using var reader = await command.ExecuteReaderAsync();
@@ -305,6 +311,78 @@ app.MapGet("/api/admin/unverified-drivers", async (IConfiguration config) => {
     }
 
     return Results.Ok(unverified);
+});
+
+// Admin: drivers whose most recent application was rejected (feeds the "Rejected" tab and card).
+app.MapGet("/api/admin/rejected-drivers", async (IConfiguration config) => {
+    string connectionString = config.GetConnectionString("DefaultConnection");
+    var rejected = new List<object>();
+
+    try
+    {
+        using var connection = new MySqlConnection(connectionString);
+        await connection.OpenAsync();
+
+        string query = @"
+            SELECT d.driver_id,
+                   CONCAT(d.first_name, ' ', d.last_name) AS FullName,
+                   d.email,
+                   d.phone,
+                   d.join_date,
+                   COALESCE(NULLIF(s.student_number, 'undefined'), CONCAT('DRV-', d.driver_id)) AS display_id,
+                   da.rejection_reason,
+                   da.reviewed_at,
+                   da.driver_notified,
+                   da.license_image_path,
+                   da.registration_file_path
+            FROM driver d
+            JOIN driverapplications da ON da.driver_id = d.driver_id
+            LEFT JOIN student s ON d.email = s.email
+            WHERE d.is_verified = 0
+              AND da.application_status = 'Rejected'
+              AND da.ApplicationID = (SELECT MAX(x.ApplicationID)
+                                      FROM driverapplications x
+                                      WHERE x.driver_id = d.driver_id)
+            ORDER BY da.reviewed_at DESC;";
+
+        using var command = new MySqlCommand(query, connection);
+        using var reader = await command.ExecuteReaderAsync();
+
+        while (await reader.ReadAsync())
+        {
+            // Did the driver upload (or replace) a document after the admin rejected them?
+            DateTime? reviewedAtValue = reader["reviewed_at"] != DBNull.Value ? Convert.ToDateTime(reader["reviewed_at"]) : (DateTime?)null;
+            string? licencePath = reader["license_image_path"] != DBNull.Value ? reader["license_image_path"].ToString() : null;
+            string? registrationPath = reader["registration_file_path"] != DBNull.Value ? reader["registration_file_path"].ToString() : null;
+            bool documentsUpdated = reviewedAtValue.HasValue &&
+                (DocumentChangedSince(licencePath, reviewedAtValue.Value) || DocumentChangedSince(registrationPath, reviewedAtValue.Value));
+
+            rejected.Add(new
+            {
+                driverId = Convert.ToInt32(reader["driver_id"]),
+                fullName = SafeStr(reader["FullName"]),
+                email = SafeStr(reader["email"]),
+                studentNumber = SafeStr(reader["display_id"]),
+                phone = reader["phone"] != DBNull.Value ? SafeStr(reader["phone"]) : "N/A",
+                joinDate = reader["join_date"] != DBNull.Value
+                    ? Convert.ToDateTime(reader["join_date"]).ToString("yyyy-MM-dd")
+                    : null,
+                rejectionReason = reader["rejection_reason"] != DBNull.Value ? SafeStr(reader["rejection_reason"]) : "",
+                driverNotified = reader["driver_notified"] != DBNull.Value && Convert.ToInt32(reader["driver_notified"]) == 1,
+                documentsUpdated,
+                reviewedAt = reader["reviewed_at"] != DBNull.Value
+                    ? Convert.ToDateTime(reader["reviewed_at"]).ToString("yyyy-MM-dd")
+                    : null
+            });
+        }
+    }
+    catch (Exception ex)
+    {
+        Console.WriteLine($"[API Error] Rejected drivers lookup failed: {ex.Message}");
+        return Results.Json(new { error = ex.Message }, statusCode: 500);
+    }
+
+    return Results.Ok(rejected);
 });
 
 // Admin: List student drivers that have been verified (is_verified = 1 and role = STUDENT_DRIVER)
@@ -630,13 +708,77 @@ app.MapPost("/api/admin/verify-driver", async (VerifyActionRequest req, IConfigu
 });
 
 
-// Single source of truth: driver.is_verified determines the status.
-// 0 = pending (waiting for approval), 1 = approved. That's it.
-// The driverapplications.application_status field is NOT used for this decision.
+// is_verified = 1 -> Approved.
+// Otherwise Rejected if the latest application was rejected, else Pending.
 static string DeriveStatus(int isVerified, string rawStatus)
 {
     if (isVerified == 1) return "Approved";
+    if (string.Equals(rawStatus, "Rejected", StringComparison.OrdinalIgnoreCase)) return "Rejected";
     return "Pending";
+}
+
+// A document counts as present only if it has a path AND the file exists inside the app folder.
+static bool DocumentFileExists(string? relativePath)
+{
+    if (string.IsNullOrWhiteSpace(relativePath)) return false;
+    try
+    {
+        string root = Path.GetFullPath(Directory.GetCurrentDirectory());
+        string full = Path.GetFullPath(Path.Combine(root, relativePath.TrimStart('/', '\\')));
+        return full.StartsWith(root, StringComparison.OrdinalIgnoreCase) && File.Exists(full);
+    }
+    catch
+    {
+        return false;
+    }
+}
+
+// True if the document file exists and was saved or replaced after the given time
+// (used to flag rejected drivers who have uploaded new documents).
+static bool DocumentChangedSince(string? relativePath, DateTime since)
+{
+    if (string.IsNullOrWhiteSpace(relativePath)) return false;
+    try
+    {
+        string root = Path.GetFullPath(Directory.GetCurrentDirectory());
+        string full = Path.GetFullPath(Path.Combine(root, relativePath.TrimStart('/', '\\')));
+        if (!full.StartsWith(root, StringComparison.OrdinalIgnoreCase) || !File.Exists(full)) return false;
+        return File.GetLastWriteTime(full) > since;
+    }
+    catch
+    {
+        return false;
+    }
+}
+
+// Names of the required documents this driver's latest application is missing.
+static async Task<List<string>> GetMissingDocumentsAsync(string connectionString, int driverId)
+{
+    string? licencePath = null;
+    string? registrationPath = null;
+
+    using var connection = new MySqlConnection(connectionString);
+    await connection.OpenAsync();
+
+    using var cmd = new MySqlCommand(@"
+        SELECT license_image_path, registration_file_path
+        FROM driverapplications
+        WHERE driver_id = @Id
+        ORDER BY ApplicationID DESC
+        LIMIT 1;", connection);
+    cmd.Parameters.AddWithValue("@Id", driverId);
+
+    using var reader = await cmd.ExecuteReaderAsync();
+    if (await reader.ReadAsync())
+    {
+        licencePath = reader["license_image_path"] != DBNull.Value ? reader["license_image_path"].ToString() : null;
+        registrationPath = reader["registration_file_path"] != DBNull.Value ? reader["registration_file_path"].ToString() : null;
+    }
+
+    var missing = new List<string>();
+    if (!DocumentFileExists(licencePath)) missing.Add("Driver's licence");
+    if (!DocumentFileExists(registrationPath)) missing.Add("Vehicle registration document");
+    return missing;
 }
 
 app.MapGet("/api/admin/drivers/{driverId:int}", async (int driverId, IConfiguration config) =>
@@ -754,7 +896,7 @@ d.is_verified AS IsVerified
 
                 // Normalized, single source of truth so the detail page agrees
                 // with the list page (which keys off driver.is_verified):
-                //   is_verified = 1 -> approved, otherwise pending
+                //   is_verified = 1 -> approved, rejected application -> rejected, otherwise pending
                 applicationStatus = DeriveStatus(GetSafeInt("IsVerified"), GetSafeString("ApplicationStatus")),
                 isVerified = GetSafeInt("IsVerified") == 1,
                 totalTrips = reader["TotalTrips"] != DBNull.Value ? Convert.ToInt32(reader["TotalTrips"]) : 0,
@@ -786,6 +928,10 @@ d.is_verified AS IsVerified
     }
 });
 
+// Approve or reject a driver application.
+//  - Approved: driver.is_verified = 1, application_status = 'Approved'
+//  - Rejected: driver.is_verified = 0, application_status = 'Rejected', the reason is saved
+//              and the driver is emailed. The driver leaves the pending list.
 app.MapPost("/api/admin/drivers/{driverId:int}/status", async (int driverId, DynamicStatusUpdate req, IConfiguration config) =>
 {
     if (req == null || string.IsNullOrWhiteSpace(req.Status))
@@ -793,61 +939,117 @@ app.MapPost("/api/admin/drivers/{driverId:int}/status", async (int driverId, Dyn
         return Results.BadRequest(new { message = "Invalid request status supplied." });
     }
 
+    bool isApprove = req.Status.Equals("Approved", StringComparison.OrdinalIgnoreCase) ||
+                     req.Status.Equals("Approve", StringComparison.OrdinalIgnoreCase);
+    bool isReject = req.Status.Equals("Rejected", StringComparison.OrdinalIgnoreCase) ||
+                    req.Status.Equals("Reject", StringComparison.OrdinalIgnoreCase);
+
+    string? reason = req.Reason?.Trim();
+    if (isReject && string.IsNullOrWhiteSpace(reason))
+    {
+        return Results.BadRequest(new { success = false, message = "A reason is required to reject an application." });
+    }
+
+    int isVerifiedValue = isApprove ? 1 : 0;
+    string storedStatus = isApprove ? "Approved" : isReject ? "Rejected" : "Pending";
+    string reviewer = string.IsNullOrWhiteSpace(req.ReviewedBy) ? "admin" : req.ReviewedBy.Trim();
+
     string connectionString = config.GetConnectionString("DefaultConnection");
 
     try
     {
         using var connection = new MySqlConnection(connectionString);
         await connection.OpenAsync();
+        using var transaction = await connection.BeginTransactionAsync();
 
-        bool isApprove = req.Status.Equals("Approved", StringComparison.OrdinalIgnoreCase) ||
-                         req.Status.Equals("Approve", StringComparison.OrdinalIgnoreCase);
-
-        // Model: is_verified is the source of truth. Approve -> 1 (verified).
-        // Reject -> keep is_verified = 0 (driver stays pending, may re-apply).
-        int isVerifiedValue = isApprove ? 1 : 0;
-        // Keep application_status consistent with is_verified (no "rejected" state).
-        string storedStatus = isApprove ? "Approved" : "Pending";
-
-        string updateQuery = @"
-          UPDATE driver dr
-           LEFT JOIN users u ON dr.email = u.email
-                 LEFT JOIN driverapplications  da ON dr.driver_id = da.driver_id
-                 SET da.application_status = @Status, 
-                 dr.is_verified = @IsVerified
-                 WHERE dr.driver_id = @DriverId;";
-
-
-        using var command = new MySqlCommand(updateQuery, connection);
-        command.Parameters.AddWithValue("@Status", storedStatus);
-        command.Parameters.AddWithValue("@IsVerified", isVerifiedValue);
-        command.Parameters.AddWithValue("@DriverId", driverId);
-
-        int rowsAffected = await command.ExecuteNonQueryAsync();
-
-        // Best-effort: store the rejection reason if that column exists.
-        // Wrapped so a missing column never breaks the status change.
-        if (!string.IsNullOrWhiteSpace(req.Reason))
+        // Approving needs both documents. (The review page greys out Approve too, but the
+        // server enforces it so the rule can't be skipped by calling the API directly.)
+        if (isApprove)
         {
-            try
+            var missingDocs = await GetMissingDocumentsAsync(connectionString, driverId);
+            if (missingDocs.Count > 0)
             {
-                string reasonQuery = @"UPDATE driverapplications
-                                       SET rejection_reason = @Reason
-                                       WHERE driver_id = @DriverId;";
-                using var reasonCmd = new MySqlCommand(reasonQuery, connection);
-                reasonCmd.Parameters.AddWithValue("@Reason", req.Reason);
-                reasonCmd.Parameters.AddWithValue("@DriverId", driverId);
-                await reasonCmd.ExecuteNonQueryAsync();
-            }
-            catch (Exception rex)
-            {
-                Console.WriteLine($"[Info] Could not store rejection reason (column may not exist): {rex.Message}");
+                await transaction.RollbackAsync();
+                return Results.BadRequest(new
+                {
+                    success = false,
+                    message = "Cannot approve: " + string.Join(" and ", missingDocs) +
+                              (missingDocs.Count == 1 ? " is" : " are") +
+                              " missing. Reject the application so the driver can re-upload.",
+                    missingDocuments = missingDocs
+                });
             }
         }
 
-        return rowsAffected > 0
-            ? Results.Ok(new { success = true, message = $"Status updated to {req.Status}" })
-            : Results.NotFound(new { success = false, message = "Driver ID not found." });
+        int driverRows;
+        using (var drvCmd = new MySqlCommand("UPDATE driver SET is_verified = @IsVerified WHERE driver_id = @DriverId;", connection, (MySqlTransaction)transaction))
+        {
+            drvCmd.Parameters.AddWithValue("@IsVerified", isVerifiedValue);
+            drvCmd.Parameters.AddWithValue("@DriverId", driverId);
+            driverRows = await drvCmd.ExecuteNonQueryAsync();
+        }
+
+        if (driverRows == 0)
+        {
+            await transaction.RollbackAsync();
+            return Results.NotFound(new { success = false, message = "Driver ID not found." });
+        }
+
+        // Update this driver's most recent application
+        int appRows;
+        using (var appCmd = new MySqlCommand(@"
+            UPDATE driverapplications
+            SET application_status = @Status,
+                rejection_reason   = @Reason,
+                reviewed_by        = @Reviewer,
+                reviewed_at        = NOW(),
+                driver_notified    = 0
+            WHERE driver_id = @DriverId
+            ORDER BY ApplicationID DESC
+            LIMIT 1;", connection, (MySqlTransaction)transaction))
+        {
+            appCmd.Parameters.AddWithValue("@Status", storedStatus);
+            appCmd.Parameters.AddWithValue("@Reason", isReject ? (object)reason! : DBNull.Value);
+            appCmd.Parameters.AddWithValue("@Reviewer", reviewer);
+            appCmd.Parameters.AddWithValue("@DriverId", driverId);
+            appRows = await appCmd.ExecuteNonQueryAsync();
+        }
+
+        if (isReject && appRows == 0)
+        {
+            await transaction.RollbackAsync();
+            return Results.BadRequest(new { success = false, message = "No application on file for this driver, so there is nothing to reject." });
+        }
+
+        await transaction.CommitAsync();
+
+        if (isReject)
+        {
+            // The rejection is saved. Hand back who to email so the admin portal can open
+            // a pre-filled Gmail / Outlook message for the admin to send manually.
+            string? driverEmail = null;
+            string? driverFirstName = null;
+            using (var whoCmd = new MySqlCommand("SELECT first_name, email FROM driver WHERE driver_id = @Id LIMIT 1;", connection))
+            {
+                whoCmd.Parameters.AddWithValue("@Id", driverId);
+                using var whoReader = await whoCmd.ExecuteReaderAsync();
+                if (await whoReader.ReadAsync())
+                {
+                    driverFirstName = whoReader["first_name"] != DBNull.Value ? whoReader["first_name"].ToString() : null;
+                    driverEmail = whoReader["email"] != DBNull.Value ? whoReader["email"].ToString() : null;
+                }
+            }
+
+            return Results.Ok(new
+            {
+                success = true,
+                message = "Application rejected.",
+                driverEmail,
+                driverFirstName
+            });
+        }
+
+        return Results.Ok(new { success = true, message = $"Status updated to {req.Status}" });
     }
     catch (Exception ex)
     {
@@ -856,6 +1058,36 @@ app.MapPost("/api/admin/drivers/{driverId:int}/status", async (int driverId, Dyn
     }
 });
 
+
+// The admin clicked "I've sent it" after emailing a rejected driver.
+app.MapPost("/api/admin/drivers/{driverId:int}/mark-notified", async (int driverId, IConfiguration config) =>
+{
+    string connectionString = config.GetConnectionString("DefaultConnection");
+
+    try
+    {
+        using var connection = new MySqlConnection(connectionString);
+        await connection.OpenAsync();
+
+        string query = @"
+            UPDATE driverapplications
+            SET driver_notified = 1
+            WHERE driver_id = @DriverId AND application_status = 'Rejected'
+            ORDER BY ApplicationID DESC
+            LIMIT 1;";
+
+        using var command = new MySqlCommand(query, connection);
+        command.Parameters.AddWithValue("@DriverId", driverId);
+        await command.ExecuteNonQueryAsync();
+
+        return Results.Ok(new { success = true });
+    }
+    catch (Exception ex)
+    {
+        Console.WriteLine($"[API Error] Mark notified failed: {ex.Message}");
+        return Results.Json(new { success = false, message = ex.Message }, statusCode: 500);
+    }
+});
 
 app.MapGet("/api/admin/drivers/{driverId:long}/trips", async (long driverId, IConfiguration config) => {
     string connectionString = config.GetConnectionString("DefaultConnection");
@@ -1440,7 +1672,7 @@ app.MapGet("/api/coordinator/drivers/{id:int}/password", async (int id, IConfigu
 
 app.MapPut("/api/coordinator/drivers/{id:int}", async (int id, DriverUpsertDto req, IConfiguration config) => {
     string connectionString = config.GetConnectionString("DefaultConnection");
-        var contactError = ValidateDriverContact(req.Email, req.Phone);
+    var contactError = ValidateDriverContact(req.Email, req.Phone);
     if (contactError != null)
         return Results.BadRequest(new { success = false, message = contactError });
     try
@@ -1477,7 +1709,7 @@ app.MapPut("/api/coordinator/drivers/{id:int}", async (int id, DriverUpsertDto r
 
 app.MapPost("/api/coordinator/drivers", async (DriverUpsertDto req, IConfiguration config) => {
     string connectionString = config.GetConnectionString("DefaultConnection");
-        var contactError = ValidateDriverContact(req.Email, req.Phone);
+    var contactError = ValidateDriverContact(req.Email, req.Phone);
     if (contactError != null)
         return Results.BadRequest(new { success = false, message = contactError });
     try
@@ -2354,9 +2586,14 @@ app.MapGet("/api/admin/dashboard/summary", async (IConfiguration config) => {
         using var connection = new MySqlConnection(connectionString);
         await connection.OpenAsync();
 
+        // Pending = not verified AND the latest application has not been rejected.
         string query = @"
             SELECT
-                (SELECT COUNT(*) FROM driver WHERE is_verified = 0) AS PendingApplications,
+                (SELECT COUNT(*) FROM driver d
+                    WHERE d.is_verified = 0
+                      AND COALESCE((SELECT x.application_status FROM driverapplications x
+                                    WHERE x.driver_id = d.driver_id
+                                    ORDER BY x.ApplicationID DESC LIMIT 1), 'Pending') <> 'Rejected') AS PendingApplications,
                 (SELECT COUNT(*) FROM driver WHERE is_verified = 1) AS ActiveDrivers,
                 (SELECT COALESCE(AVG(rating), 0.0) FROM trip_review) AS AverageRating,
                 (SELECT COUNT(*) FROM trip WHERE DATE(departure_time) = CURDATE()) AS TripsToday;";
@@ -2433,6 +2670,95 @@ app.MapPost("/api/auth/forgot-password", async (ForgotPasswordRequest req, IConf
 });
 
 
+// ---------------------------------------------------------------------------
+// MOBILE APP: DRIVER APPLICATION STATUS
+// ---------------------------------------------------------------------------
+
+// Where does this driver's application stand? (Pending | Approved | Rejected)
+app.MapGet("/api/driver/application-status", async (string email, IConfiguration config) =>
+{
+    if (string.IsNullOrWhiteSpace(email))
+        return Results.BadRequest(new { message = "Email is required." });
+
+    string connectionString = config.GetConnectionString("DefaultConnection");
+
+    try
+    {
+        using var connection = new MySqlConnection(connectionString);
+        await connection.OpenAsync();
+
+        string query = @"
+            SELECT d.is_verified, da.application_status, da.rejection_reason, da.reviewed_at
+            FROM driver d
+            LEFT JOIN driverapplications da ON da.driver_id = d.driver_id
+            WHERE d.email = @Email
+            ORDER BY da.ApplicationID DESC
+            LIMIT 1;";
+
+        using var command = new MySqlCommand(query, connection);
+        command.Parameters.AddWithValue("@Email", email);
+        using var reader = await command.ExecuteReaderAsync();
+
+        if (!await reader.ReadAsync())
+            return Results.NotFound(new { status = "None" });
+
+        int isVerified = reader["is_verified"] != DBNull.Value ? Convert.ToInt32(reader["is_verified"]) : 0;
+        string status = DeriveStatus(isVerified, SafeStr(reader["application_status"]));
+
+        return Results.Ok(new
+        {
+            status,
+            reason = status == "Rejected" ? SafeStr(reader["rejection_reason"]) : null,
+            reviewedAt = reader["reviewed_at"] != DBNull.Value ? Convert.ToDateTime(reader["reviewed_at"]) : (DateTime?)null,
+            canReapply = status == "Rejected"
+        });
+    }
+    catch (Exception ex)
+    {
+        Console.WriteLine($"[API Error] Application status lookup failed: {ex.Message}");
+        return Results.Json(new { error = ex.Message }, statusCode: 500);
+    }
+});
+
+// The app calls this after the driver fixes the problem and uploads new documents.
+// It puts the application back in the admin's Pending list.
+app.MapPost("/api/driver/application/resubmit", async (ResubmitRequest req, IConfiguration config) =>
+{
+    if (req == null || string.IsNullOrWhiteSpace(req.Email))
+        return Results.BadRequest(new { success = false, message = "Email is required." });
+
+    string connectionString = config.GetConnectionString("DefaultConnection");
+
+    try
+    {
+        using var connection = new MySqlConnection(connectionString);
+        await connection.OpenAsync();
+
+        string query = @"
+            UPDATE driverapplications da
+            JOIN driver d ON da.driver_id = d.driver_id
+            SET da.application_status = 'Pending',
+                da.rejection_reason = NULL,
+                da.reviewed_at = NULL,
+                da.driver_notified = 0
+            WHERE d.email = @Email AND da.application_status = 'Rejected';";
+
+        using var command = new MySqlCommand(query, connection);
+        command.Parameters.AddWithValue("@Email", req.Email);
+        int rows = await command.ExecuteNonQueryAsync();
+
+        return rows > 0
+            ? Results.Ok(new { success = true, message = "Application resubmitted for review." })
+            : Results.BadRequest(new { success = false, message = "There is no rejected application to resubmit." });
+    }
+    catch (Exception ex)
+    {
+        Console.WriteLine($"[API Error] Resubmit application failed: {ex.Message}");
+        return Results.Json(new { success = false, message = ex.Message }, statusCode: 500);
+    }
+});
+
+
 // One-time database fix at startup: make vehicle.driver_id nullable if it is still NOT NULL.
 // (Does nothing if it is already optional.)
 try
@@ -2484,7 +2810,8 @@ app.Run();
 
 public record LoginRequest(string Email, string Password);
 public record VerifyActionRequest(int DriverId);
-public record DynamicStatusUpdate(string Status, string? Reason = null);
+public record DynamicStatusUpdate(string Status, string? Reason = null, string? ReviewedBy = null);
+public record ResubmitRequest(string Email);
 public record ShuttleDto(int? DriverId, string ShuttleName, string LicensePlate, int Capacity, string? Status, int? VehicleYear, string? Colour);
 public record DriverUpsertDto(string FullName, string Email, string? Phone);
 public record ForgotPasswordRequest(string Email);
