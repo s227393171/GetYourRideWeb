@@ -114,7 +114,7 @@
                     body: JSON.stringify({
                         status: 'Rejected',
                         reason: fullReason,
-                        reviewedBy: localStorage.getItem('userEmail') || 'admin'
+                        reviewedBy: localStorage.getItem('userEmail') || 'admin@getyourride.com'
                     })
                 });
                 const data = await res.json().catch(() => ({}));
