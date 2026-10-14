@@ -368,6 +368,16 @@
                     color: #f59e0b;
                 }
 
+            /* Red alert style, used when trips are booked on a shuttle that is in maintenance */
+            .ov-stat.alert {
+                border-color: #ef444466;
+                background: #ef444412;
+            }
+
+                .ov-stat.alert .n {
+                    color: #ef4444;
+                }
+
         .ov-cols {
             display: grid;
             grid-template-columns: 1fr 1fr;
@@ -488,6 +498,11 @@
         .ov-bad {
             background: #f59e0b22;
             color: #f59e0b;
+        }
+
+        .ov-red {
+            background: #ef444422;
+            color: #ef4444;
         }
 
         @media (max-width: 800px) {
@@ -625,7 +640,7 @@
                     <div class="ov-stat"><div class="l">Drivers on shift</div><div class="n" id="ovDrivers">—</div></div>
                     <div class="ov-stat"><div class="l">Trips today</div><div class="n" id="ovTrips">—</div></div>
                     <div class="ov-stat"><div class="l">Next departure</div><div class="n" id="ovNext">—</div></div>
-                    <div class="ov-stat" id="ovUnBox"><div class="l">Unassigned trips</div><div class="n" id="ovUn">—</div></div>
+                    <div class="ov-stat" id="ovMaintBox"><div class="l">Trips on shuttles in maintenance</div><div class="n" id="ovMaint">—</div></div>
                 </div>
 
                 <div class="ov-cols">
@@ -754,82 +769,106 @@
     <script src="../assets/css/js/animations.js?v=4"></script>
 
     <script>
-                (function () {
-                    const greetingEl = document.getElementById("gyrGreeting");
-                    if (!greetingEl) return;
-                    const hour = new Date().getHours();
-                    let greeting = "Good evening";
-                    if (hour < 12) greeting = "Good morning";
-                    else if (hour < 18) greeting = "Good afternoon";
-                    greetingEl.innerHTML = `${greeting}, Coordinator <span class="gyr-wave">👋</span>`;
-                })();
+                        (function () {
+                            const greetingEl = document.getElementById("gyrGreeting");
+                            if (!greetingEl) return;
+                            const hour = new Date().getHours();
+                            let greeting = "Good evening";
+                            if (hour < 12) greeting = "Good morning";
+                            else if (hour < 18) greeting = "Good afternoon";
+                            greetingEl.innerHTML = `${greeting}, Coordinator <span class="gyr-wave">👋</span>`;
+                        })();
     </script>
 
     <script>
-                // Operations Overview: loads live data from the coordinator API
-                (function () {
-                    const $ = id => document.getElementById(id);
-                    const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-                    const seg = (w, c) => w > 0 ? `<span style="width:${w}%;background:${c}"></span>` : '';
-                    const leg = a => a.map(x => `<span><i style="background:${x[1]}"></i>${x[0]}</span>`).join('');
-                    const pad = n => String(n).padStart(2, '0');
+                        // Operations Overview: loads live data from the coordinator API
+                        (function () {
+                            const $ = id => document.getElementById(id);
+                            const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+                            const seg = (w, c) => w > 0 ? `<span style="width:${w}%;background:${c}"></span>` : '';
+                            const leg = a => a.map(x => `<span><i style="background:${x[1]}"></i>${x[0]}</span>`).join('');
+                            const pad = n => String(n).padStart(2, '0');
 
-                    async function load() {
-                        try {
-                            const [a, b] = await Promise.all([fetch('/api/coordinator/summary'), fetch('/api/coordinator/schedules')]);
-                            if (!a.ok || !b.ok) throw new Error('bad response');
-                            const s = await a.json(), all = await b.json();
+                            async function load() {
+                                try {
+                                    const [a, b] = await Promise.all([fetch('/api/coordinator/summary'), fetch('/api/coordinator/schedules')]);
+                                    if (!a.ok || !b.ok) throw new Error('bad response');
+                                    const s = await a.json(), all = await b.json();
 
-                            const now = new Date();
-                            const today = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}`;
-                            const hhmm = `${pad(now.getHours())}:${pad(now.getMinutes())}`;
-                            const trips = all.filter(t => t.scheduleDate === today).sort((x, y) => x.departureTime.localeCompare(y.departureTime));
+                                    const now = new Date();
+                                    const today = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}`;
+                                    const hhmm = `${pad(now.getHours())}:${pad(now.getMinutes())}`;
+                                    const trips = all.filter(t => t.scheduleDate === today).sort((x, y) => x.departureTime.localeCompare(y.departureTime));
 
-                            $('ovAvail').textContent = `${s.shuttlesAvailable} / ${s.shuttlesTotal}`;
-                            $('ovDrivers').textContent = s.driversOnShift;
-                            $('ovTrips').textContent = s.tripsToday;
-                            $('ovNext').textContent = s.nextDeparture || '—';
-                            $('ovUn').textContent = s.unassignedTrips;
-                            $('ovUnBox').classList.toggle('warn', s.unassignedTrips > 0);
+                                    $('ovAvail').textContent = `${s.shuttlesAvailable} / ${s.shuttlesTotal}`;
+                                    $('ovDrivers').textContent = s.driversOnShift;
+                                    $('ovTrips').textContent = s.tripsToday;
+                                    $('ovNext').textContent = s.nextDeparture || '—';
 
-                            const maint = Math.max(0, s.shuttlesTotal - s.shuttlesAvailable), ft = s.shuttlesTotal || 1;
-                            $('ovFleetBar').innerHTML = seg(s.shuttlesAvailable / ft * 100, '#10b981') + seg(maint / ft * 100, '#ef4444');
-                            $('ovFleetLeg').innerHTML = leg([[`${s.shuttlesAvailable} Available`, '#10b981'], [`${maint} In maintenance`, '#ef4444']]);
+                                    // Upcoming trips booked on a shuttle that is now in maintenance.
+                                    // Worked out here from the schedules list, so it does not depend on the server summary.
+                                    const nowKey = `${today} ${hhmm}`;
+                                    const affected = all
+                                        .filter(t => t.shuttleStatus === 'Maintenance'
+                                            && !['CANCELLED', 'COMPLETED'].includes(String(t.status || '').toUpperCase())
+                                            && `${t.scheduleDate} ${t.departureTime}` >= nowKey)
+                                        .sort((x, y) => `${x.scheduleDate} ${x.departureTime}`.localeCompare(`${y.scheduleDate} ${y.departureTime}`));
+                                    const conflictCount = affected.length;
+                                    const conflicts = affected.slice(0, 5).map(t => ({
+                                        departure: `${t.scheduleDate} ${t.departureTime}`,
+                                        route: t.routeName,
+                                        shuttle: t.shuttleName
+                                    }));
+                                    $('ovMaint').textContent = conflictCount;
+                                    $('ovMaintBox').classList.toggle('alert', conflictCount > 0);
 
-                            const un = trips.filter(t => !t.driverId).length;
-                            const dep = trips.filter(t => t.driverId && t.departureTime < hhmm).length;
-                            const up = trips.length - un - dep, tt = trips.length || 1;
-                            $('ovTripBar').innerHTML = seg(dep / tt * 100, '#ff7a00') + seg(up / tt * 100, '#0ea5e9') + seg(un / tt * 100, '#f59e0b');
-                            $('ovTripLeg').innerHTML = trips.length
-                                ? leg([[`${dep} Departed`, '#ff7a00'], [`${up} Upcoming`, '#0ea5e9'], [`${un} Need a driver`, '#f59e0b']])
-                                : '<span>No trips scheduled today</span>';
+                                    const maint = Math.max(0, s.shuttlesTotal - s.shuttlesAvailable), ft = s.shuttlesTotal || 1;
+                                    $('ovFleetBar').innerHTML = seg(s.shuttlesAvailable / ft * 100, '#10b981') + seg(maint / ft * 100, '#ef4444');
+                                    $('ovFleetLeg').innerHTML = leg([[`${s.shuttlesAvailable} Available`, '#10b981'], [`${maint} In maintenance`, '#ef4444']]);
 
-                            const items = [];
-                            if (s.unassignedTrips > 0) items.push(['#f59e0b', `${s.unassignedTrips} trip(s) today have no driver`, 'schedule-shuttles.html', 'Assign →']);
-                            if (maint > 0) items.push(['#ef4444', `${maint} shuttle(s) in maintenance`, 'manage-shuttles.html', 'Review →']);
-                            if (s.tripsToday === 0) items.push(['#0ea5e9', 'Nothing scheduled today', 'schedule-shuttles.html', 'Schedule →']);
-                            $('ovAttn').innerHTML = items.length
-                                ? items.map(i => `<li><span class="ov-dot" style="background:${i[0]};flex:none"></span><span>${esc(i[1])}</span><a href="${i[2]}">${i[3]}</a></li>`).join('')
-                                : '<li><span>All clear – nothing needs attention 🎉</span></li>';
+                                    // Every trip has a driver in this system, so only departed vs upcoming is shown
+                                    const dep = trips.filter(t => t.departureTime < hhmm).length;
+                                    const up = trips.length - dep, tt = trips.length || 1;
+                                    $('ovTripBar').innerHTML = seg(dep / tt * 100, '#ff7a00') + seg(up / tt * 100, '#0ea5e9');
+                                    $('ovTripLeg').innerHTML = trips.length
+                                        ? leg([[`${dep} Departed`, '#ff7a00'], [`${up} Upcoming`, '#0ea5e9']])
+                                        : '<span>No trips scheduled today</span>';
 
-                            const next = trips.filter(t => t.departureTime >= hhmm).slice(0, 5);
-                            $('ovDeps').innerHTML = next.length
-                                ? next.map(t => `<tr><td><b>${esc(t.departureTime)}</b></td><td>${esc(t.routeName)}</td><td>${esc(t.shuttleName)}</td><td>${esc(t.driverName)}</td><td><span class="ov-chip ${t.driverId ? 'ov-ok' : 'ov-bad'}">${t.driverId ? 'Scheduled' : 'Needs driver'}</span></td></tr>`).join('')
-                                : '<tr><td colspan="5">No more departures today.</td></tr>';
+                                    const items = [];
+                                    conflicts.forEach(c => {
+                                        const parts = String(c.departure).split(' ');
+                                        const when = parts[0] === today ? `today at ${parts[1]}` : `${parts[0]} at ${parts[1]}`;
+                                        items.push(['#ef4444', `${c.shuttle} is in maintenance but has a trip ${when} (${c.route})`, 'schedule-shuttles.html', 'Fix →']);
+                                    });
+                                    const extra = conflictCount - conflicts.length;
+                                    if (extra > 0) items.push(['#ef4444', `${extra} more trip(s) are scheduled on shuttles in maintenance`, 'schedule-shuttles.html', 'Review →']);
+                                    if (maint > 0 && conflicts.length === 0) items.push(['#f59e0b', `${maint} shuttle(s) in maintenance`, 'manage-shuttles.html', 'Review →']);
+                                    if (s.tripsToday === 0) items.push(['#0ea5e9', 'Nothing scheduled today', 'schedule-shuttles.html', 'Schedule →']);
+                                    $('ovAttn').innerHTML = items.length
+                                        ? items.map(i => `<li><span class="ov-dot" style="background:${i[0]};flex:none"></span><span>${esc(i[1])}</span><a href="${i[2]}">${i[3]}</a></li>`).join('')
+                                        : '<li><span>All clear – nothing needs attention 🎉</span></li>';
 
-                            $('ovUpdated').textContent = 'Updated ' + hhmm;
-                        } catch (e) {
-                            console.error('Overview failed:', e);
-                            $('ovUpdated').textContent = "Couldn't load";
-                        }
-                    }
+                                    const next = trips.filter(t => t.departureTime >= hhmm).slice(0, 5);
+                                    $('ovDeps').innerHTML = next.length
+                                        ? next.map(t => {
+                                            const inMaint = t.shuttleStatus === 'Maintenance';
+                                            return `<tr><td><b>${esc(t.departureTime)}</b></td><td>${esc(t.routeName)}</td><td>${esc(t.shuttleName)}</td><td>${esc(t.driverName)}</td><td><span class="ov-chip ${inMaint ? 'ov-red' : 'ov-ok'}">${inMaint ? 'Shuttle in maintenance' : 'Scheduled'}</span></td></tr>`;
+                                        }).join('')
+                                        : '<tr><td colspan="5">No more departures today.</td></tr>';
 
-                    document.addEventListener('DOMContentLoaded', function () {
-                        load();
-                        setInterval(load, 60000);
-                        $('ovRefresh').addEventListener('click', function (e) { e.preventDefault(); load(); });
-                    });
-                })();
+                                    $('ovUpdated').textContent = 'Updated ' + hhmm;
+                                } catch (e) {
+                                    console.error('Overview failed:', e);
+                                    $('ovUpdated').textContent = "Couldn't load";
+                                }
+                            }
+
+                            document.addEventListener('DOMContentLoaded', function () {
+                                load();
+                                setInterval(load, 60000);
+                                $('ovRefresh').addEventListener('click', function (e) { e.preventDefault(); load(); });
+                            });
+                        })();
     </script>
 </body>
 </html>

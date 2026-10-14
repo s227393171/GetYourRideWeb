@@ -717,33 +717,46 @@ static string DeriveStatus(int isVerified, string rawStatus)
     return "Pending";
 }
 
-// A document counts as present only if it has a path AND the file exists inside the app folder.
-static bool DocumentFileExists(string? relativePath)
+// Finds a stored document on disk the same way the web server serves it:
+// first in the project folder, then in wwwroot (the browser can load files from either).
+static string? ResolveDocumentFile(string? relativePath)
 {
-    if (string.IsNullOrWhiteSpace(relativePath)) return false;
+    if (string.IsNullOrWhiteSpace(relativePath)) return null;
     try
     {
-        string root = Path.GetFullPath(Directory.GetCurrentDirectory());
-        string full = Path.GetFullPath(Path.Combine(root, relativePath.TrimStart('/', '\\')));
-        return full.StartsWith(root, StringComparison.OrdinalIgnoreCase) && File.Exists(full);
+        string cleaned = relativePath.Trim().TrimStart('/', '\\');
+        string contentRoot = Path.GetFullPath(Directory.GetCurrentDirectory());
+        foreach (var candidate in new[] { contentRoot, Path.Combine(contentRoot, "wwwroot") })
+        {
+            string rootFull = Path.GetFullPath(candidate);
+            string full = Path.GetFullPath(Path.Combine(rootFull, cleaned));
+            // Stay inside the root folder, and only accept a file that really exists
+            if (full.StartsWith(rootFull, StringComparison.OrdinalIgnoreCase) && File.Exists(full)) return full;
+        }
     }
     catch
     {
-        return false;
+        // fall through: treat any problem as "not found"
     }
+    return null;
 }
 
-// True if the document file exists and was saved or replaced after the given time
+// A document counts as present only if it has a path AND the file exists on the server.
+static bool DocumentFileExists(string? relativePath) => ResolveDocumentFile(relativePath) != null;
+
+// True if the document file exists and was saved or copied in after the given time
 // (used to flag rejected drivers who have uploaded new documents).
+// A file copied into the folder keeps its old "modified" date but gets a new "created" date,
+// so the newer of the two is used.
 static bool DocumentChangedSince(string? relativePath, DateTime since)
 {
-    if (string.IsNullOrWhiteSpace(relativePath)) return false;
+    string? full = ResolveDocumentFile(relativePath);
+    if (full == null) return false;
     try
     {
-        string root = Path.GetFullPath(Directory.GetCurrentDirectory());
-        string full = Path.GetFullPath(Path.Combine(root, relativePath.TrimStart('/', '\\')));
-        if (!full.StartsWith(root, StringComparison.OrdinalIgnoreCase) || !File.Exists(full)) return false;
-        return File.GetLastWriteTime(full) > since;
+        DateTime written = File.GetLastWriteTime(full);
+        DateTime created = File.GetCreationTime(full);
+        return (written > created ? written : created) > since;
     }
     catch
     {
@@ -2396,6 +2409,8 @@ app.MapGet("/api/coordinator/summary", async (IConfiguration config) => {
 
         // A "shuttle" is a vehicle with capacity >= 10 and status Active or Maintenance.
         // Available = those currently Active.
+        // MaintenanceConflicts = upcoming scheduled trips on a shuttle that is now in maintenance
+        // (this happens when a shuttle is set to Maintenance AFTER trips were scheduled on it).
         string query = @"
             SELECT
                 (SELECT COUNT(*) FROM vehicle
@@ -2410,38 +2425,73 @@ app.MapGet("/api/coordinator/summary", async (IConfiguration config) => {
                 (SELECT COUNT(*) FROM trip
                     WHERE trip_type = 'SHUTTLE' AND DATE(departure_time) = CURDATE()
                       AND driver_id IS NULL) AS UnassignedTrips,
+                (SELECT COUNT(*) FROM trip t
+                    JOIN vehicle v ON v.registration_number = t.registration_number
+                    WHERE t.trip_type = 'SHUTTLE' AND t.status = 'SCHEDULED'
+                      AND t.departure_time >= NOW()
+                      AND v.status = 'Maintenance') AS MaintenanceConflicts,
                 (SELECT MIN(departure_time) FROM trip
                     WHERE trip_type = 'SHUTTLE' AND DATE(departure_time) = CURDATE()
                       AND departure_time >= NOW()) AS NextDeparture;";
 
-        using var command = new MySqlCommand(query, connection);
-        using var reader = await command.ExecuteReaderAsync();
+        int shuttlesAvailable = 0, shuttlesTotal = 0, driversOnShift = 0;
+        int tripsToday = 0, unassignedTrips = 0, maintenanceConflicts = 0;
+        string? nextDeparture = null;
 
-        if (await reader.ReadAsync())
+        using (var command = new MySqlCommand(query, connection))
+        using (var reader = await command.ExecuteReaderAsync())
         {
-            string? nextDeparture = reader["NextDeparture"] != DBNull.Value
-                ? Convert.ToDateTime(reader["NextDeparture"]).ToString("HH:mm")
-                : null;
-
-            return Results.Ok(new
+            if (await reader.ReadAsync())
             {
-                shuttlesAvailable = Convert.ToInt32(reader["ShuttlesAvailable"]),
-                shuttlesTotal = Convert.ToInt32(reader["ShuttlesTotal"]),
-                driversOnShift = Convert.ToInt32(reader["DriversOnShift"]),
-                tripsToday = Convert.ToInt32(reader["TripsToday"]),
-                nextDeparture = nextDeparture,
-                unassignedTrips = Convert.ToInt32(reader["UnassignedTrips"])
-            });
+                shuttlesAvailable = Convert.ToInt32(reader["ShuttlesAvailable"]);
+                shuttlesTotal = Convert.ToInt32(reader["ShuttlesTotal"]);
+                driversOnShift = Convert.ToInt32(reader["DriversOnShift"]);
+                tripsToday = Convert.ToInt32(reader["TripsToday"]);
+                unassignedTrips = Convert.ToInt32(reader["UnassignedTrips"]);
+                maintenanceConflicts = Convert.ToInt32(reader["MaintenanceConflicts"]);
+                nextDeparture = reader["NextDeparture"] != DBNull.Value
+                    ? Convert.ToDateTime(reader["NextDeparture"]).ToString("HH:mm")
+                    : null;
+            }
+        }
+
+        // The first few affected trips, so the "Needs your attention" box can name them
+        var maintenanceTrips = new List<object>();
+        string listQuery = @"
+            SELECT t.trip_id, t.departure_time, t.departure_stop, t.destination_stop, v.model
+            FROM trip t
+            JOIN vehicle v ON v.registration_number = t.registration_number
+            WHERE t.trip_type = 'SHUTTLE' AND t.status = 'SCHEDULED'
+              AND t.departure_time >= NOW()
+              AND v.status = 'Maintenance'
+            ORDER BY t.departure_time ASC
+            LIMIT 5;";
+
+        using (var listCmd = new MySqlCommand(listQuery, connection))
+        using (var listReader = await listCmd.ExecuteReaderAsync())
+        {
+            while (await listReader.ReadAsync())
+            {
+                maintenanceTrips.Add(new
+                {
+                    tripId = Convert.ToInt32(listReader["trip_id"]),
+                    departure = Convert.ToDateTime(listReader["departure_time"]).ToString("yyyy-MM-dd HH:mm"),
+                    route = $"{SafeStr(listReader["departure_stop"])} \u2192 {SafeStr(listReader["destination_stop"])}",
+                    shuttle = SafeStr(listReader["model"])
+                });
+            }
         }
 
         return Results.Ok(new
         {
-            shuttlesAvailable = 0,
-            shuttlesTotal = 0,
-            driversOnShift = 0,
-            tripsToday = 0,
-            nextDeparture = (string?)null,
-            unassignedTrips = 0
+            shuttlesAvailable,
+            shuttlesTotal,
+            driversOnShift,
+            tripsToday,
+            nextDeparture,
+            unassignedTrips,
+            maintenanceConflicts,
+            maintenanceTrips
         });
     }
     catch (Exception ex)
