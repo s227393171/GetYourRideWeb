@@ -1,0 +1,9 @@
+﻿  Determining projects to restore...
+  All projects are up-to-date for restore.
+  GetYourRideWeb -> D:\App\application\The_Bee_Project\GetYourRideWeb\GetYourRideWeb\bin\Debug\net10.0\GetYourRideWeb.dll
+
+Build succeeded.
+    0 Warning(s)
+    0 Error(s)
+
+Time Elapsed 00:00:08.88
